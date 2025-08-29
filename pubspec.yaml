@@ -1,0 +1,49 @@
+name: ahorro_app
+description: "App móvil para control de gastos y ahorros"
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Iconos de Material Design
+  cupertino_icons: ^1.0.8
+
+  # Para gráficos y estadísticas
+  fl_chart: ^0.68.0
+
+  # Para manejo de fechas
+  intl: ^0.20.2
+
+  # Para localización
+  flutter_localizations:
+    sdk: flutter
+
+  # Para persistencia de datos local
+  shared_preferences: ^2.2.2
+
+  # Para modelos de datos
+  json_annotation: ^4.8.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  # Para generar código de modelos
+  json_serializable: ^6.7.1
+  build_runner: ^2.4.7
+
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Aquí agregaremos assets más adelante si es necesario
+  # assets:
+  #   - images/
