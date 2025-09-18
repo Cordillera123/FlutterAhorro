@@ -69,6 +69,9 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
     await _budgetService.loadBudgets();
     await _transactionService.loadTransactions();
     _summary = _budgetService.getBudgetSummary();
+    
+    // Debug para verificar la carga de datos
+    _budgetService.debugPrintBudgets();
 
     if (mounted) {
       setState(() {
@@ -327,13 +330,39 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      '${_summary?.totalBudgets ?? 0} presupuestos activos',
-                      style: const TextStyle(
-                        color: textDark,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            '${_summary?.totalBudgets ?? 0} presupuestos activos',
+                            style: const TextStyle(
+                              color: textDark,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: (_summary?.isNearLimit ?? false) ? warningYellow.withOpacity(0.1) : primaryBlue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: (_summary?.isNearLimit ?? false) ? warningYellow.withOpacity(0.3) : primaryBlue.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Text(
+                            '${_summary?.totalBudgets ?? 0}/15',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: (_summary?.isNearLimit ?? false) ? warningYellow : primaryBlue,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -366,6 +395,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
       ),
     );
   }
+
 
   Widget _buildSummaryMetric(String title, String amount, Color color, IconData icon) {
     return Container(
@@ -592,45 +622,50 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
   }
 
   Widget _buildBudgetsList() {
-    final budgets = _budgetService.activeBudgets;
+    // CORREGIDO: Mostrar todos los presupuestos activos (incluyendo pausados)
+      final budgets = _budgetService.budgets;
+  
+  print('Displaying ${budgets.length} budgets');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Expanded(
-              child: Text(
-                'Presupuestos Activos',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: textDark,
-                  letterSpacing: -0.5,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            if (budgets.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: primaryBlue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: primaryBlue.withOpacity(0.2),
-                  ),
-                ),
-                child: Text(
-                  '${budgets.length} ${budgets.length == 1 ? 'activo' : 'activos'}',
-                  style: const TextStyle(
-                    color: primaryBlue,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+       Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    const Expanded(
+      child: Text(
+        'Mis Presupuestos', // CAMBIAR por: 'Todos los Presupuestos'
+        style: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.w700,
+          color: textDark,
+          letterSpacing: -0.5,
+        ),
+        overflow: TextOverflow.ellipsis,
+      ),
+    ),
+            // En la misma sección, cambiar el container del contador:
+if (budgets.isNotEmpty)
+  Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    decoration: BoxDecoration(
+      color: primaryBlue.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(
+        color: primaryBlue.withOpacity(0.2),
+      ),
+    ),
+    child: Text(
+      // CAMBIAR ESTA LÍNEA:
+      '${_budgetService.activeBudgets.length} activos / ${budgets.length} total',
+      style: const TextStyle(
+        color: primaryBlue,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  ),
           ],
         ),
         const SizedBox(height: 20),
@@ -645,9 +680,11 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
   Widget _buildBudgetCard(Budget budget) {
     final progress = _budgetService.getBudgetProgress(budget);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
+    return Opacity(
+        opacity: budget.isActive ? 1.0 : 0.7,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
@@ -658,7 +695,9 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
           ),
         ],
         border: Border.all(
-          color: Budget.getStatusColor(progress.status).withOpacity(0.2),
+          color: budget.isActive
+              ? Budget.getStatusColor(progress.status).withOpacity(0.2)
+              : Colors.grey.withOpacity(0.3), // Borde gris para pausados
           width: 1,
         ),
       ),
@@ -674,13 +713,18 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
                       width: 56,
                       height: 56,
                       decoration: BoxDecoration(
-                        color: Budget.getStatusColor(progress.status).withOpacity(0.1),
+                        color: budget.isActive
+                            ? Budget.getStatusColor(progress.status).withOpacity(0.1)
+                            : Colors.grey.withOpacity(0.1), // Gris para pausados
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Center(
                         child: Text(
                           budget.categoryIcon,
-                          style: const TextStyle(fontSize: 24),
+                          style: TextStyle(
+                            fontSize: 24,
+                            color: budget.isActive ? null : Colors.grey, // Gris para pausados
+                          ),
                         ),
                       ),
                     ),
@@ -694,28 +738,56 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
                               Expanded(
                                 child: Text(
                                   budget.name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
+                                  style: TextStyle(
                                     fontSize: 16,
-                                    color: textDark,
+                                    fontWeight: FontWeight.w700,
+                                    color: budget.isActive ? textDark : Colors.grey, // Gris para pausados
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
+                              // Indicador de estado mejorado
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: Budget.getStatusColor(progress.status).withOpacity(0.1),
+                                  color: budget.isActive
+                                      ? Budget.getStatusColor(progress.status).withOpacity(0.1)
+                                      : Colors.orange.withOpacity(0.1), // Naranja para pausados
                                   borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  Budget.getStatusMessage(progress.status),
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: Budget.getStatusColor(progress.status),
+                                  border: Border.all(
+                                    color: budget.isActive
+                                        ? Budget.getStatusColor(progress.status).withOpacity(0.3)
+                                        : Colors.orange.withOpacity(0.3),
+                                    width: 1,
                                   ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      budget.isActive
+                                          ? Icons.check_circle
+                                          : Icons.pause_circle,
+                                      size: 12,
+                                      color: budget.isActive
+                                          ? Budget.getStatusColor(progress.status)
+                                          : Colors.orange,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      budget.isActive
+                                          ? Budget.getStatusMessage(progress.status)
+                                          : 'Pausado',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                        color: budget.isActive
+                                            ? Budget.getStatusColor(progress.status)
+                                            : Colors.orange,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -723,8 +795,8 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
                           const SizedBox(height: 6),
                           Text(
                             '${budget.categoryName} • ${budget.periodName}',
-                            style: const TextStyle(
-                              color: textMedium,
+                            style: TextStyle(
+                              color: budget.isActive ? textMedium : Colors.grey,
                               fontSize: 14,
                             ),
                           ),
@@ -735,7 +807,9 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
                                 '${FormatUtils.formatMoney(progress.spentAmount)} de ${FormatUtils.formatMoney(budget.amount)}',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Budget.getStatusColor(progress.status),
+                                  color: budget.isActive
+                                      ? Budget.getStatusColor(progress.status)
+                                      : Colors.grey,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -744,7 +818,9 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
                                 '${(progress.percentage * 100).toStringAsFixed(0)}%',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Budget.getStatusColor(progress.status),
+                                  color: budget.isActive
+                                      ? Budget.getStatusColor(progress.status)
+                                      : Colors.grey,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -756,7 +832,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
                   ],
                 ),
                 const SizedBox(height: 16),
-                // Barra de progreso
+                // Barra de progreso mejorada
                 Container(
                   height: 8,
                   decoration: BoxDecoration(
@@ -768,15 +844,30 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
                     widthFactor: progress.percentage.clamp(0.0, 1.0),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Budget.getStatusColor(progress.status),
+                        color: budget.isActive
+                            ? Budget.getStatusColor(progress.status)
+                            : Colors.grey,
                         borderRadius: BorderRadius.circular(4),
+                        // Patrón rayado para presupuestos pausados
+                        gradient: budget.isActive
+                            ? null
+                            : LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.grey.withOpacity(0.6),
+                            Colors.grey.withOpacity(0.8),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  progress.progressMessage,
+                  budget.isActive
+                      ? progress.progressMessage
+                      : 'Presupuesto pausado - Se puede reactivar en cualquier momento',
                   style: TextStyle(
                     fontSize: 13,
                     color: Colors.grey[600],
@@ -787,17 +878,22 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
               ],
             ),
           ),
+          // Sección de botones con estilo diferenciado
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: backgroundCard,
+              color: budget.isActive
+                  ? const Color(0xFFF8FAFC)
+                  : Colors.grey.withOpacity(0.05), // Fondo más gris para pausados
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(20),
                 bottomRight: Radius.circular(20),
               ),
               border: Border(
                 top: BorderSide(
-                  color: Colors.grey[200]!,
+                  color: budget.isActive
+                      ? const Color(0xFFE5E7EB)
+                      : Colors.grey.withOpacity(0.2),
                   width: 1,
                 ),
               ),
@@ -817,7 +913,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
                   child: _buildBudgetActionButton(
                     budget.isActive ? Icons.pause : Icons.play_arrow,
                     budget.isActive ? 'Pausar' : 'Activar',
-                    warningYellow,
+                    budget.isActive ? warningYellow : successGreen,
                         () => _toggleBudget(budget),
                   ),
                 ),
@@ -835,6 +931,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
           ),
         ],
       ),
+        ),
     );
   }
 
@@ -957,58 +1054,20 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildModernFAB() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      width: double.infinity,
-      height: 56,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(
-          colors: [primaryBlue, darkBlue],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: primaryBlue.withOpacity(0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(28),
-          onTap: () {
-            HapticFeedback.mediumImpact();
-            _navigateToCreateBudget();
-          },
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.add_rounded,
-                color: Colors.white,
-                size: 24,
-              ),
-              SizedBox(width: 10),
-              Text(
-                'Crear Presupuesto',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   // Métodos de navegación y acciones
   void _navigateToCreateBudget() async {
+    // Validar límite antes de navegar
+    if (!_budgetService.canCreateBudget()) {
+      _showMessage(
+        'Límite Alcanzado',
+        'Has alcanzado el límite máximo de 15 presupuestos activos. Elimina o pausa algunos presupuestos para crear nuevos.',
+        dangerRed,
+        Icons.block_rounded,
+      );
+      return;
+    }
+
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -1022,6 +1081,17 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
   }
 
   void _createQuickBudget(BudgetPeriod period) async {
+    // Validar límite antes de navegar
+    if (!_budgetService.canCreateBudget()) {
+      _showMessage(
+        'Límite Alcanzado',
+        'Has alcanzado el límite máximo de 15 presupuestos activos. Elimina o pausa algunos presupuestos para crear nuevos.',
+        dangerRed,
+        Icons.block_rounded,
+      );
+      return;
+    }
+
     final result = await Navigator.push(
       context,
       MaterialPageRoute(

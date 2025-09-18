@@ -7,10 +7,12 @@ import '../utils/format_utils.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final TransactionType initialType;
+  final Transaction? transactionToEdit; // Nueva propiedad para edición
 
   const AddTransactionScreen({
     super.key,
     required this.initialType,
+    this.transactionToEdit, // Parámetro opcional para editar
   });
 
   @override
@@ -57,11 +59,26 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
     _selectedType = widget.initialType;
     _initAnimations();
 
-    // Si es ingreso de salario, preconfigurar
-    if (_selectedType == TransactionType.income) {
-      _selectedIncomeCategory = IncomeCategory.salary;
-      _descriptionController.text = 'Salario del mes';
+    // Si estamos editando una transacción, pre-llenar los campos
+    if (widget.transactionToEdit != null) {
+      _loadTransactionData();
+    } else {
+      // Si es ingreso de salario, preconfigurar
+      if (_selectedType == TransactionType.income) {
+        _selectedIncomeCategory = IncomeCategory.salary;
+        _descriptionController.text = 'Salario del mes';
+      }
     }
+  }
+
+  void _loadTransactionData() {
+    final transaction = widget.transactionToEdit!;
+    _amountController.text = transaction.amount.toString();
+    _descriptionController.text = transaction.description;
+    _selectedDate = transaction.date;
+    _selectedType = transaction.type;
+    _selectedExpenseCategory = transaction.expenseCategory;
+    _selectedIncomeCategory = transaction.incomeCategory;
   }
 
   void _initAnimations() {
@@ -187,9 +204,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              _selectedType == TransactionType.income
-                                  ? 'Agregar Ingreso'
-                                  : 'Agregar Gasto',
+                              widget.transactionToEdit != null
+                                  ? (_selectedType == TransactionType.income
+                                      ? 'Editar Ingreso'
+                                      : 'Editar Gasto')
+                                  : (_selectedType == TransactionType.income
+                                      ? 'Agregar Ingreso'
+                                      : 'Agregar Gasto'),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 26,
@@ -201,9 +222,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              _selectedType == TransactionType.income
-                                  ? 'Registra tus ingresos fácilmente'
-                                  : 'Mantén control de tus gastos',
+                              widget.transactionToEdit != null
+                                  ? 'Modifica los datos de tu transacción'
+                                  : (_selectedType == TransactionType.income
+                                      ? 'Registra tus ingresos fácilmente'
+                                      : 'Mantén control de tus gastos'),
                               style: TextStyle(
                                 color: Colors.white.withOpacity(0.9),
                                 fontSize: 15,
@@ -230,22 +253,29 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
 
   Widget _buildHeaderIcon() {
     return Container(
-      width: 48,
-      height: 48,
+      width: 52, // MEJORADO: Ligeramente más grande
+      height: 52,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(18), // MEJORADO: Más redondeado
+        color: Colors.white.withOpacity(0.25), // MEJORADO: Más opacidad
         border: Border.all(
-          color: Colors.white.withOpacity(0.3),
+          color: Colors.white.withOpacity(0.4), // MEJORADO: Borde más visible
           width: 2,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Icon(
         _selectedType == TransactionType.income
             ? Icons.trending_up_rounded
             : Icons.trending_down_rounded,
         color: Colors.white,
-        size: 24,
+        size: 26, // MEJORADO: Icono más grande
       ),
     );
   }
@@ -764,7 +794,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 2.2,
+        childAspectRatio: 2.5, // MEJORADO: Más espacio para mejor legibilidad
       ),
       itemCount: categories.length,
       itemBuilder: (context, index) {
@@ -778,7 +808,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
               _selectedIncomeCategory = category['category'] as IncomeCategory;
             });
           },
-          child: Container(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: isSelected ? primaryGreen.withOpacity(0.1) : backgroundCard,
@@ -795,22 +826,30 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                   offset: const Offset(0, 4),
                 ),
               ]
-                  : null,
+                  : [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   category['icon'] as String,
-                  style: const TextStyle(fontSize: 20),
+                  style: TextStyle(
+                    fontSize: isSelected ? 24 : 22, // MEJORADO: Emoji más grande cuando está seleccionado
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Flexible(
                   child: Text(
                     category['name'] as String,
                     style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                      fontSize: 14, // MEJORADO: Texto más grande
                       color: isSelected ? primaryGreen : textDark,
                     ),
                     textAlign: TextAlign.center,
@@ -828,9 +867,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
   Widget _buildExpenseCategoryGrid() {
     final categories = [
       {'category': ExpenseCategory.transport, 'name': 'Transporte', 'icon': '🚗'},
-      {'category': ExpenseCategory.food, 'name': 'Comida', 'icon': '🍕'},
-      {'category': ExpenseCategory.shopping, 'name': 'Compras', 'icon': '🛍️'},
-      {'category': ExpenseCategory.entertainment, 'name': 'Entretenimiento', 'icon': '🎬'},
+      {'category': ExpenseCategory.food, 'name': 'Alimentación', 'icon': '🍕'},
+      {'category': ExpenseCategory.utilities, 'name': 'Servicios', 'icon': '💡'},
+      {'category': ExpenseCategory.health, 'name': 'Salud', 'icon': '🏥'},
+      {'category': ExpenseCategory.education, 'name': 'Educación', 'icon': '📚'},
+      {'category': ExpenseCategory.entertainment, 'name': 'Diversión', 'icon': '🎬'},
+      {'category': ExpenseCategory.clothing, 'name': 'Ropa', 'icon': '👕'},
+      {'category': ExpenseCategory.home, 'name': 'Hogar', 'icon': '🏠'},
+      {'category': ExpenseCategory.technology, 'name': 'Tecnología', 'icon': '📱'},
+      {'category': ExpenseCategory.savings, 'name': 'Ahorros', 'icon': '💰'},
+      {'category': ExpenseCategory.gifts, 'name': 'Regalos', 'icon': '🎁'},
       {'category': ExpenseCategory.other, 'name': 'Otros', 'icon': '📦'},
     ];
 
@@ -838,10 +884,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 2.8, // AUMENTADO de 1.8 a 2.8 para dar más espacio
+        crossAxisCount: 3,
+        crossAxisSpacing: 8, // REDUCIDO de 12 a 8
+        mainAxisSpacing: 8,  // REDUCIDO de 12 a 8
+        childAspectRatio: 1.1, // REDUCIDO de 1.4 a 1.1 para menos altura
       ),
       itemCount: categories.length,
       itemBuilder: (context, index) {
@@ -855,11 +901,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
               _selectedExpenseCategory = category['category'] as ExpenseCategory;
             });
           },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // AJUSTADO padding
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8), // REDUCIDO padding
             decoration: BoxDecoration(
               color: isSelected ? primaryRed.withOpacity(0.1) : backgroundCard,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(14), // REDUCIDO de 16 a 14
               border: Border.all(
                 color: isSelected ? primaryRed : borderLight,
                 width: isSelected ? 2 : 1,
@@ -868,30 +915,40 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                   ? [
                 BoxShadow(
                   color: primaryRed.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
+                  blurRadius: 6, // REDUCIDO de 8 a 6
+                  offset: const Offset(0, 3), // REDUCIDO de 4 a 3
                 ),
               ]
-                  : null,
+                  : [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.05),
+                  blurRadius: 3, // REDUCIDO
+                  offset: const Offset(0, 1), // REDUCIDO
+                ),
+              ],
             ),
-            child: Row( // CAMBIADO de Column a Row para layout horizontal
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min, // AGREGADO para minimizar espacio
               children: [
                 Text(
                   category['icon'] as String,
-                  style: const TextStyle(fontSize: 18), // REDUCIDO tamaño del emoji
+                  style: TextStyle(
+                    fontSize: isSelected ? 20 : 18, // REDUCIDO de 24/22 a 20/18
+                  ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(height: 4), // REDUCIDO de 6 a 4
                 Flexible(
                   child: Text(
                     category['name'] as String,
                     style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 11, // REDUCIDO tamaño del texto
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                      fontSize: 10, // REDUCIDO de 12 a 10
                       color: isSelected ? primaryRed : textDark,
+                      height: 1.1, // REDUCIDO de 1.2 a 1.1
                     ),
                     textAlign: TextAlign.center,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -969,35 +1026,71 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                 HapticFeedback.lightImpact();
                 _selectDate();
               },
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: backgroundCard,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: borderLight),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.event_rounded,
-                      color: primaryBlue,
-                      size: 20,
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: primaryBlue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.event_rounded,
+                        color: primaryBlue,
+                        size: 20,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(
-                        FormatUtils.formatDateFull(_selectedDate),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: textDark,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            FormatUtils.formatDateFull(_selectedDate),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: textDark,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            FormatUtils.formatDateForList(_selectedDate),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: textMedium,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Icon(
-                      Icons.arrow_drop_down_rounded,
-                      color: textMedium,
-                      size: 24,
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: primaryBlue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Icon(
+                        Icons.arrow_drop_down_rounded,
+                        color: primaryBlue,
+                        size: 20,
+                      ),
                     ),
                   ],
                 ),
@@ -1092,13 +1185,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Center(
                     child: Text(
                       _getSelectedCategoryIcon(),
-                      style: const TextStyle(fontSize: 20),
+                      style: const TextStyle(fontSize: 22), // MEJORADO: Emoji más grande
                     ),
                   ),
                 ),
@@ -1117,33 +1210,63 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _getSelectedCategoryName(),
-                        style: const TextStyle(
-                          color: textMedium,
-                          fontSize: 14,
+                      const SizedBox(height: 6), // MEJORADO: Más espacio
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          _getSelectedCategoryName(),
+                          style: TextStyle(
+                            color: color,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(
                         FormatUtils.formatDateForList(_selectedDate),
                         style: const TextStyle(
                           color: textMedium,
-                          fontSize: 12,
+                          fontSize: 13, // MEJORADO: Texto un poco más grande
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 16),
-                Text(
-                  '${isIncome ? '+' : '-'}\$${amount.toStringAsFixed(2)}', // CAMBIADO para mostrar siempre 2 decimales
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: color,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${isIncome ? '+' : '-'}\$${amount.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: color,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isIncome ? primaryGreen.withOpacity(0.1) : primaryRed.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        isIncome ? 'Ingreso' : 'Gasto',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: color,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -1161,60 +1284,92 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       width: double.infinity,
-      height: 56,
+      height: 64, // MEJORADO: Botón más alto
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(32),
         gradient: LinearGradient(
           colors: [color, darkColor],
         ),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+            color: color.withOpacity(0.4), // MEJORADO: Sombra más pronunciada
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(32),
           onTap: _isLoading ? null : () {
             HapticFeedback.mediumImpact();
             _saveTransaction();
           },
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (_isLoading)
-                const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_isLoading)
+                  const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      isIncome ? Icons.savings_rounded : Icons.payment_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                   ),
-                )
-              else
-                Icon(
-                  isIncome ? Icons.savings_rounded : Icons.payment_rounded,
-                  color: Colors.white,
-                  size: 24,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _isLoading
+                        ? 'Guardando transacción...'
+                        : isIncome
+                        ? 'Agregar Ingreso'
+                        : 'Agregar Gasto',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18, // MEJORADO: Texto más grande
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-              const SizedBox(width: 10),
-              Text(
-                _isLoading
-                    ? 'Guardando...'
-                    : isIncome
-                    ? 'Agregar Ingreso'
-                    : 'Agregar Gasto',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+                if (!_isLoading)
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.arrow_forward_rounded,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1263,8 +1418,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
       switch (_selectedExpenseCategory) {
         case ExpenseCategory.transport: return '🚗';
         case ExpenseCategory.food: return '🍕';
-        case ExpenseCategory.shopping: return '🛍️';
+        case ExpenseCategory.utilities: return '💡';
+        case ExpenseCategory.health: return '🏥';
+        case ExpenseCategory.education: return '📚';
         case ExpenseCategory.entertainment: return '🎬';
+        case ExpenseCategory.clothing: return '👕';
+        case ExpenseCategory.home: return '🏠';
+        case ExpenseCategory.technology: return '📱';
+        case ExpenseCategory.savings: return '💰';
+        case ExpenseCategory.gifts: return '�';
         case ExpenseCategory.other: return '📦';
         default: return '💸';
       }
@@ -1283,9 +1445,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
     } else {
       switch (_selectedExpenseCategory) {
         case ExpenseCategory.transport: return 'Transporte';
-        case ExpenseCategory.food: return 'Comida';
-        case ExpenseCategory.shopping: return 'Compras';
+        case ExpenseCategory.food: return 'Alimentación';
+        case ExpenseCategory.utilities: return 'Servicios Básicos';
+        case ExpenseCategory.health: return 'Salud';
+        case ExpenseCategory.education: return 'Educación';
         case ExpenseCategory.entertainment: return 'Entretenimiento';
+        case ExpenseCategory.clothing: return 'Ropa y Calzado';
+        case ExpenseCategory.home: return 'Hogar y Muebles';
+        case ExpenseCategory.technology: return 'Tecnología';
+        case ExpenseCategory.savings: return 'Ahorros e Inversión';
+        case ExpenseCategory.gifts: return 'Regalos y Donaciones';
         case ExpenseCategory.other: return 'Otros Gastos';
         default: return 'Gasto';
       }
@@ -1318,7 +1487,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
       }
 
       final transaction = Transaction(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: widget.transactionToEdit?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
         amount: amount,
         type: _selectedType,
         description: _descriptionController.text,
@@ -1327,7 +1496,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
         incomeCategory: _selectedIncomeCategory,
       );
 
-      await _transactionService.addTransaction(transaction);
+      // Si estamos editando, actualizar; si no, agregar nueva transacción
+      if (widget.transactionToEdit != null) {
+        await _transactionService.updateTransaction(transaction);
+      } else {
+        await _transactionService.addTransaction(transaction);
+      }
 
       if (mounted) {
         // Navegar a la pantalla de éxito en lugar de solo hacer pop
@@ -1336,6 +1510,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
           MaterialPageRoute(
             builder: (context) => TransactionSuccessScreen(
               transaction: transaction,
+              isEdit: widget.transactionToEdit != null, // Indicar si es edición
             ),
           ),
         );
@@ -1345,7 +1520,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
       }
     } catch (e) {
       if (mounted) {
-        _showErrorMessage('Error al guardar la transacción: ${e.toString()}');
+        _showErrorMessage('Error al ${widget.transactionToEdit != null ? 'actualizar' : 'guardar'} la transacción: ${e.toString()}');
       }
     } finally {
       if (mounted) {

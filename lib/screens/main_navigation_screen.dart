@@ -153,7 +153,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
-        child: SizedBox(
+        child: Container(
           height: 70,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -221,8 +221,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
   }
 
   Widget? _buildFloatingActionButton() {
-    // Mostrar FAB solo en ciertas pantallas
-    if (_currentIndex == 0 || _currentIndex == 1 || _currentIndex == 3) {
+    // CAMBIO PRINCIPAL: Excluir la pantalla de presupuestos (índice 1)
+    // Solo mostrar FAB en Inicio (0) e Historial (3)
+    if (_currentIndex == 0 || _currentIndex == 3) {
       return ScaleTransition(
         scale: _fabAnimation,
         child: FloatingActionButton.extended(
@@ -249,12 +250,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
 
   void _onNavItemTap(int index) {
     HapticFeedback.lightImpact();
-    
+
     if (index != _currentIndex) {
       setState(() {
         _currentIndex = index;
       });
-      
+
       _pageController.animateToPage(
         index,
         duration: const Duration(milliseconds: 300),
@@ -265,7 +266,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
 
   void _showAddTransactionOptions() {
     HapticFeedback.mediumImpact();
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -295,7 +296,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Header
             Row(
               children: [
@@ -353,7 +354,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
                     Icons.trending_up_rounded,
                     primaryGreen,
                     darkGreen,
-                    () => _navigateToAddTransaction(TransactionType.income),
+                        () => _navigateToAddTransaction(TransactionType.income),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -364,7 +365,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
                     Icons.trending_down_rounded,
                     primaryRed,
                     darkRed,
-                    () => _navigateToAddTransaction(TransactionType.expense),
+                        () => _navigateToAddTransaction(TransactionType.expense),
                   ),
                 ),
               ],
@@ -413,13 +414,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
   }
 
   Widget _buildQuickActionButton(
-    String title,
-    String subtitle,
-    IconData icon,
-    Color primaryColor,
-    Color darkColor,
-    VoidCallback onPressed,
-  ) {
+      String title,
+      String subtitle,
+      IconData icon,
+      Color primaryColor,
+      Color darkColor,
+      VoidCallback onPressed,
+      ) {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();

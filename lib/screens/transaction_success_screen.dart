@@ -4,10 +4,12 @@ import '../utils/format_utils.dart';
 
 class TransactionSuccessScreen extends StatefulWidget {
   final Transaction transaction;
+  final bool isEdit;
 
   const TransactionSuccessScreen({
     super.key,
     required this.transaction,
+    this.isEdit = false,
   });
 
   @override
@@ -119,8 +121,8 @@ class _TransactionSuccessScreenState extends State<TransactionSuccessScreen>
                 duration: const Duration(milliseconds: 300),
                 child: Text(
                   _showSuccess
-                      ? '¡Transacción guardada!'
-                      : 'Guardando transacción...',
+                      ? (widget.isEdit ? '¡Transacción actualizada!' : '¡Transacción guardada!')
+                      : (widget.isEdit ? 'Actualizando transacción...' : 'Guardando transacción...'),
                   key: ValueKey(_showSuccess),
                   style: TextStyle(
                     fontSize: 24,

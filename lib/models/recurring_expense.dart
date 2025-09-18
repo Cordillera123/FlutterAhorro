@@ -230,33 +230,61 @@ class RecurringExpense {
     );
   }
 
-  // Obtener el ícono de la categoría
+  // ACTUALIZADO - Obtener el ícono de la categoría con todas las nuevas categorías
   String get categoryIcon {
     switch (category) {
       case ExpenseCategory.transport:
         return '🚗';
       case ExpenseCategory.food:
         return '🍕';
-      case ExpenseCategory.shopping:
-        return '🛍️';
+      case ExpenseCategory.utilities:
+        return '💡';
+      case ExpenseCategory.health:
+        return '🏥';
+      case ExpenseCategory.education:
+        return '📚';
       case ExpenseCategory.entertainment:
         return '🎬';
+      case ExpenseCategory.clothing:
+        return '👕';
+      case ExpenseCategory.home:
+        return '🏠';
+      case ExpenseCategory.technology:
+        return '📱';
+      case ExpenseCategory.savings:
+        return '💰';
+      case ExpenseCategory.gifts:
+        return '🎁';
       case ExpenseCategory.other:
         return '📦';
     }
   }
 
-  // Obtener el nombre de la categoría
+  // ACTUALIZADO - Obtener el nombre de la categoría con todas las nuevas categorías
   String get categoryName {
     switch (category) {
       case ExpenseCategory.transport:
         return 'Transporte';
       case ExpenseCategory.food:
-        return 'Comida';
-      case ExpenseCategory.shopping:
-        return 'Compras';
+        return 'Alimentación';
+      case ExpenseCategory.utilities:
+        return 'Servicios Básicos';
+      case ExpenseCategory.health:
+        return 'Salud';
+      case ExpenseCategory.education:
+        return 'Educación';
       case ExpenseCategory.entertainment:
         return 'Entretenimiento';
+      case ExpenseCategory.clothing:
+        return 'Ropa y Calzado';
+      case ExpenseCategory.home:
+        return 'Hogar y Muebles';
+      case ExpenseCategory.technology:
+        return 'Tecnología';
+      case ExpenseCategory.savings:
+        return 'Ahorros e Inversión';
+      case ExpenseCategory.gifts:
+        return 'Regalos y Donaciones';
       case ExpenseCategory.other:
         return 'Otros';
     }

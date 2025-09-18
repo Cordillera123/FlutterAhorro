@@ -3,9 +3,11 @@ import 'package:flutter/services.dart';
 import '../models/transaction.dart';
 import '../services/transaction_service.dart';
 import '../services/recurring_expense_service.dart';
+import '../services/stats_service.dart';
 import '../utils/format_utils.dart';
 import 'add_transaction_screen.dart';
 import 'recurring_expenses_screen.dart';
+import 'stats_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,11 +19,13 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final TransactionService _transactionService = TransactionService();
   final RecurringExpenseService _recurringExpenseService = RecurringExpenseService();
+  final StatsService _statsService = StatsService();
   bool _isLoading = true;
   bool _isRefreshing = false;
   late AnimationController _animationController;
   late Animation<double> _fadeInAnimation;
   late Animation<double> _slideAnimation;
+  FinancialStats? _financialStats;
 
   @override
   void initState() {
@@ -36,10 +40,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   // NUEVO: Método que se ejecuta cuando el TransactionService notifica cambios
   void _onTransactionServiceChanged() {
     if (mounted) {
+      _updateStats();
       setState(() {
         // Forzar rebuild cuando cambien los datos del servicio
       });
     }
+  }
+
+  void _updateStats() {
+    _financialStats = _statsService.getCurrentVsPreviousStats();
   }
 
   void _initAnimations() {
@@ -70,6 +79,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       await _transactionService.loadTransactions();
       await _recurringExpenseService.loadRecurringExpenses();
       await _recurringExpenseService.processRecurringExpensesForToday();
+      
+      _updateStats();
 
       if (mounted) {
         setState(() {
@@ -414,7 +425,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Tu dinero está creciendo',
+                  _getGrowthMessage(),
                   style: TextStyle(
                     color: Colors.grey[600],
                     fontSize: 14,
@@ -425,17 +436,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Row(
                   children: [
                     Icon(
-                      _transactionService.totalBalance >= 0
-                          ? Icons.trending_up_rounded
-                          : Icons.trending_down_rounded,
-                      color: const Color(0xFF4CAF50),
+                      _getGrowthIcon(),
+                      color: _getGrowthColor(),
                       size: 16,
                     ),
                     const SizedBox(width: 4),
-                    const Text(
-                      '+2.5% este mes',
+                    Text(
+                      _getGrowthText(),
                       style: TextStyle(
-                        color: Color(0xFF4CAF50),
+                        color: _getGrowthColor(),
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -451,26 +460,67 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildFinancialOverview() {
-    return Row(
+    final stats = _financialStats;
+    final currentIncome = stats?.currentIncome ?? 0.0;
+    final currentExpenses = stats?.currentExpenses ?? 0.0;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: _buildGlassCard(
-            title: 'Ingresos',
-            amount: FormatUtils.formatMoney(_transactionService.totalIncome),
-            icon: Icons.arrow_upward_rounded,
-            color: const Color(0xFF059669),
-            isPositive: true,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Este mes',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+            if (stats?.hasCurrentData == true)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF059669).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${stats!.currentMonthTransactionCount} transacciones',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF059669),
+                  ),
+                ),
+              ),
+          ],
         ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildGlassCard(
-            title: 'Gastos',
-            amount: FormatUtils.formatMoney(_transactionService.totalExpenses),
-            icon: Icons.arrow_downward_rounded,
-            color: const Color(0xFFDC2626),
-            isPositive: false,
-          ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _buildGlassCard(
+                title: 'Ingresos',
+                amount: FormatUtils.formatMoney(currentIncome),
+                icon: Icons.arrow_upward_rounded,
+                color: const Color(0xFF059669),
+                isPositive: true,
+                subtitle: _getIncomeGrowthText(),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildGlassCard(
+                title: 'Gastos',
+                amount: FormatUtils.formatMoney(currentExpenses),
+                icon: Icons.arrow_downward_rounded,
+                color: const Color(0xFFDC2626),
+                isPositive: false,
+                subtitle: _getExpenseGrowthText(),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -482,6 +532,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     required IconData icon,
     required Color color,
     required bool isPositive,
+    String? subtitle,
   }) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -515,7 +566,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 child: Icon(icon, color: color, size: 20),
               ),
               Text(
-                isPositive ? '+12%' : '-8%',
+                subtitle ?? '',
                 style: TextStyle(
                   color: color,
                   fontSize: 12,
@@ -611,7 +662,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               gradient: const LinearGradient(
                 colors: [Color(0xFF7C3AED), Color(0xFF5B21B6)],
               ),
-              onTap: _showStatsDialog,
+              onTap: _navigateToStats,
             ),
           ],
         ),
@@ -983,44 +1034,101 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  void _showStatsDialog() {
+  void _navigateToStats() async {
     HapticFeedback.lightImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF3B82F6).withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.analytics_rounded,
-                color: Color(0xFF1E293B),
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                'Estadísticas próximamente',
-                style: TextStyle(
-                  color: Color(0xFF1E293B),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.white,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        margin: const EdgeInsets.all(16),
-        elevation: 8,
+    
+    final result = await Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const StatsScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOut;
+
+          var tween = Tween(begin: begin, end: end).chain(
+            CurveTween(curve: curve),
+          );
+
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 300),
       ),
     );
+  }
+
+  // Métodos para obtener datos reales del crecimiento financiero
+  String _getGrowthMessage() {
+    final stats = _financialStats;
+    if (stats == null || !stats.hasData) {
+      return 'Agrega transacciones para ver tu progreso';
+    }
+    
+    if (!stats.hasCurrentData) {
+      return 'Aún no tienes transacciones este mes';
+    }
+    
+    if (!stats.hasPreviousData) {
+      return 'Tu primer mes registrado';
+    }
+    
+    return FormatUtils.getGrowthMessage(stats.balanceGrowthPercentage);
+  }
+
+  IconData _getGrowthIcon() {
+    final stats = _financialStats;
+    if (stats == null || !stats.hasData || !stats.hasPreviousData) {
+      return Icons.show_chart_rounded;
+    }
+    
+    return FormatUtils.getGrowthIcon(stats.balanceGrowthPercentage);
+  }
+
+  Color _getGrowthColor() {
+    final stats = _financialStats;
+    if (stats == null || !stats.hasData || !stats.hasPreviousData) {
+      return const Color(0xFF64748B);
+    }
+    
+    return FormatUtils.getGrowthColor(stats.balanceGrowthPercentage);
+  }
+
+  String _getGrowthText() {
+    final stats = _financialStats;
+    if (stats == null || !stats.hasData) {
+      return 'Sin datos';
+    }
+    
+    if (!stats.hasCurrentData) {
+      return 'Este mes: \$0';
+    }
+    
+    if (!stats.hasPreviousData) {
+      return 'Primer mes';
+    }
+    
+    final percentage = stats.balanceGrowthPercentage;
+    return '${FormatUtils.formatPercentageWithSign(percentage)} este mes';
+  }
+
+  String _getIncomeGrowthText() {
+    final stats = _financialStats;
+    if (stats == null || !stats.hasData || !stats.hasPreviousData) {
+      return '';
+    }
+    
+    return FormatUtils.formatPercentageWithSign(stats.incomeGrowthPercentage);
+  }
+
+  String _getExpenseGrowthText() {
+    final stats = _financialStats;
+    if (stats == null || !stats.hasData || !stats.hasPreviousData) {
+      return '';
+    }
+    
+    return FormatUtils.formatPercentageWithSign(stats.expenseGrowthPercentage);
   }
 }

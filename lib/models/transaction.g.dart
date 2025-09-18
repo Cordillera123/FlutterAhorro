@@ -40,9 +40,16 @@ const _$TransactionTypeEnumMap = {
 
 const _$ExpenseCategoryEnumMap = {
   ExpenseCategory.transport: 'transport',
-  ExpenseCategory.shopping: 'shopping',
   ExpenseCategory.food: 'food',
+  ExpenseCategory.utilities: 'utilities',
+  ExpenseCategory.health: 'health',
+  ExpenseCategory.education: 'education',
   ExpenseCategory.entertainment: 'entertainment',
+  ExpenseCategory.clothing: 'clothing',
+  ExpenseCategory.home: 'home',
+  ExpenseCategory.technology: 'technology',
+  ExpenseCategory.savings: 'savings',
+  ExpenseCategory.gifts: 'gifts',
   ExpenseCategory.other: 'other',
 };
 

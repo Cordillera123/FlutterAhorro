@@ -113,32 +113,14 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
     } else {
       // Configurar valores por defecto
       _nameController.text = 'Presupuesto ${_getCategoryName(_selectedCategory)}';
-      _setDefaultAmount();
+      // CORREGIDO: No establecer monto por defecto
+      _amountController.text = '';
     }
   }
 
-  void _setDefaultAmount() {
-    double amount = 0;
-
-    switch (_selectedCategory) {
-      case ExpenseCategory.food:
-        amount = _selectedPeriod == BudgetPeriod.monthly ? 200000 : 50000;
-        break;
-      case ExpenseCategory.transport:
-        amount = _selectedPeriod == BudgetPeriod.monthly ? 150000 : 35000;
-        break;
-      case ExpenseCategory.entertainment:
-        amount = _selectedPeriod == BudgetPeriod.monthly ? 100000 : 25000;
-        break;
-      case ExpenseCategory.shopping:
-        amount = _selectedPeriod == BudgetPeriod.monthly ? 120000 : 30000;
-        break;
-      case ExpenseCategory.other:
-        amount = _selectedPeriod == BudgetPeriod.monthly ? 80000 : 20000;
-        break;
-    }
-
-    _amountController.text = FormatUtils.formatMoney(amount);
+ void _setDefaultAmount() {
+    // CORREGIDO: Establecer en 0 por defecto
+    _amountController.text = '';
   }
 
   // Build methods
@@ -496,15 +478,20 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
               if (value == null || value.isEmpty) {
                 return 'Por favor ingresa un monto';
               }
-              final amount = double.tryParse(value);
-              if (amount == null || amount <= 0) {
-                return 'El monto debe ser mayor a \$0.00';
-              }
-              if (amount > 999999.99) {
-                return 'El monto máximo es \$999,999.99';
-              }
-              if (amount < 0.01) {
-                return 'El monto mínimo es \$0.01';
+              // CORREGIDO: Usar FormatUtils.parseAmount para validar
+              try {
+                final amount = FormatUtils.parseAmount(value);
+                if (amount <= 0) {
+                  return 'El monto debe ser mayor a \$0.00';
+                }
+                if (amount > 999999.99) {
+                  return 'El monto máximo es \$999,999.99';
+                }
+                if (amount < 0.01) {
+                  return 'El monto mínimo es \$0.01';
+                }
+              } catch (e) {
+                return 'Formato de monto inválido';
               }
               return null;
             },
@@ -576,33 +563,33 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
             ],
           ),
           const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: _buildPeriodOption(
-                  BudgetPeriod.weekly,
-                  'Semanal',
-                  Icons.date_range_rounded,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildPeriodOption(
-                  BudgetPeriod.monthly,
-                  'Mensual',
-                  Icons.calendar_month_rounded,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildPeriodOption(
-                  BudgetPeriod.yearly,
-                  'Anual',
-                  Icons.event_note_rounded,
-                ),
-              ),
-            ],
-          ),
+         Row(
+    children: [
+      Expanded(
+        child: _buildPeriodOption(
+          BudgetPeriod.weekly,
+          'Semanal',
+          Icons.date_range_rounded,
+        ),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: _buildPeriodOption(
+          BudgetPeriod.monthly,
+          'Mensual',
+          Icons.calendar_month_rounded,
+        ),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: _buildPeriodOption(
+          BudgetPeriod.yearly,
+          'Anual',
+          Icons.event_note_rounded,
+        ),
+      ),
+    ],
+  ),
         ],
       ),
     );
@@ -617,7 +604,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
         setState(() {
           _selectedPeriod = period;
           _nameController.text = 'Presupuesto ${_getCategoryName(_selectedCategory)} ${name.toLowerCase()}';
-          _setDefaultAmount();
+          // CORREGIDO: No establecer monto automáticamente
         });
       },
       child: Container(
@@ -745,7 +732,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
                   setState(() {
                     _selectedCategory = category;
                     _nameController.text = 'Presupuesto ${_getCategoryName(category)} ${_getPeriodName(_selectedPeriod).toLowerCase()}';
-                    _setDefaultAmount();
+                    // CORREGIDO: No establecer monto automáticamente
                   });
                 },
                 child: Container(
@@ -1161,35 +1148,63 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
   }
 
   // Utility methods
-  String _getCategoryName(ExpenseCategory category) {
-    switch (category) {
-      case ExpenseCategory.transport:
-        return 'Transporte';
-      case ExpenseCategory.food:
-        return 'Comida';
-      case ExpenseCategory.shopping:
-        return 'Compras';
-      case ExpenseCategory.entertainment:
-        return 'Entretenimiento';
-      case ExpenseCategory.other:
-        return 'Otros';
-    }
+ String _getCategoryName(ExpenseCategory category) {
+  switch (category) {
+    case ExpenseCategory.transport:
+      return 'Transporte';
+    case ExpenseCategory.food:
+      return 'Alimentación';
+    case ExpenseCategory.utilities:
+      return 'Servicios Básicos';
+    case ExpenseCategory.health:
+      return 'Salud';
+    case ExpenseCategory.education:
+      return 'Educación';
+    case ExpenseCategory.entertainment:
+      return 'Entretenimiento';
+    case ExpenseCategory.clothing:
+      return 'Ropa y Calzado';
+    case ExpenseCategory.home:
+      return 'Hogar y Muebles';
+    case ExpenseCategory.technology:
+      return 'Tecnología';
+    case ExpenseCategory.savings:
+      return 'Ahorros e Inversión';
+    case ExpenseCategory.gifts:
+      return 'Regalos y Donaciones';
+    case ExpenseCategory.other:
+      return 'Otros';
   }
+}
 
   String _getCategoryIcon(ExpenseCategory category) {
-    switch (category) {
-      case ExpenseCategory.transport:
-        return '🚗';
-      case ExpenseCategory.food:
-        return '🍕';
-      case ExpenseCategory.shopping:
-        return '🛍️';
-      case ExpenseCategory.entertainment:
-        return '🎬';
-      case ExpenseCategory.other:
-        return '📦';
-    }
+  switch (category) {
+    case ExpenseCategory.transport:
+      return '🚗';
+    case ExpenseCategory.food:
+      return '🍕';
+    case ExpenseCategory.utilities:
+      return '💡';
+    case ExpenseCategory.health:
+      return '🏥';
+    case ExpenseCategory.education:
+      return '📚';
+    case ExpenseCategory.entertainment:
+      return '🎬';
+    case ExpenseCategory.clothing:
+      return '👕';
+    case ExpenseCategory.home:
+      return '🏠';
+    case ExpenseCategory.technology:
+      return '📱';
+    case ExpenseCategory.savings:
+      return '💰';
+    case ExpenseCategory.gifts:
+      return '🎁';
+    case ExpenseCategory.other:
+      return '📦';
   }
+}
 
   String _getPeriodName(BudgetPeriod period) {
     switch (period) {
@@ -1203,7 +1218,6 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
   }
 
   // Action methods
-// En CreateBudgetScreen, reemplaza el método _saveBudget():
   Future<void> _saveBudget() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -1212,7 +1226,11 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
     });
 
     try {
-      final amount = double.tryParse(_amountController.text) ?? 0;
+      // AGREGAR ESTA LÍNEA AL PRINCIPIO:
+      await _budgetService.loadBudgets();
+
+      // CORREGIDO: Usar FormatUtils.parseAmount en lugar de double.tryParse
+      final amount = FormatUtils.parseAmount(_amountController.text);
       if (amount <= 0) {
         _showErrorMessage('Por favor ingresa un monto válido');
         return;
@@ -1237,6 +1255,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
         await _budgetService.updateBudget(budget);
       } else {
         await _budgetService.addBudget(budget);
+        _budgetService.debugPrintBudgets(); // Para verificar que se agregó
       }
 
       if (mounted) {

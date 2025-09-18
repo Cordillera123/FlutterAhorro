@@ -362,7 +362,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
               const SizedBox(width: 12),
               Expanded(
                 child: _buildSummaryCard(
-                  'Estimado Mensual',
+                  'Estimado Mes',
                   FormatUtils.formatMoney(_summary['estimatedMonthly'] ?? 0),
                   'promedio',
                   infoBlue,

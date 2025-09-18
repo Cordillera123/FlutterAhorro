@@ -141,4 +141,15 @@ class TransactionService extends ChangeNotifier {
   void forceUpdate() {
     notifyListeners();
   }
+  // Actualizar una transacción existente
+  Future<void> updateTransaction(Transaction updatedTransaction) async {
+    final index = _transactions.indexWhere((t) => t.id == updatedTransaction.id);
+    if (index != -1) {
+      _transactions[index] = updatedTransaction;
+      // Mantener ordenado por fecha
+      _transactions.sort((a, b) => b.date.compareTo(a.date));
+      await _saveTransactions();
+      notifyListeners();
+    }
+  }
 }

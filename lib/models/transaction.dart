@@ -9,12 +9,20 @@ enum TransactionType {
   expense   // Gasto
 }
 
-// Enum para las categorías de gastos
+// Enum para las categorías de gastos - ACTUALIZADO con 12 categorías
+// Enum para las categorías de gastos - ACTUALIZADO con 12 categorías
 enum ExpenseCategory {
   transport,      // Transporte
-  shopping,       // Compras
-  food,          // Comida
-  entertainment, // Entretenimiento
+  food,          // Alimentación
+  utilities,      // Servicios Básicos
+  health,         // Salud
+  education,      // Educación
+  entertainment,  // Entretenimiento
+  clothing,       // Ropa y Calzado
+  home,          // Hogar y Muebles
+  technology,    // Tecnología
+  savings,       // Ahorros e Inversión
+  gifts,         // Regalos y Donaciones
   other          // Otros
 }
 
@@ -52,7 +60,7 @@ class Transaction {
 
   Map<String, dynamic> toJson() => _$TransactionToJson(this);
 
-  // Método para obtener el nombre de la categoría en español
+  // Método para obtener el nombre de la categoría en español - ACTUALIZADO
   String get categoryName {
     if (type == TransactionType.income) {
       switch (incomeCategory) {
@@ -69,23 +77,37 @@ class Transaction {
       }
     } else {
       switch (expenseCategory) {
-        case ExpenseCategory.transport:
-          return 'Transporte';
-        case ExpenseCategory.shopping:
-          return 'Compras';
-        case ExpenseCategory.food:
-          return 'Comida';
-        case ExpenseCategory.entertainment:
-          return 'Entretenimiento';
-        case ExpenseCategory.other:
-          return 'Otros gastos';
-        default:
-          return 'Gasto';
-      }
+  case ExpenseCategory.transport:
+    return 'Transporte';
+  case ExpenseCategory.food:
+    return 'Alimentación';
+  case ExpenseCategory.utilities:
+    return 'Servicios Básicos';
+  case ExpenseCategory.health:
+    return 'Salud';
+  case ExpenseCategory.education:
+    return 'Educación';
+  case ExpenseCategory.entertainment:
+    return 'Entretenimiento';
+  case ExpenseCategory.clothing:
+    return 'Ropa y Calzado';
+  case ExpenseCategory.home:
+    return 'Hogar y Muebles';
+  case ExpenseCategory.technology:
+    return 'Tecnología';
+  case ExpenseCategory.savings:
+    return 'Ahorros e Inversión';
+  case ExpenseCategory.gifts:
+    return 'Regalos y Donaciones';
+  case ExpenseCategory.other:
+    return 'Otros gastos';
+  default:
+    return 'Gasto';
+}
     }
   }
 
-  // Método para obtener el ícono de la categoría
+  // Método para obtener el ícono de la categoría - ACTUALIZADO
   String get categoryIcon {
     if (type == TransactionType.income) {
       switch (incomeCategory) {
@@ -102,19 +124,33 @@ class Transaction {
       }
     } else {
       switch (expenseCategory) {
-        case ExpenseCategory.transport:
-          return '🚗';
-        case ExpenseCategory.shopping:
-          return '🛍️';
-        case ExpenseCategory.food:
-          return '🍕';
-        case ExpenseCategory.entertainment:
-          return '🎬';
-        case ExpenseCategory.other:
-          return '📦';
-        default:
-          return '💸';
-      }
+  case ExpenseCategory.transport:
+    return '🚗';
+  case ExpenseCategory.food:
+    return '🍕';
+  case ExpenseCategory.utilities:
+    return '💡';
+  case ExpenseCategory.health:
+    return '🏥';
+  case ExpenseCategory.education:
+    return '📚';
+  case ExpenseCategory.entertainment:
+    return '🎬';
+  case ExpenseCategory.clothing:
+    return '👕';
+  case ExpenseCategory.home:
+    return '🏠';
+  case ExpenseCategory.technology:
+    return '📱';
+  case ExpenseCategory.savings:
+    return '💰';
+  case ExpenseCategory.gifts:
+    return '🎁';
+  case ExpenseCategory.other:
+    return '📦';
+  default:
+    return '💸';
+}
     }
   }
 }

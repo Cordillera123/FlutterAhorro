@@ -56,31 +56,61 @@ class Budget {
     }
   }
 
+  // ACTUALIZADO - Método categoryName con todas las categorías
   String get categoryName {
     switch (category) {
       case ExpenseCategory.transport:
         return 'Transporte';
       case ExpenseCategory.food:
-        return 'Comida';
-      case ExpenseCategory.shopping:
-        return 'Compras';
+        return 'Alimentación';
+      case ExpenseCategory.utilities:
+        return 'Servicios Básicos';
+      case ExpenseCategory.health:
+        return 'Salud';
+      case ExpenseCategory.education:
+        return 'Educación';
       case ExpenseCategory.entertainment:
         return 'Entretenimiento';
+      case ExpenseCategory.clothing:
+        return 'Ropa y Calzado';
+      case ExpenseCategory.home:
+        return 'Hogar y Muebles';
+      case ExpenseCategory.technology:
+        return 'Tecnología';
+      case ExpenseCategory.savings:
+        return 'Ahorros e Inversión';
+      case ExpenseCategory.gifts:
+        return 'Regalos y Donaciones';
       case ExpenseCategory.other:
         return 'Otros';
     }
   }
 
+  // ACTUALIZADO - Método categoryIcon con todas las categorías
   String get categoryIcon {
     switch (category) {
       case ExpenseCategory.transport:
         return '🚗';
       case ExpenseCategory.food:
         return '🍕';
-      case ExpenseCategory.shopping:
-        return '🛍️';
+      case ExpenseCategory.utilities:
+        return '💡';
+      case ExpenseCategory.health:
+        return '🏥';
+      case ExpenseCategory.education:
+        return '📚';
       case ExpenseCategory.entertainment:
         return '🎬';
+      case ExpenseCategory.clothing:
+        return '👕';
+      case ExpenseCategory.home:
+        return '🏠';
+      case ExpenseCategory.technology:
+        return '📱';
+      case ExpenseCategory.savings:
+        return '💰';
+      case ExpenseCategory.gifts:
+        return '🎁';
       case ExpenseCategory.other:
         return '📦';
     }
@@ -93,10 +123,26 @@ class Budget {
   }
 
   bool get isCurrentlyActive {
+    if (!isActive) return false; // Si está pausado, no está activo
+    
     final now = DateTime.now();
-    return isActive &&
-        now.isAfter(startDate.subtract(const Duration(days: 1))) &&
-        now.isBefore(endDate.add(const Duration(days: 1)));
+    final today = DateTime(now.year, now.month, now.day);
+    final startDay = DateTime(startDate.year, startDate.month, startDate.day);
+    final endDay = DateTime(endDate.year, endDate.month, endDate.day);
+    
+    // Verificar si la fecha actual está dentro del rango del presupuesto
+    return today.isAfter(startDay.subtract(const Duration(days: 1))) &&
+           today.isBefore(endDay.add(const Duration(days: 1)));
+  }
+
+  // NUEVO: Método para verificar si el presupuesto está pausado
+  bool get isPaused => !isActive;
+
+  // NUEVO: Método para obtener el estado del presupuesto
+  String get statusText {
+    if (!isActive) return 'Pausado';
+    if (!isCurrentlyActive) return 'Fuera de período';
+    return 'Activo';
   }
 
   // Calcular status basado en gasto actual

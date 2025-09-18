@@ -6,12 +6,18 @@ import 'transaction_service.dart';
 
 class BudgetService {
   static const String _budgetsKey = 'budgets';
+  static const int _maxActiveBudgets = 15; // NUEVO: Límite máximo de presupuestos
 
   List<Budget> _budgets = [];
   final TransactionService _transactionService = TransactionService();
 
   List<Budget> get budgets => _budgets;
-  List<Budget> get activeBudgets => _budgets.where((b) => b.isCurrentlyActive).toList();
+  
+  // CORREGIDO: Mostrar todos los presupuestos activos (no pausados), independientemente de las fechas
+  List<Budget> get activeBudgets => _budgets.where((b) => b.isActive).toList();
+  
+  // NUEVO: Getter para presupuestos que están en su período actual
+  List<Budget> get currentPeriodBudgets => _budgets.where((b) => b.isActive && b.isCurrentlyActive).toList();
 
   // Cargar presupuestos desde almacenamiento local
   Future<void> loadBudgets() async {
@@ -23,9 +29,18 @@ class BudgetService {
         final List<dynamic> budgetsList = json.decode(budgetsJson);
         _budgets = budgetsList.map((json) => Budget.fromJson(json)).toList();
 
+        // AGREGAR DEBUGGING DESPUÉS DE CARGAR:
+        print('=== CARGANDO PRESUPUESTOS ===');
+        print('JSON encontrado, cargados ${_budgets.length} presupuestos:');
+        for (int i = 0; i < _budgets.length; i++) {
+          print('  $i: ${_budgets[i].name} - ID: ${_budgets[i].id}');
+        }
+        print('============================');
+
         // Ordenar por fecha de creación (más recientes primero)
         _budgets.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       } else {
+        print('=== NO SE ENCONTRÓ JSON DE PRESUPUESTOS ===');
         _budgets = [];
       }
     } catch (e) {
@@ -40,47 +55,135 @@ class BudgetService {
       final prefs = await SharedPreferences.getInstance();
       final budgetsJson = json.encode(_budgets.map((b) => b.toJson()).toList());
       await prefs.setString(_budgetsKey, budgetsJson);
+      
+      // AGREGAR DEBUGGING DESPUÉS DE GUARDAR:
+      print('=== GUARDANDO EN SHAREDPREFERENCES ===');
+      print('Guardando ${_budgets.length} presupuestos');
+      print('JSON generado: ${budgetsJson.substring(0, 100)}...');
+      print('=====================================');
     } catch (e) {
       print('Error saving budgets: $e');
       throw Exception('No se pudo guardar el presupuesto');
     }
   }
 
-  // Agregar nuevo presupuesto
-  Future<void> addBudget(Budget budget) async {
-    // Validar que no exista un presupuesto activo para la misma categoría y período
-    final existingBudget = _budgets.firstWhere(
-          (b) => b.category == budget.category &&
-          b.period == budget.period &&
-          b.isCurrentlyActive &&
-          _periodsOverlap(b, budget),
-      orElse: () => Budget(
-        name: '',
-        amount: 0,
-        period: budget.period,
-        category: budget.category,
-        startDate: DateTime.now(),
-        endDate: DateTime.now(),
-        createdAt: DateTime.now(),
-      ),
-    );
+  // NUEVO: Verificar si se puede crear un nuevo presupuesto
+  bool canCreateBudget() {
+    return activeBudgets.length < _maxActiveBudgets;
+  }
 
-    if (existingBudget.name.isNotEmpty) {
-      throw Exception('Ya existe un presupuesto activo para ${budget.categoryName} en este período');
+  // NUEVO: Obtener el número de presupuestos disponibles
+  int get remainingBudgetsSlots => _maxActiveBudgets - activeBudgets.length;
+
+  // CORREGIDO: Agregar nuevo presupuesto con validación mejorada
+  Future<void> addBudget(Budget budget) async {
+    print('=== AGREGANDO PRESUPUESTO ===');
+    print('Presupuestos antes de agregar: ${_budgets.length}');
+    print('Presupuestos activos: ${activeBudgets.length}');
+    print('Nombre: ${budget.name}');
+    print('Categoría: ${budget.categoryName}');
+    print('Período: ${budget.periodName}');
+    
+    // 1. Validar límite máximo de presupuestos activos
+    if (!canCreateBudget()) {
+      throw Exception('Has alcanzado el límite máximo de $_maxActiveBudgets presupuestos activos');
     }
 
+    // 2. CORREGIDO: Validación más específica - solo bloquear duplicados EXACTOS
+    final duplicateBudgets = _budgets.where((b) => 
+      b.category == budget.category &&
+      b.period == budget.period &&
+      b.isActive && // Solo considerar presupuestos activos (no pausados)
+      _isSamePeriodExact(b, budget) // Función mejorada para detectar períodos exactos
+    ).toList();
+
+    print('Presupuestos duplicados encontrados: ${duplicateBudgets.length}');
+
+    if (duplicateBudgets.isNotEmpty) {
+      throw Exception('Ya existe un presupuesto ${budget.periodName.toLowerCase()} de ${budget.categoryName} para este mismo período');
+    }
+
+    // 3. Crear nuevo presupuesto
     final newBudget = budget.copyWith(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
     );
 
     _budgets.add(newBudget);
+    
+    // CORREGIDO: Ordenar por fecha de creación (más recientes primero)
+    _budgets.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    
     await _saveBudgets();
+
+    // AGREGAR DEBUGGING DESPUÉS DE GUARDAR:
+    print('=== DESPUÉS DE GUARDAR ===');
+    print('Lista _budgets tiene ${_budgets.length} elementos:');
+    for (int i = 0; i < _budgets.length; i++) {
+      print('  $i: ${_budgets[i].name} - ID: ${_budgets[i].id}');
+    }
+    print('========================');
+    
+    print('Presupuesto agregado: ${newBudget.name}');
+    print('Total presupuestos: ${_budgets.length}');
+    print('Presupuestos activos: ${activeBudgets.length}');
+    print('=== FIN AGREGAR PRESUPUESTO ===');
   }
 
-  // Verificar si dos presupuestos se superponen en tiempo
+  // NUEVO: Función mejorada para detectar períodos exactamente iguales
+  bool _isSamePeriodExact(Budget existing, Budget newBudget) {
+    switch (newBudget.period) {
+      case BudgetPeriod.weekly:
+        // Para semanal: mismo lunes de inicio
+        final existingMonday = _getMondayOfWeek(existing.startDate);
+        final newMonday = _getMondayOfWeek(newBudget.startDate);
+        return existingMonday.isAtSameMomentAs(newMonday);
+
+      case BudgetPeriod.monthly:
+        // Para mensual: mismo mes y año
+        return existing.startDate.year == newBudget.startDate.year &&
+               existing.startDate.month == newBudget.startDate.month;
+
+      case BudgetPeriod.yearly:
+        // Para anual: mismo año
+        return existing.startDate.year == newBudget.startDate.year;
+    }
+  }
+
+  // NUEVO: Obtener el lunes de una semana específica
+  DateTime _getMondayOfWeek(DateTime date) {
+    return date.subtract(Duration(days: date.weekday - 1));
+  }
+
+  // MEJORADO: Verificar solapamiento temporal más flexible (mantenido por compatibilidad)
+  bool _hasExactPeriodOverlap(Budget existing, Budget newBudget) {
+    // Solo considerar como duplicado si es EXACTAMENTE la misma categoría Y período Y fechas
+    switch (newBudget.period) {
+      case BudgetPeriod.weekly:
+        // Para semanal: mismo rango de fechas exacto
+        return existing.startDate.isAtSameMomentAs(newBudget.startDate) &&
+               existing.endDate.isAtSameMomentAs(newBudget.endDate);
+
+      case BudgetPeriod.monthly:
+        // Para mensual: mismo mes y año exacto
+        return existing.startDate.year == newBudget.startDate.year &&
+               existing.startDate.month == newBudget.startDate.month;
+
+      case BudgetPeriod.yearly:
+        // Para anual: mismo año exacto
+        return existing.startDate.year == newBudget.startDate.year;
+    }
+  }
+
+  // NUEVO: Método auxiliar para verificar solapamiento de rangos de fechas
+  bool _dateRangesOverlap(DateTime start1, DateTime end1, DateTime start2, DateTime end2) {
+    return start1.isBefore(end2.add(Duration(days: 1))) &&
+        end1.isAfter(start2.subtract(Duration(days: 1)));
+  }
+
+  // CORREGIDO: Verificar si dos presupuestos se superponen en tiempo (mantenido por compatibilidad)
   bool _periodsOverlap(Budget existing, Budget newBudget) {
-    return newBudget.startDate.isBefore(existing.endDate) &&
-        newBudget.endDate.isAfter(existing.startDate);
+    return _dateRangesOverlap(existing.startDate, existing.endDate,
+        newBudget.startDate, newBudget.endDate);
   }
 
   // Actualizar presupuesto existente
@@ -88,6 +191,19 @@ class BudgetService {
     final index = _budgets.indexWhere((b) => b.id == budget.id);
     if (index == -1) {
       throw Exception('Presupuesto no encontrado');
+    }
+
+    // Validar que no haya conflictos con otros presupuestos al actualizar
+    final conflictingBudgets = _budgets.where((b) => 
+      b.id != budget.id && // Excluir el presupuesto actual
+      b.category == budget.category &&
+      b.period == budget.period &&
+      b.isActive && // CORREGIDO: Solo considerar presupuestos activos
+      _isSamePeriodExact(b, budget) // CORREGIDO: Usar función mejorada
+    ).toList();
+
+    if (conflictingBudgets.isNotEmpty) {
+      throw Exception('Ya existe otro presupuesto ${budget.periodName.toLowerCase()} de ${budget.categoryName} para este período');
     }
 
     _budgets[index] = budget.copyWith(updatedAt: DateTime.now());
@@ -113,8 +229,16 @@ class BudgetService {
       throw Exception('Presupuesto no encontrado');
     }
 
+    final currentBudget = _budgets[index];
+    final newActiveState = !currentBudget.isActive;
+
+    // Si se está activando, verificar límite
+    if (newActiveState && !canCreateBudget()) {
+      throw Exception('No puedes activar más presupuestos. Límite máximo: $_maxActiveBudgets');
+    }
+
     _budgets[index] = _budgets[index].copyWith(
-      isActive: !_budgets[index].isActive,
+      isActive: newActiveState,
       updatedAt: DateTime.now(),
     );
     await _saveBudgets();
@@ -216,7 +340,7 @@ class BudgetService {
     );
   }
 
-  // Obtener resumen de todos los presupuestos
+  // MEJORADO: Obtener resumen de todos los presupuestos con información del límite
   BudgetSummary getBudgetSummary() {
     final allProgress = getAllBudgetProgress();
 
@@ -244,6 +368,11 @@ class BudgetService {
       }
     }
 
+    // Debug para verificar la carga de presupuestos
+    print('Debug - Total budgets loaded: ${_budgets.length}');
+    print('Debug - Active budgets: ${activeBudgets.length}');
+    print('Debug - Current period budgets: ${currentPeriodBudgets.length}');
+
     return BudgetSummary(
       totalBudgets: allProgress.length,
       totalBudgeted: totalBudgeted,
@@ -252,6 +381,8 @@ class BudgetService {
       warningCount: warningCount,
       exceededCount: exceededCount,
       budgetProgress: allProgress,
+      maxBudgets: _maxActiveBudgets, // NUEVO
+      remainingSlots: remainingBudgetsSlots, // NUEVO
     );
   }
 
@@ -280,6 +411,18 @@ class BudgetService {
         return {'start': firstDayOfYear, 'end': lastDayOfYear};
     }
   }
+
+  // Método temporal para debugging
+  void debugPrintBudgets() {
+    print('=== DEBUG BUDGETS ===');
+    print('Total budgets: ${_budgets.length}');
+    for (int i = 0; i < _budgets.length; i++) {
+      final budget = _budgets[i];
+      print('Budget $i: ${budget.name} - ${budget.categoryName} - ${budget.periodName} - Active: ${budget.isActive}');
+    }
+    print('Active budgets: ${activeBudgets.length}');
+    print('==================');
+  }
 }
 
 // Clase para el resultado de verificación de gastos
@@ -295,7 +438,7 @@ class BudgetCheckResult {
   });
 }
 
-// Clase para el resumen general de presupuestos
+// ACTUALIZADA: Clase para el resumen general de presupuestos
 class BudgetSummary {
   final int totalBudgets;
   final double totalBudgeted;
@@ -304,6 +447,8 @@ class BudgetSummary {
   final int warningCount;
   final int exceededCount;
   final List<BudgetProgress> budgetProgress;
+  final int maxBudgets; // NUEVO
+  final int remainingSlots; // NUEVO
 
   BudgetSummary({
     required this.totalBudgets,
@@ -313,9 +458,12 @@ class BudgetSummary {
     required this.warningCount,
     required this.exceededCount,
     required this.budgetProgress,
+    required this.maxBudgets, // NUEVO
+    required this.remainingSlots, // NUEVO
   });
 
   double get remainingBudget => (totalBudgeted - totalSpent).clamp(0.0, double.infinity);
   double get spentPercentage => totalBudgeted > 0 ? (totalSpent / totalBudgeted) : 0.0;
   bool get overallHealthy => exceededCount == 0 && warningCount <= (totalBudgets * 0.3);
+  bool get isNearLimit => remainingSlots <= 3; // NUEVO: Alerta cuando quedan pocos slots
 }

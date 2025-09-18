@@ -324,7 +324,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
     final categories = [
       {'category': ExpenseCategory.transport, 'name': 'Transporte', 'icon': '🚗'},
       {'category': ExpenseCategory.food, 'name': 'Comida', 'icon': '🍕'},
-      {'category': ExpenseCategory.shopping, 'name': 'Compras', 'icon': '🛍️'},
+      {'category': ExpenseCategory.clothing, 'name': 'Ropa y Calzado', 'icon': '👕'},
       {'category': ExpenseCategory.entertainment, 'name': 'Entretenimiento', 'icon': '🎬'},
       {'category': ExpenseCategory.other, 'name': 'Otros', 'icon': '📦'},
     ];
@@ -947,10 +947,24 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
         return '🚗';
       case ExpenseCategory.food:
         return '🍕';
-      case ExpenseCategory.shopping:
-        return '🛍️';
+      case ExpenseCategory.utilities:
+        return '💡';
+      case ExpenseCategory.health:
+        return '🏥';
+      case ExpenseCategory.education:
+        return '📚';
       case ExpenseCategory.entertainment:
         return '🎬';
+      case ExpenseCategory.clothing:
+        return '👕';
+      case ExpenseCategory.home:
+        return '🏠';
+      case ExpenseCategory.technology:
+        return '📱';
+      case ExpenseCategory.savings:
+        return '💰';
+      case ExpenseCategory.gifts:
+        return '🎁';
       case ExpenseCategory.other:
         return '📦';
     }
