@@ -321,11 +321,22 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
   }
 
   Widget _buildCategoryGrid() {
+    // ACTUALIZADO: Categorías filtradas para gastos recurrentes lógicos
     final categories = [
+      // CATEGORÍAS PERFECTAS PARA GASTOS RECURRENTES
       {'category': ExpenseCategory.transport, 'name': 'Transporte', 'icon': '🚗'},
-      {'category': ExpenseCategory.food, 'name': 'Comida', 'icon': '🍕'},
-      {'category': ExpenseCategory.clothing, 'name': 'Ropa y Calzado', 'icon': '👕'},
+      {'category': ExpenseCategory.food, 'name': 'Alimentación', 'icon': '🍕'},
+      {'category': ExpenseCategory.utilities, 'name': 'Servicios Básicos', 'icon': '💡'},
+      {'category': ExpenseCategory.health, 'name': 'Salud', 'icon': '🏥'},
+      {'category': ExpenseCategory.education, 'name': 'Educación', 'icon': '📚'},
+      {'category': ExpenseCategory.home, 'name': 'Hogar', 'icon': '🏠'},
+      
+      // CATEGORÍAS CONDICIONALES (pueden ser recurrentes)
       {'category': ExpenseCategory.entertainment, 'name': 'Entretenimiento', 'icon': '🎬'},
+      {'category': ExpenseCategory.technology, 'name': 'Tecnología', 'icon': '📱'},
+      {'category': ExpenseCategory.savings, 'name': 'Ahorros', 'icon': '💰'},
+      
+      // CATEGORÍA GENERAL
       {'category': ExpenseCategory.other, 'name': 'Otros', 'icon': '📦'},
     ];
 
@@ -336,7 +347,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 2.2,
+        childAspectRatio: 2.0, // AJUSTADO: Reducido para mejor visualización con más categorías
       ),
       itemCount: categories.length,
       itemBuilder: (context, index) {
@@ -902,6 +913,55 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
               ],
             ),
           ),
+          
+          // Mostrar desglose de cálculos para gastos semanales
+          if (_selectedFrequency == RecurrenceFrequency.weekly && _selectedWeekDays.isNotEmpty)
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: infoBlue.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: infoBlue.withOpacity(0.2),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Desglose de cálculos:',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: infoBlue,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '• Por día: ${FormatUtils.formatMoney(amount / _selectedWeekDays.length)}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: textMedium,
+                    ),
+                  ),
+                  Text(
+                    '• Por semana: ${FormatUtils.formatMoney(amount)}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: textMedium,
+                    ),
+                  ),
+                  Text(
+                    '• Estimado mensual: ${FormatUtils.formatMoney(amount * 4)}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: textMedium,
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

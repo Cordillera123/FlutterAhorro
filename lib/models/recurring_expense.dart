@@ -219,9 +219,16 @@ class RecurringExpense {
 
   // Crear transacción a partir del gasto recurrente
   Transaction createTransaction() {
+    double transactionAmount = amount;
+    
+    // Para gastos semanales, calculamos el monto diario
+    if (frequency == RecurrenceFrequency.weekly && weekDays != null && weekDays!.isNotEmpty) {
+      transactionAmount = amount / weekDays!.length;
+    }
+    
     return Transaction(
       id: 'recurring_${DateTime.now().millisecondsSinceEpoch}',
-      amount: amount,
+      amount: transactionAmount,
       type: TransactionType.expense,
       description: '$name - $description',
       date: DateTime.now(),

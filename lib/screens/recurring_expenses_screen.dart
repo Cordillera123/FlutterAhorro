@@ -17,6 +17,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
   final RecurringExpenseService _recurringExpenseService = RecurringExpenseService();
   bool _isLoading = true;
   Map<String, dynamic> _summary = {};
+  Map<String, dynamic> _budgetImpact = {}; // NUEVO: Para almacenar impacto en presupuestos
   late AnimationController _animationController;
   late Animation<double> _fadeInAnimation;
   late Animation<double> _slideAnimation;
@@ -72,6 +73,14 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
   Future<void> _loadData() async {
     await _recurringExpenseService.loadRecurringExpenses();
     _summary = _recurringExpenseService.getRecurringExpensesSummary();
+    
+    // NUEVO: Cargar impacto en presupuestos
+    try {
+      _budgetImpact = await _recurringExpenseService.getBudgetImpactSummary();
+    } catch (e) {
+      print('Error cargando impacto en presupuestos: $e');
+      _budgetImpact = {};
+    }
 
     if (mounted) {
       setState(() {
@@ -425,6 +434,11 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
               ],
             ),
           ),
+          // NUEVO: Sección de impacto en presupuestos
+          if (_budgetImpact.isNotEmpty && (_budgetImpact['affectedBudgets'] ?? 0) > 0) ...[
+            const SizedBox(height: 16),
+            _buildBudgetImpactSection(),
+          ],
         ],
       ),
     );
@@ -520,6 +534,144 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
       ),
     );
   }
+
+  // NUEVO: Widget para mostrar impacto en presupuestos
+  Widget _buildBudgetImpactSection() {
+    final affectedBudgets = _budgetImpact['affectedBudgets'] ?? 0;
+    final totalImpact = _budgetImpact['totalEstimatedImpact'] ?? 0.0;
+    final categoriesWithImpact = _budgetImpact['categoriesWithImpact'] ?? 0;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: backgroundCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: borderLight,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.account_balance_wallet_rounded,
+                color: successGreen,
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Impacto en Presupuestos',
+                style: TextStyle(
+                  color: textDark,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildImpactItem(
+                  'Presupuestos Afectados',
+                  '$affectedBudgets',
+                  Icons.pie_chart_outline_outlined,
+                  infoBlue,
+                ),
+              ),
+              Expanded(
+                child: _buildImpactItem(
+                  'Categorías Impactadas',
+                  '$categoriesWithImpact',
+                  Icons.category_outlined,
+                  warningYellow,
+                ),
+              ),
+            ],
+          ),
+          if (totalImpact > 0) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: successGreen.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: successGreen.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.trending_down_rounded,
+                    color: successGreen,
+                    size: 14,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Impacto estimado: ${FormatUtils.formatMoney(totalImpact)}',
+                    style: TextStyle(
+                      color: successGreen,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // NUEVO: Widget para items de impacto
+  Widget _buildImpactItem(String label, String value, IconData icon, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8.0),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: color,
+            size: 14,
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: textMedium,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildQuickActions() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
