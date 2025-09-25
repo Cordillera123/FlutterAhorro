@@ -5,6 +5,7 @@ import '../models/transaction.dart';
 import '../services/budget_service.dart';
 import '../services/transaction_service.dart';
 import '../utils/format_utils.dart';
+import '../widgets/app_logo.dart';
 import 'create_budget_screen.dart';
 
 class BudgetsScreen extends StatefulWidget {
@@ -990,20 +991,9 @@ if (budgets.isNotEmpty)
       ),
       child: Column(
         children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              gradient: const LinearGradient(
-                colors: [primaryBlue, darkBlue],
-              ),
-            ),
-            child: const Icon(
-              Icons.account_balance_wallet_rounded,
-              color: Colors.white,
-              size: 40,
-            ),
+          // Logo de la app en lugar del ícono genérico
+          const AppLogo.medium(
+            showText: false,
           ),
           const SizedBox(height: 24),
           const Text(

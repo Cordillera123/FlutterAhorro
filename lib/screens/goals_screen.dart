@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../models/financial_goal.dart';
 import '../services/goal_service.dart';
 import '../utils/format_utils.dart';
+import '../widgets/app_logo.dart';
 import 'create_goal_screen.dart';
 
 class GoalsScreen extends StatefulWidget {
@@ -852,18 +853,9 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
       ),
       child: Column(
         children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              color: primaryBlue.withOpacity(0.1),
-            ),
-            child: const Icon(
-              Icons.flag_rounded,
-              color: primaryBlue,
-              size: 40,
-            ),
+          // Logo de la app para dar coherencia visual
+          const AppLogo.medium(
+            showText: false,
           ),
           const SizedBox(height: 20),
           const Text(

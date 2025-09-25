@@ -39,11 +39,32 @@ dev_dependencies:
   json_serializable: ^6.7.1
   build_runner: ^2.4.7
 
+  # Para generar íconos de la app automáticamente
+  flutter_launcher_icons: ^0.13.1
+
   flutter_lints: ^5.0.0
 
 flutter:
   uses-material-design: true
 
-  # Aquí agregaremos assets más adelante si es necesario
-  # assets:
-  #   - images/
+  # Assets de la aplicación
+  assets:
+    - assets/images/
+    - assets/icons/
+
+# Configuración para generar íconos automáticamente  
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icons/new_icon_image.jpg"  # Cambiado a JPG
+  min_sdk_android: 21
+  remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: "assets/icons/new_icon_image.jpg"  # Cambiado a JPG
+  windows:
+    generate: true
+    image_path: "assets/icons/new_icon_image.jpg"  # Cambiado a JPG
+  macos:
+    generate: true
+    image_path: "assets/icons/new_icon_image.jpg"  # Cambiado a JPG

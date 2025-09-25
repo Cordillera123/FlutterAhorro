@@ -5,6 +5,7 @@ import '../services/transaction_service.dart';
 import '../services/recurring_expense_service.dart';
 import '../services/stats_service.dart';
 import '../utils/format_utils.dart';
+import '../widgets/app_logo.dart';
 import 'add_transaction_screen.dart';
 import 'recurring_expenses_screen.dart';
 import 'stats_screen.dart';
@@ -121,41 +122,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (_isLoading) {
       return Scaffold(
         backgroundColor: const Color(0xFFF1F5F9),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
-                  ),
-                ),
-                child: const Icon(
-                  Icons.account_balance_wallet_rounded,
-                  color: Colors.white,
-                  size: 40,
-                ),
-              ),
-              const SizedBox(height: 24),
-              const CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
-                strokeWidth: 3,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Cargando tu información financiera...',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+        body: const Center(
+          child: AppLogoLoading(),
         ),
       );
     }

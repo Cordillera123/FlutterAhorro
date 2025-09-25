@@ -2,9 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'screens/main_navigation_screen.dart';
+import 'screens/splash_screen.dart';
 
-void main() {
-  runApp(const AhorroApp());
+void main() async {
+  try {
+    // Asegurar que los bindings estén inicializados
+    WidgetsFlutterBinding.ensureInitialized();
+    
+    // Configurar orientación de pantalla
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
+    
+    // Configurar la barra de estado
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+      ),
+    );
+    
+    runApp(const AhorroApp());
+  } catch (e) {
+    // En caso de error, ejecutar la app básica
+    runApp(const AhorroApp());
+  }
 }
 
 class AhorroApp extends StatelessWidget {
@@ -139,7 +161,7 @@ class AhorroApp extends StatelessWidget {
 
         useMaterial3: true,
       ),
-      home: const MainNavigationScreen(),
+      home: const SplashScreen(),
     );
   }
 }
