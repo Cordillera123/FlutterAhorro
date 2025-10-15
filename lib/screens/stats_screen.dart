@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../services/stats_service.dart';
 import '../services/transaction_service.dart';
 import '../utils/format_utils.dart';
-import '../models/transaction.dart';
 import '../widgets/pie_chart_widget.dart';
 
 class StatsScreen extends StatefulWidget {
@@ -25,6 +23,11 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
   List<CategoryStats> _categoryStats = [];
   List<WeeklyStats> _weeklyStats = [];
   OverallStats? _overallStats;
+  
+  // NUEVAS VARIABLES PARA HISTORIAL MENSUAL
+  List<MonthlyStats> _monthlyHistory = [];
+  DateTime _selectedMonth = DateTime.now();
+  MonthlyDetailStats? _selectedMonthDetails;
 
   // Definición de colores consistentes
   static const Color primaryBlue = Color(0xFF3B82F6);
@@ -83,6 +86,10 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
       _categoryStats = _statsService.getCategoryStats();
       _weeklyStats = _statsService.getWeeklyStats();
       _overallStats = _statsService.getOverallStats();
+      
+      // CARGAR NUEVAS ESTADÍSTICAS MENSUALES
+      _monthlyHistory = _statsService.getMonthlyStatsHistory();
+      _selectedMonthDetails = _statsService.getMonthStats(_selectedMonth);
 
       if (mounted) {
         setState(() {
@@ -99,110 +106,27 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
     }
   }
 
+  void _selectMonth(DateTime month) {
+    setState(() {
+      _selectedMonth = month;
+      _selectedMonthDetails = _statsService.getMonthStats(month);
+    });
+  }
+
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Scaffold(
-        backgroundColor: backgroundLight,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  gradient: const LinearGradient(
-                    colors: [primaryPurple, infoBlue],
-                  ),
-                ),
-                child: const Icon(
-                  Icons.analytics_rounded,
-                  color: Colors.white,
-                  size: 40,
-                ),
-              ),
-              const SizedBox(height: 24),
-              const CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(primaryPurple),
-                strokeWidth: 3,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Generando tus estadísticas...',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Scaffold(
-      backgroundColor: backgroundLight,
-      body: RefreshIndicator(
-        onRefresh: _loadStats,
-        color: primaryPurple,
-        backgroundColor: Colors.white,
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            _buildModernAppBar(),
-            SliverToBoxAdapter(
-              child: AnimatedBuilder(
-                animation: _animationController,
-                builder: (context, child) {
-                  return Transform.translate(
-                    offset: Offset(0, _slideAnimation.value),
-                    child: Opacity(
-                      opacity: _fadeInAnimation.value,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildOverallSummary(),
-                            const SizedBox(height: 28),
-                            _buildMonthlyComparison(),
-                            const SizedBox(height: 28),
-                            _buildCategoryBreakdown(),
-                            const SizedBox(height: 28),
-                            _buildWeeklyTrends(),
-                            const SizedBox(height: 28),
-                            _buildFinancialInsights(),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildModernAppBar() {
     return SliverAppBar(
-      expandedHeight: 180,
+      expandedHeight: 160,
       floating: false,
       pinned: true,
-      backgroundColor: backgroundLight,
+      backgroundColor: Colors.white,
       elevation: 0,
-      systemOverlayStyle: SystemUiOverlayStyle.dark,
+      automaticallyImplyLeading: false,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: const BoxDecoration(
@@ -210,70 +134,83 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                primaryPurple,
-                infoBlue,
                 primaryBlue,
+                darkBlue,
+                deepBlue,
               ],
-            ),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(32),
-              bottomRight: Radius.circular(32),
             ),
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text(
-                              'Estadísticas',
+                            Icon(
+                              Icons.analytics_rounded,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Reportes',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 26,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Analiza tus finanzas en detalle',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
-                                fontSize: 15,
-                                fontWeight: FontWeight.w400,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          color: Colors.white.withOpacity(0.2),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
-                            width: 1,
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.analytics_rounded,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
                     ],
                   ),
                   const Spacer(),
-                  _buildStatsPreview(),
+                  const Text(
+                    'Estadísticas Financieras',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Analiza tu progreso y toma decisiones inteligentes',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -283,52 +220,82 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildStatsPreview() {
-    final stats = _financialStats;
-    final hasData = stats?.hasData ?? false;
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          hasData ? 'Tu progreso este mes' : 'Sin datos suficientes',
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.9),
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Icon(
-              hasData && stats!.hasPreviousData 
-                  ? FormatUtils.getGrowthIcon(stats.balanceGrowthPercentage)
-                  : Icons.show_chart_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              hasData && stats!.hasPreviousData
-                  ? FormatUtils.formatPercentageWithSign(stats.balanceGrowthPercentage)
-                  : 'Agrega más transacciones',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: backgroundLight,
+      body: _isLoading 
+          ? const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(primaryBlue),
+                strokeWidth: 3,
               ),
+            )
+          : CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                _buildModernAppBar(),
+                SliverToBoxAdapter(
+                  child: AnimatedBuilder(
+                    animation: _animationController,
+                    builder: (context, child) {
+                      return FadeTransition(
+                        opacity: _fadeInAnimation,
+                        child: Transform.translate(
+                          offset: Offset(0, _slideAnimation.value),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Resumen financiero principal
+                                if (_financialStats != null) ...[
+                                  _buildCurrentVsPreviousCard(),
+                                  const SizedBox(height: 20),
+                                ],
+                                
+                                // Estadísticas generales
+                                if (_overallStats != null) ...[
+                                  _buildOverallStatsCard(),
+                                  const SizedBox(height: 20),
+                                ],
+                                
+                                // Análisis por categorías
+                                if (_categoryStats.isNotEmpty) ...[
+                                  _buildCategoryAnalysisCard(),
+                                  const SizedBox(height: 20),
+                                ],
+                                
+                                // Historial mensual mejorado
+                                _buildMonthlyHistory(),
+                                const SizedBox(height: 20),
+                                
+                                // Detalles del mes seleccionado
+                                if (_selectedMonthDetails != null) 
+                                  _buildMonthDetails(),
+                                const SizedBox(height: 20),
+                                
+                                // Tendencias semanales
+                                if (_weeklyStats.isNotEmpty) ...[
+                                  _buildWeeklyTrendsCard(),
+                                  const SizedBox(height: 20),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ],
     );
   }
 
-  Widget _buildOverallSummary() {
-    final overall = _overallStats;
-    if (overall == null) return const SizedBox.shrink();
-
+  Widget _buildCurrentVsPreviousCard() {
+    final stats = _financialStats!;
+    
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -336,121 +303,192 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: primaryPurple.withOpacity(0.1),
+            color: Colors.grey.withOpacity(0.1),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(
-          color: primaryPurple.withOpacity(0.1),
-          width: 1,
-        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  gradient: const LinearGradient(
-                    colors: [primaryPurple, infoBlue],
-                  ),
-                ),
-                child: const Icon(
-                  Icons.account_balance_wallet_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 16),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Resumen General',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: textDark,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Todos tus datos financieros',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: textMedium,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: _buildSummaryCard(
-                  'Balance Total',
-                  FormatUtils.formatMoney(overall.totalBalance),
-                  overall.totalBalance >= 0 ? successGreen : dangerRed,
-                  overall.totalBalance >= 0 ? Icons.trending_up_rounded : Icons.trending_down_rounded,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildSummaryCard(
-                  'Transacciones',
-                  '${overall.totalTransactions}',
-                  primaryBlue,
-                  Icons.receipt_long_rounded,
-                ),
-              ),
-            ],
-          ),
-          if (overall.monthsWithData > 0) ...[
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildSummaryCard(
-                    'Ahorro Promedio',
-                    FormatUtils.formatMoney(overall.averageMonthlyBalance),
-                    overall.averageMonthlyBalance >= 0 ? successGreen : dangerRed,
-                    Icons.savings_rounded,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildSummaryCard(
-                    'Tasa de Ahorro',
-                    FormatUtils.formatPercentage(overall.savingsRate),
-                    overall.savingsRate >= 20 ? successGreen : 
-                    overall.savingsRate >= 10 ? warningYellow : dangerRed,
-                    Icons.percent_rounded,
-                  ),
-                ),
-              ],
+          const Text(
+            'Este Mes vs Anterior',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: textDark,
             ),
-          ],
+          ),
+          const SizedBox(height: 20),
+          
+          // Ingresos
+          _buildComparisonItem(
+            'Ingresos',
+            Icons.trending_up_rounded,
+            successGreen,
+            stats.currentIncome,
+            stats.previousIncome,
+            stats.incomeGrowthPercentage,
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Gastos
+          _buildComparisonItem(
+            'Gastos',
+            Icons.trending_down_rounded,
+            dangerRed,
+            stats.currentExpenses,
+            stats.previousExpenses,
+            stats.expenseGrowthPercentage,
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Balance
+          _buildComparisonItem(
+            'Balance',
+            Icons.account_balance_rounded,
+            stats.currentBalance >= 0 ? successGreen : dangerRed,
+            stats.currentBalance,
+            stats.previousBalance,
+            stats.balanceGrowthPercentage,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSummaryCard(String title, String value, Color color, IconData icon) {
+  Widget _buildComparisonItem(
+    String title,
+    IconData icon,
+    Color color,
+    double current,
+    double previous,
+    double change,
+  ) {
+    final isPositive = change >= 0;
+    final changeColor = title == 'Gastos' ? 
+        (isPositive ? dangerRed : successGreen) : 
+        (isPositive ? successGreen : dangerRed);
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: color.withOpacity(0.2),
+          color: color.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: textDark,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    FormatUtils.formatMoney(current),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: color,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: changeColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isPositive ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                        color: changeColor,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        '${change.abs().toStringAsFixed(1)}%',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: changeColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
+                FittedBox(
+                  child: Text(
+                    'Anterior: ${FormatUtils.formatMoney(previous)}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: textMedium,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOverallStatsCard() {
+    final stats = _overallStats!;
+    
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: primaryBlue.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        border: Border.all(
+          color: primaryBlue.withOpacity(0.1),
           width: 1,
         ),
       ),
@@ -458,17 +496,112 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(icon, color: color, size: 20),
               Container(
-                width: 6,
-                height: 6,
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
+                  color: primaryBlue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.assessment_rounded,
+                  color: primaryBlue,
+                  size: 20,
                 ),
               ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Resumen General',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: textDark,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth > 300;
+              return Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  SizedBox(
+                    width: isWide ? (constraints.maxWidth - 12) / 2 : constraints.maxWidth,
+                    child: _buildOverallStatItem(
+                      'Transacciones',
+                      '${stats.totalTransactions}',
+                      primaryBlue,
+                      Icons.receipt_long_rounded,
+                    ),
+                  ),
+                  SizedBox(
+                    width: isWide ? (constraints.maxWidth - 12) / 2 : constraints.maxWidth,
+                    child: _buildOverallStatItem(
+                      'Promedio Mensual',
+                      FormatUtils.formatMoney(stats.averageMonthlyExpenses),
+                      warningYellow,
+                      Icons.calendar_month_rounded,
+                    ),
+                  ),
+                  SizedBox(
+                    width: isWide ? (constraints.maxWidth - 12) / 2 : constraints.maxWidth,
+                    child: _buildOverallStatItem(
+                      'Balance Promedio',
+                      FormatUtils.formatMoney(stats.averageMonthlyBalance),
+                      successGreen,
+                      Icons.trending_up_rounded,
+                    ),
+                  ),
+                  SizedBox(
+                    width: isWide ? (constraints.maxWidth - 12) / 2 : constraints.maxWidth,
+                    child: _buildOverallStatItem(
+                      'Meses Registrados',
+                      '${stats.monthsWithData}',
+                      primaryPurple,
+                      Icons.date_range_rounded,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOverallStatItem(String title, String value, Color color, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withOpacity(0.15),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: color, size: 16),
+              ),
+              const Spacer(),
             ],
           ),
           const SizedBox(height: 12),
@@ -476,9 +609,11 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
             title,
             style: const TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w600,
               color: textMedium,
+              fontWeight: FontWeight.w500,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 4),
           FittedBox(
@@ -498,16 +633,7 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildMonthlyComparison() {
-    final stats = _financialStats;
-    if (stats == null || !stats.hasData) {
-      return _buildEmptyStateCard(
-        'Comparación Mensual',
-        'Agrega transacciones para ver la comparación',
-        Icons.compare_arrows_rounded,
-      );
-    }
-
+  Widget _buildCategoryAnalysisCard() {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -515,872 +641,181 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: primaryPurple.withOpacity(0.08),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(
-          color: borderLight,
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  gradient: const LinearGradient(
-                    colors: [infoBlue, primaryBlue],
-                  ),
-                ),
-                child: const Icon(
-                  Icons.compare_arrows_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 16),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Este Mes vs Anterior',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: textDark,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Compara tu progreso mensual',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: textMedium,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          _buildComparisonRow(
-            'Balance',
-            FormatUtils.formatMoney(stats.currentBalance),
-            FormatUtils.formatMoney(stats.previousBalance),
-            stats.balanceGrowthPercentage,
-          ),
-          const SizedBox(height: 16),
-          _buildComparisonRow(
-            'Ingresos',
-            FormatUtils.formatMoney(stats.currentIncome),
-            FormatUtils.formatMoney(stats.previousIncome),
-            stats.incomeGrowthPercentage,
-          ),
-          const SizedBox(height: 16),
-          _buildComparisonRow(
-            'Gastos',
-            FormatUtils.formatMoney(stats.currentExpenses),
-            FormatUtils.formatMoney(stats.previousExpenses),
-            stats.expenseGrowthPercentage,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildComparisonRow(String title, String current, String previous, double growthPercentage) {
-    final color = FormatUtils.getGrowthColor(growthPercentage);
-    final icon = FormatUtils.getGrowthIcon(growthPercentage);
-    
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: backgroundCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: borderLight,
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: textDark,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Actual: $current',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: textMedium,
-                  ),
-                ),
-                Text(
-                  'Anterior: $previous',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: textMedium,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Icon(icon, color: color, size: 16),
-                const SizedBox(width: 4),
-                Text(
-                  FormatUtils.formatPercentageWithSign(growthPercentage),
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: color,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryBreakdown() {
-    if (_categoryStats.isEmpty) {
-      return _buildEmptyStateCard(
-        'Gastos por Categoría',
-        'Agrega gastos para ver el desglose',
-        Icons.pie_chart_rounded,
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-        border: Border.all(
-          color: borderLight,
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [primaryPurple, infoBlue],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: primaryPurple.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.pie_chart_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 16),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Gastos por Categoría',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: textDark,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Visualiza cómo distribuyes tu dinero',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: textMedium,
-                        height: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
-          // Gráfico de pastel interactivo
-          Center(
-            child: PieChartWidget(
-              categoryStats: _categoryStats,
-              size: 280,
-              showLegend: true,
-              onCategorySelected: (category) {
-                // Feedback háptico cuando se selecciona una categoría
-                if (category != null) {
-                  HapticFeedback.lightImpact();
-                }
-              },
-            ),
-          ),
-          const SizedBox(height: 24),
-          // Resumen adicional
-          _buildCategoryStatsSummary(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryItem(CategoryStats category) {
-    final colors = [
-      dangerRed,
-      warningYellow,
-      successGreen,
-      primaryBlue,
-      primaryPurple,
-      infoBlue,
-    ];
-    final color = colors[_categoryStats.indexOf(category) % colors.length];
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Text(
-                category.categoryIcon,
-                style: const TextStyle(fontSize: 18),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      category.categoryName,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: textDark,
-                      ),
-                    ),
-                    Text(
-                      FormatUtils.formatMoney(category.amount),
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: color,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: color.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                        child: FractionallySizedBox(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: category.percentage / 100,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: color,
-                              borderRadius: BorderRadius.circular(3),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${category.percentage.toStringAsFixed(1)}%',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: color,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWeeklyTrends() {
-    if (_weeklyStats.isEmpty || _weeklyStats.every((w) => w.transactionCount == 0)) {
-      return _buildEmptyStateCard(
-        'Tendencias Semanales',
-        'Agrega transacciones para ver las tendencias',
-        Icons.show_chart_rounded,
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-        border: Border.all(
-          color: borderLight,
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  gradient: const LinearGradient(
-                    colors: [successGreen, darkGreen],
-                  ),
-                ),
-                child: const Icon(
-                  Icons.show_chart_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 16),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Últimas 4 Semanas',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: textDark,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Tu actividad financiera semanal',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: textMedium,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          _buildWeeklyChart(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWeeklyChart() {
-    final maxAmount = _weeklyStats.map((w) => 
-      [w.income, w.expenses].reduce((a, b) => a > b ? a : b)
-    ).reduce((a, b) => a > b ? a : b);
-
-    if (maxAmount == 0) {
-      return const Center(
-        child: Text(
-          'No hay datos para mostrar',
-          style: TextStyle(
-            fontSize: 14,
-            color: textMedium,
-          ),
-        ),
-      );
-    }
-
-    return Column(
-      children: _weeklyStats.map((week) => _buildWeeklyBar(week, maxAmount)).toList(),
-    );
-  }
-
-  Widget _buildWeeklyBar(WeeklyStats week, double maxAmount) {
-    final incomePercentage = maxAmount > 0 ? week.income / maxAmount : 0.0;
-    final expensePercentage = maxAmount > 0 ? week.expenses / maxAmount : 0.0;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                week.weekLabel,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: textDark,
-                ),
-              ),
-              Text(
-                'Balance: ${FormatUtils.formatMoney(week.balance)}',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: week.balance >= 0 ? successGreen : dangerRed,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  children: [
-                    // Barra de ingresos
-                    Container(
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: successGreen.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: incomePercentage,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: successGreen,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    // Barra de gastos
-                    Container(
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: dangerRed.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: expensePercentage,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: dangerRed,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    FormatUtils.formatMoneyCompact(week.income),
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: successGreen,
-                    ),
-                  ),
-                  Text(
-                    FormatUtils.formatMoneyCompact(week.expenses),
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: dangerRed,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFinancialInsights() {
-    final stats = _financialStats;
-    final overall = _overallStats;
-    
-    if (stats == null || overall == null) {
-      return _buildEmptyStateCard(
-        'Insights Financieros',
-        'Agrega más transacciones para obtener insights',
-        Icons.lightbulb_rounded,
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-        border: Border.all(
-          color: borderLight,
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  gradient: const LinearGradient(
-                    colors: [warningYellow, Color(0xFFFF8C00)],
-                  ),
-                ),
-                child: const Icon(
-                  Icons.lightbulb_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 16),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Insights Financieros',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: textDark,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Recomendaciones personalizadas',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: textMedium,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          ..._generateInsights(stats, overall),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _generateInsights(FinancialStats stats, OverallStats overall) {
-    List<Widget> insights = [];
-
-    // Insight sobre tasa de ahorro
-    if (overall.savingsRate > 0) {
-      insights.add(_buildInsightCard(
-        overall.savingsRate >= 20 ? '🎉' : overall.savingsRate >= 10 ? '👍' : '⚠️',
-        'Tasa de Ahorro',
-        overall.savingsRate >= 20 
-            ? '¡Excelente! Estás ahorrando ${overall.savingsRate.toStringAsFixed(1)}% de tus ingresos.'
-            : overall.savingsRate >= 10
-                ? 'Bien hecho. Ahorras ${overall.savingsRate.toStringAsFixed(1)}% de tus ingresos.'
-                : 'Tu tasa de ahorro es del ${overall.savingsRate.toStringAsFixed(1)}%. Considera reducir gastos.',
-        overall.savingsRate >= 20 ? successGreen : overall.savingsRate >= 10 ? warningYellow : dangerRed,
-      ));
-    }
-
-    // Insight sobre crecimiento
-    if (stats.hasPreviousData) {
-      insights.add(_buildInsightCard(
-        stats.balanceGrowthPercentage > 0 ? '📈' : stats.balanceGrowthPercentage < 0 ? '📉' : '➡️',
-        'Tendencia Mensual',
-        stats.balanceGrowthPercentage > 0 
-            ? 'Tu balance creció ${stats.balanceGrowthPercentage.toStringAsFixed(1)}% este mes. ¡Sigue así!'
-            : stats.balanceGrowthPercentage < 0
-                ? 'Tu balance disminuyó ${stats.balanceGrowthPercentage.abs().toStringAsFixed(1)}% este mes. Revisa tus gastos.'
-                : 'Tu balance se mantiene estable este mes.',
-        FormatUtils.getGrowthColor(stats.balanceGrowthPercentage),
-      ));
-    }
-
-    // Insight sobre categoría principal
-    if (_categoryStats.isNotEmpty) {
-      final topCategory = _categoryStats.first;
-      insights.add(_buildInsightCard(
-        topCategory.categoryIcon,
-        'Mayor Gasto',
-        'Tu mayor gasto este mes es en ${topCategory.categoryName} con ${FormatUtils.formatMoney(topCategory.amount)} (${topCategory.percentage.toStringAsFixed(1)}%).',
-        primaryBlue,
-      ));
-    }
-
-    return insights;
-  }
-
-  Widget _buildInsightCard(String emoji, String title, String description, Color color) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Text(
-                emoji,
-                style: const TextStyle(fontSize: 18),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: color,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: textMedium,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyStateCard(String title, String description, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-        border: Border.all(
-          color: borderLight,
-          width: 1,
-        ),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: textMedium.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Icon(
-              icon,
-              color: textMedium,
-              size: 30,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: textDark,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            description,
-            style: const TextStyle(
-              fontSize: 14,
-              color: textMedium,
-              height: 1.4,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryStatsSummary() {
-    if (_categoryStats.isEmpty) return const SizedBox.shrink();
-
-    final totalAmount = _categoryStats.fold(0.0, (sum, cat) => sum + cat.amount);
-    final topCategory = _categoryStats.first;
-    final categoryCount = _categoryStats.length;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            backgroundCard,
-            primaryPurple.withOpacity(0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: primaryPurple.withOpacity(0.1),
           width: 1,
         ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Expanded(
-                child: _buildStatItem(
-                  '💰',
-                  'Total Gastado',
-                  FormatUtils.formatMoney(totalAmount),
-                  primaryPurple,
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: primaryPurple.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.pie_chart_rounded,
+                  color: primaryPurple,
+                  size: 20,
                 ),
               ),
-              Container(
-                width: 1,
-                height: 40,
-                color: borderLight,
-              ),
-              Expanded(
-                child: _buildStatItem(
-                  topCategory.categoryIcon,
-                  'Mayor Gasto',
-                  topCategory.categoryName,
-                  successGreen,
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Análisis por Categorías',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: textDark,
+                  ),
                 ),
               ),
-              Container(
-                width: 1,
-                height: 40,
-                color: borderLight,
+            ],
+          ),
+          const SizedBox(height: 24),
+          
+          if (_categoryStats.isNotEmpty) ...[
+            // Gráfico de torta con contenedor responsivo
+            ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxHeight: 220,
+                minHeight: 180,
               ),
-              Expanded(
-                child: _buildStatItem(
-                  '📊',
-                  'Categorías',
-                  '$categoryCount',
-                  infoBlue,
+              child: AspectRatio(
+                aspectRatio: 1.2,
+                child: PieChartWidget(categoryStats: _categoryStats),
+              ),
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Lista de categorías principales
+            ...(_categoryStats.take(4).map((category) => 
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _buildCategoryItem(category),
+              )
+            )),
+            
+            // Mostrar indicador si hay más categorías
+            if (_categoryStats.length > 4)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: primaryPurple.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '+${_categoryStats.length - 4} categorías más',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: primaryPurple,
+                  ),
+                ),
+              ),
+          ] else
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: primaryPurple.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.category_rounded,
+                    color: primaryPurple.withOpacity(0.6),
+                    size: 32,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'No hay datos de categorías',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: primaryPurple.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryItem(CategoryStats category) {
+    final colors = [dangerRed, warningYellow, successGreen, primaryBlue, primaryPurple];
+    final colorIndex = _categoryStats.indexOf(category);
+    final color = colors[colorIndex % colors.length];
+    
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  category.categoryName,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: textDark,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${category.transactionCount} transacciones',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: textMedium,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                FormatUtils.formatMoney(category.amount),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${category.percentage.toStringAsFixed(1)}%',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: color,
                 ),
               ),
             ],
@@ -1390,28 +825,538 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildStatItem(String icon, String label, String value, Color color) {
+  Widget _buildWeeklyTrendsCard() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Tendencias Semanales',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: textDark,
+            ),
+          ),
+          const SizedBox(height: 20),
+          
+          SizedBox(
+            height: 150,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _weeklyStats.length,
+              itemBuilder: (context, index) {
+                final week = _weeklyStats[index];
+                return _buildWeekBar(week);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeekBar(WeeklyStats week) {
+    final maxAmount = _weeklyStats.map((w) => w.expenses).reduce((a, b) => a > b ? a : b);
+    final height = maxAmount > 0 ? (week.expenses / maxAmount) * 100 : 0.0;
+    
+    return Container(
+      width: 60,
+      margin: const EdgeInsets.only(right: 12),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Container(
+            width: double.infinity,
+            height: height,
+            decoration: BoxDecoration(
+              color: primaryBlue,
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            week.weekLabel.split(' - ')[0],
+            style: const TextStyle(
+              fontSize: 12,
+              color: textMedium,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // NUEVO: Widget para mostrar historial mensual
+  Widget _buildMonthlyHistory() {
+    if (_monthlyHistory.isEmpty || _monthlyHistory.every((m) => !m.hasData)) {
+      return _buildEmptyStateCard(
+        'Historial Mensual',
+        'Agrega transacciones para ver tu historial',
+        Icons.history_rounded,
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        border: Border.all(
+          color: borderLight,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  gradient: const LinearGradient(
+                    colors: [primaryBlue, infoBlue],
+                  ),
+                ),
+                child: const Icon(
+                  Icons.history_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Historial Mensual',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: textDark,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Tus últimos 12 meses de actividad',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: textMedium,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          
+          // Gráfico de barras mensual
+          _buildMonthlyChart(),
+          
+          const SizedBox(height: 20),
+          
+          // Lista de meses con resumen
+          _buildMonthlyList(),
+        ],
+      ),
+    );
+  }
+
+  // NUEVO: Gráfico de barras mensual
+  Widget _buildMonthlyChart() {
+    final monthsWithData = _monthlyHistory.where((m) => m.hasData).toList();
+    if (monthsWithData.isEmpty) return const SizedBox.shrink();
+
+    final maxAmount = monthsWithData.map((m) => 
+      [m.income, m.expenses].reduce((a, b) => a > b ? a : b)
+    ).reduce((a, b) => a > b ? a : b);
+
+    return Container(
+      height: 200,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: monthsWithData.map((month) => 
+          _buildMonthBar(month, maxAmount)
+        ).toList(),
+      ),
+    );
+  }
+
+  Widget _buildMonthBar(MonthlyStats month, double maxAmount) {
+    final incomeHeight = maxAmount > 0 ? (month.income / maxAmount) * 160 : 0.0;
+    final expenseHeight = maxAmount > 0 ? (month.expenses / maxAmount) * 160 : 0.0;
+    final isSelected = FormatUtils.isSameMonth(month.month, _selectedMonth);
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => _selectMonth(month.month),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              // Balance indicator
+              Container(
+                height: 20,
+                child: month.balance >= 0 
+                  ? Icon(Icons.trending_up, color: successGreen, size: 14)
+                  : Icon(Icons.trending_down, color: dangerRed, size: 14),
+              ),
+              
+              // Income bar
+              Container(
+                width: double.infinity,
+                height: incomeHeight,
+                decoration: BoxDecoration(
+                  color: isSelected ? successGreen : successGreen.withOpacity(0.7),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(4),
+                    topRight: Radius.circular(4),
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 2),
+              
+              // Expense bar
+              Container(
+                width: double.infinity,
+                height: expenseHeight,
+                decoration: BoxDecoration(
+                  color: isSelected ? dangerRed : dangerRed.withOpacity(0.7),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(4),
+                    bottomRight: Radius.circular(4),
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 8),
+              
+              // Month label
+              Text(
+                month.shortMonthLabel,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? primaryBlue : textMedium,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // NUEVO: Lista de meses
+  Widget _buildMonthlyList() {
+    final recentMonths = _monthlyHistory.where((m) => m.hasData).take(6).toList();
+    
     return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              icon,
-              style: const TextStyle(fontSize: 16),
+      children: recentMonths.map((month) => _buildMonthItem(month)).toList(),
+    );
+  }
+
+  Widget _buildMonthItem(MonthlyStats month) {
+    final isSelected = FormatUtils.isSameMonth(month.month, _selectedMonth);
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => _selectMonth(month.month),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isSelected ? primaryBlue.withOpacity(0.1) : backgroundCard,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isSelected ? primaryBlue : borderLight,
+                width: isSelected ? 2 : 1,
+              ),
             ),
-            const SizedBox(width: 4),
-            Icon(
-              Icons.circle,
-              size: 6,
-              color: color,
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: month.isPositive 
+                        ? successGreen.withOpacity(0.1) 
+                        : dangerRed.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    month.isPositive 
+                        ? Icons.trending_up_rounded 
+                        : Icons.trending_down_rounded,
+                    color: month.isPositive ? successGreen : dangerRed,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        month.fullMonthLabel,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected ? primaryBlue : textDark,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${month.transactionCount} transacciones • ${month.topExpenseCategory?.categoryName ?? "Sin gastos"}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: textMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      FormatUtils.formatMoney(month.balance),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: month.isPositive ? successGreen : dangerRed,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${month.savingsRate.toStringAsFixed(1)}% ahorro',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: textMedium,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // NUEVO: Widget para mostrar detalles del mes seleccionado
+  Widget _buildMonthDetails() {
+    final monthDetails = _selectedMonthDetails;
+    if (monthDetails == null || !monthDetails.hasData) {
+      return _buildEmptyStateCard(
+        'Detalles del Mes',
+        'Selecciona un mes con datos para ver los detalles',
+        Icons.calendar_month_rounded,
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        border: Border.all(
+          color: borderLight,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  gradient: const LinearGradient(
+                    colors: [warningYellow, primaryPurple],
+                  ),
+                ),
+                child: const Icon(
+                  Icons.calendar_month_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Detalles de ${monthDetails.monthLabel}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: textDark,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Análisis detallado del mes seleccionado',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: textMedium,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          
+          // Resumen del mes
+          _buildMonthSummary(monthDetails),
+          
+          const SizedBox(height: 20),
+          
+          // Top categorías del mes
+          if (monthDetails.categoryStats.isNotEmpty)
+            _buildMonthTopCategories(monthDetails.categoryStats),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMonthSummary(MonthlyDetailStats monthDetails) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            monthDetails.isPositive ? successGreen.withOpacity(0.1) : dangerRed.withOpacity(0.1),
+            backgroundCard,
           ],
         ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: monthDetails.isPositive ? successGreen.withOpacity(0.2) : dangerRed.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _buildDetailStat(
+                  'Balance',
+                  FormatUtils.formatMoney(monthDetails.balance),
+                  monthDetails.isPositive ? successGreen : dangerRed,
+                  monthDetails.isPositive ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+                ),
+              ),
+              Container(width: 1, height: 40, color: borderLight),
+              Expanded(
+                child: _buildDetailStat(
+                  'Transacciones',
+                  '${monthDetails.transactionCount}',
+                  primaryBlue,
+                  Icons.receipt_long_rounded,
+                ),
+              ),
+              Container(width: 1, height: 40, color: borderLight),
+              Expanded(
+                child: _buildDetailStat(
+                  'Tasa Ahorro',
+                  '${monthDetails.savingsRate.toStringAsFixed(1)}%',
+                  monthDetails.savingsRate >= 20 ? successGreen : warningYellow,
+                  Icons.savings_rounded,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildDetailStat(
+                  'Promedio Diario',
+                  FormatUtils.formatMoney(monthDetails.averageDailyExpenses),
+                  infoBlue,
+                  Icons.today_rounded,
+                ),
+              ),
+              Container(width: 1, height: 40, color: borderLight),
+              Expanded(
+                child: _buildDetailStat(
+                  'Mayor Gasto',
+                  monthDetails.highestExpenseDay != null 
+                      ? 'Día ${monthDetails.highestExpenseDay!.day}'
+                      : 'N/A',
+                  dangerRed,
+                  Icons.bar_chart_rounded,
+                ),
+              ),
+              Container(width: 1, height: 40, color: borderLight),
+              Expanded(
+                child: _buildDetailStat(
+                  'Categorías',
+                  '${monthDetails.categoryStats.length}',
+                  primaryPurple,
+                  Icons.category_rounded,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailStat(String label, String value, Color color, IconData icon) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 18),
         const SizedBox(height: 8),
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 11,
             color: textMedium,
             fontWeight: FontWeight.w500,
@@ -1427,10 +1372,168 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
             color: color,
           ),
           textAlign: TextAlign.center,
-          maxLines: 1,
+          maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
       ],
+    );
+  }
+
+  Widget _buildMonthTopCategories(List<CategoryStats> categoryStats) {
+    final topCategories = categoryStats.take(3).toList();
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Top Categorías del Mes',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: textDark,
+          ),
+        ),
+        const SizedBox(height: 16),
+        ...topCategories.map((category) => _buildCompactCategoryItem(category)).toList(),
+      ],
+    );
+  }
+
+  Widget _buildCompactCategoryItem(CategoryStats category) {
+    final colors = [dangerRed, warningYellow, successGreen];
+    final colorIndex = _selectedMonthDetails!.categoryStats.indexOf(category);
+    final color = colors[colorIndex % colors.length];
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: Text(
+                category.categoryIcon,
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  category.categoryName,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: textDark,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${category.transactionCount} transacciones',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: textMedium,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                FormatUtils.formatMoney(category.amount),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${category.percentage.toStringAsFixed(1)}%',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyStateCard(String title, String subtitle, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        border: Border.all(
+          color: borderLight,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: primaryBlue.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(
+              icon,
+              size: 48,
+              color: primaryBlue,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: textDark,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              fontSize: 14,
+              color: textMedium,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 }

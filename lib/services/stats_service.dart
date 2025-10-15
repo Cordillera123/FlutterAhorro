@@ -121,32 +121,158 @@ class StatsService {
     return weeklyStats;
   }
 
-  // Obtener estadísticas de los últimos 6 meses
+  // Obtener estadísticas de los últimos 6 meses (método existente mantenido para compatibilidad)
   List<MonthlyStats> getMonthlyStats() {
+    return getMonthlyStatsHistory(months: 6);
+  }
+
+  // NUEVO: Obtener historial mensual expandido (hasta 12 meses)
+  List<MonthlyStats> getMonthlyStatsHistory({int months = 12}) {
     final transactions = _transactionService.transactions;
     final now = DateTime.now();
     final List<MonthlyStats> monthlyStats = [];
     
-    for (int i = 5; i >= 0; i--) {
-      final month = DateTime(now.year, now.month - i);
-      
+    for (int i = months - 1; i >= 0; i--) {
+      final targetMonth = DateTime(now.year, now.month - i);
       final monthTransactions = transactions.where((t) => 
-        FormatUtils.isSameMonth(t.date, month)
+        FormatUtils.isSameMonth(t.date, targetMonth)
       ).toList();
       
       final income = _calculateTotalIncome(monthTransactions);
       final expenses = _calculateTotalExpenses(monthTransactions);
+      final categoryBreakdown = _getCategoryBreakdownForMonth(monthTransactions);
+      final topExpenseCategory = _getTopCategoryForMonth(monthTransactions);
       
       monthlyStats.add(MonthlyStats(
-        month: month,
+        month: targetMonth,
         income: income,
         expenses: expenses,
         balance: income - expenses,
         transactionCount: monthTransactions.length,
+        incomeTransactionCount: monthTransactions.where((t) => t.type == TransactionType.income).length,
+        expenseTransactionCount: monthTransactions.where((t) => t.type == TransactionType.expense).length,
+        categoryBreakdown: categoryBreakdown,
+        topExpenseCategory: topExpenseCategory,
       ));
     }
     
     return monthlyStats;
+  }
+
+  // NUEVO: Obtener estadísticas de comparación mensual avanzada
+  MonthlyComparisonStats getMonthlyComparison() {
+    final monthlyHistory = getMonthlyStatsHistory(months: 6); // Últimos 6 meses
+    
+    if (monthlyHistory.length < 2) {
+      return MonthlyComparisonStats(
+        currentMonth: monthlyHistory.isNotEmpty ? monthlyHistory.last : null,
+        previousMonth: null,
+        averageIncome: 0,
+        averageExpenses: 0,
+        bestMonth: null,
+        worstMonth: null,
+        trend: MonthlyTrend.stable,
+        monthsWithData: monthlyHistory.length,
+      );
+    }
+
+    final current = monthlyHistory.last;
+    final previous = monthlyHistory[monthlyHistory.length - 2];
+    
+    // Calcular promedios
+    final monthsWithTransactions = monthlyHistory.where((m) => m.transactionCount > 0).toList();
+    final avgIncome = monthsWithTransactions.isEmpty ? 0.0 : 
+        monthsWithTransactions.map((m) => m.income).reduce((a, b) => a + b) / monthsWithTransactions.length;
+    final avgExpenses = monthsWithTransactions.isEmpty ? 0.0 : 
+        monthsWithTransactions.map((m) => m.expenses).reduce((a, b) => a + b) / monthsWithTransactions.length;
+    
+    // Encontrar mejor y peor mes por balance
+    MonthlyStats? bestMonth;
+    MonthlyStats? worstMonth;
+    
+    if (monthsWithTransactions.isNotEmpty) {
+      bestMonth = monthsWithTransactions.reduce((a, b) => a.balance > b.balance ? a : b);
+      worstMonth = monthsWithTransactions.reduce((a, b) => a.balance < b.balance ? a : b);
+    }
+    
+    // Determinar tendencia basada en los últimos 3 meses
+    MonthlyTrend trend = MonthlyTrend.stable;
+    if (monthsWithTransactions.length >= 3) {
+      final last3Months = monthsWithTransactions.take(3).toList();
+      
+      // Verificar si hay tendencia creciente
+      bool isImproving = true;
+      bool isWorsening = true;
+      
+      for (int i = 1; i < last3Months.length; i++) {
+        if (last3Months[i].balance <= last3Months[i-1].balance) {
+          isImproving = false;
+        }
+        if (last3Months[i].balance >= last3Months[i-1].balance) {
+          isWorsening = false;
+        }
+      }
+      
+      if (isImproving) trend = MonthlyTrend.improving;
+      else if (isWorsening) trend = MonthlyTrend.declining;
+    }
+
+    return MonthlyComparisonStats(
+      currentMonth: current,
+      previousMonth: previous,
+      averageIncome: avgIncome,
+      averageExpenses: avgExpenses,
+      bestMonth: bestMonth,
+      worstMonth: worstMonth,
+      trend: trend,
+      monthsWithData: monthsWithTransactions.length,
+    );
+  }
+
+  // NUEVO: Obtener estadísticas detalladas de un mes específico
+  MonthlyDetailStats getMonthStats(DateTime month) {
+    final transactions = _transactionService.transactions;
+    final monthTransactions = transactions.where((t) => 
+      FormatUtils.isSameMonth(t.date, month)
+    ).toList();
+    
+    final income = _calculateTotalIncome(monthTransactions);
+    final expenses = _calculateTotalExpenses(monthTransactions);
+    final categoryStats = _getCategoryStatsForMonth(monthTransactions);
+    
+    // Obtener estadísticas por día del mes
+    final Map<int, DayStats> dailyStats = {};
+    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+    
+    for (int day = 1; day <= daysInMonth; day++) {
+      final dayTransactions = monthTransactions.where((t) => t.date.day == day).toList();
+      dailyStats[day] = DayStats(
+        day: day,
+        income: _calculateTotalIncome(dayTransactions),
+        expenses: _calculateTotalExpenses(dayTransactions),
+        transactionCount: dayTransactions.length,
+      );
+    }
+    
+    // Encontrar el día con mayor gasto
+    DayStats? highestExpenseDay;
+    if (dailyStats.values.isNotEmpty) {
+      highestExpenseDay = dailyStats.values.reduce((a, b) => a.expenses > b.expenses ? a : b);
+      if (highestExpenseDay!.expenses == 0) highestExpenseDay = null;
+    }
+    
+    return MonthlyDetailStats(
+      month: month,
+      income: income,
+      expenses: expenses,
+      balance: income - expenses,
+      transactionCount: monthTransactions.length,
+      categoryStats: categoryStats,
+      dailyStats: dailyStats,
+      averageDailyExpenses: expenses / daysInMonth,
+      highestExpenseDay: highestExpenseDay,
+      transactionsList: monthTransactions,
+    );
   }
 
   // Obtener resumen general
@@ -206,6 +332,70 @@ class StatsService {
     return transactions
         .where((t) => t.type == TransactionType.expense)
         .fold(0.0, (sum, t) => sum + t.amount);
+  }
+
+  // NUEVO: Obtener desglose por categorías de un mes específico
+  Map<ExpenseCategory, double> _getCategoryBreakdownForMonth(List<Transaction> transactions) {
+    final Map<ExpenseCategory, double> breakdown = {};
+    
+    for (final transaction in transactions) {
+      if (transaction.type == TransactionType.expense && transaction.expenseCategory != null) {
+        breakdown[transaction.expenseCategory!] = 
+            (breakdown[transaction.expenseCategory!] ?? 0.0) + transaction.amount;
+      }
+    }
+    
+    return breakdown;
+  }
+
+  // NUEVO: Obtener la categoría con mayor gasto del mes
+  CategoryStats? _getTopCategoryForMonth(List<Transaction> transactions) {
+    final breakdown = _getCategoryBreakdownForMonth(transactions);
+    if (breakdown.isEmpty) return null;
+    
+    final topEntry = breakdown.entries.reduce((a, b) => a.value > b.value ? a : b);
+    final totalExpenses = breakdown.values.fold(0.0, (sum, amount) => sum + amount);
+    final percentage = totalExpenses > 0 ? (topEntry.value / totalExpenses) * 100 : 0.0;
+    
+    return CategoryStats(
+      category: topEntry.key,
+      amount: topEntry.value,
+      percentage: percentage,
+      transactionCount: transactions.where((t) => t.expenseCategory == topEntry.key).length,
+      categoryName: _getCategoryName(topEntry.key),
+      categoryIcon: _getCategoryIcon(topEntry.key),
+    );
+  }
+
+  // NUEVO: Obtener estadísticas de categorías para un mes específico
+  List<CategoryStats> _getCategoryStatsForMonth(List<Transaction> transactions) {
+    final expenseTransactions = transactions.where((t) => t.type == TransactionType.expense).toList();
+    final totalExpenses = _calculateTotalExpenses(expenseTransactions);
+    
+    final Map<ExpenseCategory, List<Transaction>> expensesByCategory = {};
+    
+    for (final transaction in expenseTransactions) {
+      if (transaction.expenseCategory != null) {
+        expensesByCategory.putIfAbsent(transaction.expenseCategory!, () => []);
+        expensesByCategory[transaction.expenseCategory!]!.add(transaction);
+      }
+    }
+    
+    return expensesByCategory.entries.map((entry) {
+      final category = entry.key;
+      final categoryTransactions = entry.value;
+      final categoryTotal = categoryTransactions.fold(0.0, (sum, t) => sum + t.amount);
+      final percentage = totalExpenses > 0 ? (categoryTotal / totalExpenses) * 100 : 0.0;
+      
+      return CategoryStats(
+        category: category,
+        amount: categoryTotal,
+        percentage: percentage,
+        transactionCount: categoryTransactions.length,
+        categoryName: _getCategoryName(category),
+        categoryIcon: _getCategoryIcon(category),
+      );
+    }).toList()..sort((a, b) => b.amount.compareTo(a.amount));
   }
 
   String _getCategoryName(ExpenseCategory category) {
@@ -325,6 +515,10 @@ class MonthlyStats {
   final double expenses;
   final double balance;
   final int transactionCount;
+  final int incomeTransactionCount;
+  final int expenseTransactionCount;
+  final Map<ExpenseCategory, double> categoryBreakdown;
+  final CategoryStats? topExpenseCategory;
 
   MonthlyStats({
     required this.month,
@@ -332,15 +526,18 @@ class MonthlyStats {
     required this.expenses,
     required this.balance,
     required this.transactionCount,
+    required this.incomeTransactionCount,
+    required this.expenseTransactionCount,
+    required this.categoryBreakdown,
+    this.topExpenseCategory,
   });
 
-  String get monthLabel {
-    return FormatUtils.getShortMonthName(month.month);
-  }
-
-  String get fullMonthLabel {
-    return FormatUtils.getMonthName(month.month);
-  }
+  String get monthLabel => FormatUtils.getMonthName(month.month);
+  String get shortMonthLabel => FormatUtils.getShortMonthName(month.month);
+  double get savingsRate => income > 0 ? (balance / income) * 100 : 0.0;
+  bool get hasData => transactionCount > 0;
+  bool get isPositive => balance >= 0;
+  String get fullMonthLabel => '${monthLabel} ${month.year}';
 }
 
 class OverallStats {
@@ -366,4 +563,107 @@ class OverallStats {
 
   double get averageMonthlyBalance => averageMonthlyIncome - averageMonthlyExpenses;
   double get savingsRate => averageMonthlyIncome > 0 ? (averageMonthlyBalance / averageMonthlyIncome) * 100 : 0.0;
+}
+
+// NUEVAS CLASES PARA LAS ESTADÍSTICAS AMPLIADAS
+
+enum MonthlyTrend {
+  improving,  // Mejorando
+  declining,  // Empeorando
+  stable,     // Estable
+}
+
+class MonthlyComparisonStats {
+  final MonthlyStats? currentMonth;
+  final MonthlyStats? previousMonth;
+  final double averageIncome;
+  final double averageExpenses;
+  final MonthlyStats? bestMonth;
+  final MonthlyStats? worstMonth;
+  final MonthlyTrend trend;
+  final int monthsWithData;
+
+  MonthlyComparisonStats({
+    this.currentMonth,
+    this.previousMonth,
+    required this.averageIncome,
+    required this.averageExpenses,
+    this.bestMonth,
+    this.worstMonth,
+    required this.trend,
+    required this.monthsWithData,
+  });
+
+  double get averageBalance => averageIncome - averageExpenses;
+  bool get hasEnoughData => monthsWithData >= 2;
+  
+  String get trendDescription {
+    switch (trend) {
+      case MonthlyTrend.improving:
+        return 'Mejorando';
+      case MonthlyTrend.declining:
+        return 'Empeorando';
+      case MonthlyTrend.stable:
+        return 'Estable';
+    }
+  }
+
+  String get trendEmoji {
+    switch (trend) {
+      case MonthlyTrend.improving:
+        return '📈';
+      case MonthlyTrend.declining:
+        return '📉';
+      case MonthlyTrend.stable:
+        return '➡️';
+    }
+  }
+}
+
+class MonthlyDetailStats {
+  final DateTime month;
+  final double income;
+  final double expenses;
+  final double balance;
+  final int transactionCount;
+  final List<CategoryStats> categoryStats;
+  final Map<int, DayStats> dailyStats;
+  final double averageDailyExpenses;
+  final DayStats? highestExpenseDay;
+  final List<Transaction> transactionsList;
+
+  MonthlyDetailStats({
+    required this.month,
+    required this.income,
+    required this.expenses,
+    required this.balance,
+    required this.transactionCount,
+    required this.categoryStats,
+    required this.dailyStats,
+    required this.averageDailyExpenses,
+    this.highestExpenseDay,
+    required this.transactionsList,
+  });
+
+  String get monthLabel => FormatUtils.getMonthName(month.month);
+  double get savingsRate => income > 0 ? (balance / income) * 100 : 0.0;
+  bool get hasData => transactionCount > 0;
+  bool get isPositive => balance >= 0;
+}
+
+class DayStats {
+  final int day;
+  final double income;
+  final double expenses;
+  final int transactionCount;
+
+  DayStats({
+    required this.day,
+    required this.income,
+    required this.expenses,
+    required this.transactionCount,
+  });
+
+  double get balance => income - expenses;
+  bool get hasTransactions => transactionCount > 0;
 }

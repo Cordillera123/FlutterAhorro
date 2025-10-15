@@ -11,8 +11,12 @@ class GoalService {
 
   List<FinancialGoal> get goals => _goals;
   List<FinancialGoal> get activeGoals => _goals.where((g) => g.status == GoalStatus.active).toList();
+  List<FinancialGoal> get pausedGoals => _goals.where((g) => g.status == GoalStatus.paused).toList();
   List<FinancialGoal> get completedGoals => _goals.where((g) => g.status == GoalStatus.completed).toList();
   List<GoalContribution> get contributions => _contributions;
+  
+  // Validar si se pueden crear más metas
+  bool get canCreateMoreGoals => _goals.length < 15;
 
   // Cargar metas desde almacenamiento local
   Future<void> loadGoals() async {
@@ -111,8 +115,18 @@ class GoalService {
 
   // Agregar nueva meta
   Future<void> addGoal(FinancialGoal goal) async {
+    // Validar límite máximo de metas
+    if (_goals.length >= 15) {
+      throw Exception('Has alcanzado el límite máximo de 15 metas. Elimina o completa algunas metas para crear nuevas.');
+    }
+
+    // Calcular contribución sugerida automáticamente
+    final suggestedContribution = goal.calculateSuggestedContribution();
+    
     final newGoal = goal.copyWith(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
+      suggestedContribution: suggestedContribution,
+      monthlyContribution: goal.monthlyContribution > 0 ? goal.monthlyContribution : suggestedContribution,
     );
 
     _goals.add(newGoal);
@@ -165,6 +179,23 @@ class GoalService {
     );
 
     await _saveGoals();
+  }
+
+  // Pausar meta específicamente
+  Future<void> pauseGoal(String goalId) async {
+    await changeGoalStatus(goalId, GoalStatus.paused);
+  }
+
+  // Reactivar meta pausada
+  Future<void> resumeGoal(String goalId) async {
+    await changeGoalStatus(goalId, GoalStatus.active);
+  }
+
+  // Validar contribución
+  bool validateContribution(String goalId, double contribution) {
+    final goal = getGoalById(goalId);
+    if (goal == null) return false;
+    return goal.isContributionValid(contribution);
   }
 
   // Agregar contribución a una meta
@@ -297,19 +328,52 @@ class GoalService {
 
     for (var goal in activeGoals) {
       if (goal.autoSave && goal.monthlyContribution > 0) {
-        // Verificar si ya se procesó este mes
-        final thisMonth = DateTime(today.year, today.month);
-        final lastContribution = _contributions
-            .where((c) => c.goalId == goal.id && c.isAutomatic)
-            .where((c) => DateTime(c.date.year, c.date.month) == thisMonth)
-            .isNotEmpty;
+        bool shouldProcess = false;
+        String note = '';
+        
+        switch (goal.autoSaveFrequency) {
+          case AutoSaveFrequency.daily:
+            // Verificar si ya se procesó hoy
+            final lastContribution = _contributions
+                .where((c) => c.goalId == goal.id && c.isAutomatic)
+                .where((c) => 
+                    c.date.year == today.year && 
+                    c.date.month == today.month && 
+                    c.date.day == today.day)
+                .isNotEmpty;
+            shouldProcess = !lastContribution;
+            note = 'Contribución automática diaria';
+            break;
+            
+          case AutoSaveFrequency.weekly:
+            // Verificar si ya se procesó esta semana (lunes)
+            final mondayOfWeek = today.subtract(Duration(days: today.weekday - 1));
+            final lastContribution = _contributions
+                .where((c) => c.goalId == goal.id && c.isAutomatic)
+                .where((c) => c.date.isAfter(mondayOfWeek.subtract(const Duration(days: 1))))
+                .isNotEmpty;
+            shouldProcess = !lastContribution && today.weekday == 1; // Lunes
+            note = 'Contribución automática semanal';
+            break;
+            
+          case AutoSaveFrequency.monthly:
+            // Verificar si ya se procesó este mes
+            final thisMonth = DateTime(today.year, today.month);
+            final lastContribution = _contributions
+                .where((c) => c.goalId == goal.id && c.isAutomatic)
+                .where((c) => DateTime(c.date.year, c.date.month) == thisMonth)
+                .isNotEmpty;
+            shouldProcess = !lastContribution && today.day == 1; // Primer día del mes
+            note = 'Contribución automática mensual';
+            break;
+        }
 
-        if (!lastContribution && today.day == 1) { // Procesar el primer día del mes
+        if (shouldProcess) {
           try {
             await addContribution(
               goal.id!,
               goal.monthlyContribution,
-              note: 'Contribución automática mensual',
+              note: note,
               isAutomatic: true,
             );
             processedCount++;

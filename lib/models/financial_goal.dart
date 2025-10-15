@@ -24,6 +24,12 @@ enum GoalStatus {
   cancelled,
 }
 
+enum AutoSaveFrequency {
+  daily,
+  weekly,
+  monthly,
+}
+
 class FinancialGoal {
   final String? id;
   final String name;
@@ -37,7 +43,9 @@ class FinancialGoal {
   final GoalStatus status;
   final String emoji;
   final double monthlyContribution;
+  final double suggestedContribution;
   final bool autoSave;
+  final AutoSaveFrequency autoSaveFrequency;
   final DateTime createdAt;
   final DateTime? updatedAt;
   final DateTime? completedAt;
@@ -55,7 +63,9 @@ class FinancialGoal {
     this.status = GoalStatus.active,
     this.emoji = '🎯',
     this.monthlyContribution = 0.0,
+    this.suggestedContribution = 0.0,
     this.autoSave = false,
+    this.autoSaveFrequency = AutoSaveFrequency.monthly,
     required this.createdAt,
     this.updatedAt,
     this.completedAt,
@@ -92,6 +102,38 @@ class FinancialGoal {
   double get requiredDailyContribution {
     if (daysRemaining <= 0) return remainingAmount;
     return remainingAmount / daysRemaining;
+  }
+
+  // Calcular contribución sugerida basada en la frecuencia seleccionada
+  double calculateSuggestedContribution() {
+    switch (autoSaveFrequency) {
+      case AutoSaveFrequency.daily:
+        return requiredDailyContribution;
+      case AutoSaveFrequency.weekly:
+        return requiredWeeklyContribution;
+      case AutoSaveFrequency.monthly:
+        return requiredMonthlyContribution;
+    }
+  }
+
+  // Validar que la contribución no exceda el monto objetivo
+  bool isContributionValid(double contribution) {
+    return contribution > 0 && contribution <= remainingAmount;
+  }
+
+  // Obtener la próxima fecha de contribución automática
+  DateTime? get nextAutoSaveDate {
+    if (!autoSave) return null;
+    
+    final now = DateTime.now();
+    switch (autoSaveFrequency) {
+      case AutoSaveFrequency.daily:
+        return DateTime(now.year, now.month, now.day + 1);
+      case AutoSaveFrequency.weekly:
+        return now.add(Duration(days: 7 - now.weekday + 1));
+      case AutoSaveFrequency.monthly:
+        return DateTime(now.year, now.month + 1, now.day);
+    }
   }
 
   bool get isOnTrack {
@@ -149,6 +191,17 @@ class FinancialGoal {
         return 'Completada';
       case GoalStatus.cancelled:
         return 'Cancelada';
+    }
+  }
+
+  String get autoSaveFrequencyName {
+    switch (autoSaveFrequency) {
+      case AutoSaveFrequency.daily:
+        return 'Diariamente';
+      case AutoSaveFrequency.weekly:
+        return 'Semanalmente';
+      case AutoSaveFrequency.monthly:
+        return 'Mensualmente';
     }
   }
 
@@ -261,7 +314,9 @@ class FinancialGoal {
       'status': status.index,
       'emoji': emoji,
       'monthlyContribution': monthlyContribution,
+      'suggestedContribution': suggestedContribution,
       'autoSave': autoSave,
+      'autoSaveFrequency': autoSaveFrequency.index,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
       'completedAt': completedAt?.toIso8601String(),
@@ -282,7 +337,9 @@ class FinancialGoal {
       status: GoalStatus.values[json['status'] ?? 0],
       emoji: json['emoji'] ?? '🎯',
       monthlyContribution: json['monthlyContribution']?.toDouble() ?? 0.0,
+      suggestedContribution: json['suggestedContribution']?.toDouble() ?? 0.0,
       autoSave: json['autoSave'] ?? false,
+      autoSaveFrequency: AutoSaveFrequency.values[json['autoSaveFrequency'] ?? 2],
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'])
@@ -306,7 +363,9 @@ class FinancialGoal {
     GoalStatus? status,
     String? emoji,
     double? monthlyContribution,
+    double? suggestedContribution,
     bool? autoSave,
+    AutoSaveFrequency? autoSaveFrequency,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? completedAt,
@@ -324,7 +383,9 @@ class FinancialGoal {
       status: status ?? this.status,
       emoji: emoji ?? this.emoji,
       monthlyContribution: monthlyContribution ?? this.monthlyContribution,
+      suggestedContribution: suggestedContribution ?? this.suggestedContribution,
       autoSave: autoSave ?? this.autoSave,
+      autoSaveFrequency: autoSaveFrequency ?? this.autoSaveFrequency,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
       completedAt: completedAt ?? this.completedAt,

@@ -577,13 +577,15 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
   }
 
   Widget _buildGoalsList() {
-    final goals = _goalService.activeGoals;
+    final activeGoals = _goalService.activeGoals;
+    final pausedGoals = _goalService.pausedGoals;
+    final totalGoals = activeGoals.length + pausedGoals.length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Mis Metas (${goals.length})',
+          'Mis Metas ($totalGoals/15)',
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
@@ -591,31 +593,56 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
           ),
         ),
         const SizedBox(height: 16),
-        if (goals.isEmpty)
+        if (totalGoals == 0)
           _buildEmptyState()
-        else
-          ...goals.map((goal) => _buildGoalCard(goal)),
+        else ...[
+          // Metas activas
+          if (activeGoals.isNotEmpty) ...[
+            ...activeGoals.map((goal) => _buildGoalCard(goal)),
+          ],
+          // Metas pausadas
+          if (pausedGoals.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Metas Pausadas (${pausedGoals.length})',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: textMedium,
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...pausedGoals.map((goal) => _buildGoalCard(goal)),
+          ],
+        ],
       ],
     );
   }
 
   Widget _buildGoalCard(FinancialGoal goal) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+    final isPaused = goal.status == GoalStatus.paused;
+    
+    return Opacity(
+      opacity: isPaused ? 0.7 : 1.0,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(isPaused ? 0.05 : 0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+          border: Border.all(
+            color: isPaused 
+              ? Colors.grey.withOpacity(0.3)
+              : goal.priorityColor.withOpacity(0.2),
+            width: isPaused ? 2 : 1,
           ),
-        ],
-        border: Border.all(
-          color: goal.priorityColor.withOpacity(0.2),
         ),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -645,15 +672,42 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            goal.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                              color: textDark,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  goal.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                    color: textDark,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (isPaused) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: warningYellow.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                      color: warningYellow.withOpacity(0.3),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'PAUSADA',
+                                    style: TextStyle(
+                                      color: warningYellow,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -762,41 +816,59 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
                 bottomRight: Radius.circular(20),
               ),
             ),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: _buildGoalActionButton(
-                    Icons.add_rounded,
-                    'Aportar',
-                    successGreen,
-                    () => _addContribution(goal),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildGoalActionButton(
-                    Icons.edit_rounded,
-                    'Editar',
-                    primaryBlue,
-                    () => _editGoal(goal),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildGoalActionButton(
-                    Icons.pause_rounded,
-                    'Pausar',
-                    warningYellow,
-                    () => _pauseGoal(goal),
-                  ),
+                Row(
+                  children: [
+                    if (goal.status == GoalStatus.active) ...[
+                      Expanded(
+                        child: _buildGoalActionButton(
+                          Icons.add_rounded,
+                          'Aportar',
+                          successGreen,
+                          () => _addContribution(goal),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Expanded(
+                      child: _buildGoalActionButton(
+                        Icons.edit_rounded,
+                        'Editar',
+                        primaryBlue,
+                        () => _editGoal(goal),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildGoalActionButton(
+                        goal.status == GoalStatus.active 
+                          ? Icons.pause_rounded 
+                          : Icons.play_arrow_rounded,
+                        goal.status == GoalStatus.active ? 'Pausar' : 'Reanudar',
+                        goal.status == GoalStatus.active ? warningYellow : successGreen,
+                        () => _toggleGoalStatus(goal),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildGoalActionButton(
+                        Icons.delete_rounded,
+                        'Eliminar',
+                        dangerRed,
+                        () => _deleteGoal(goal),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
         ],
       ),
-    );
-  }
+    ),
+  ); // Cierre del widget Opacity
+}
 
   Widget _buildGoalActionButton(IconData icon, String label, Color color, VoidCallback onPressed) {
     return GestureDetector(
@@ -952,6 +1024,17 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
 
   // Métodos de navegación y acciones
   void _navigateToCreateGoal() async {
+    // Verificar límite de metas
+    if (!_goalService.canCreateMoreGoals) {
+      _showMessage(
+        'Límite Alcanzado',
+        'Has alcanzado el límite máximo de 15 metas. Elimina o completa algunas metas para crear nuevas.',
+        warningYellow,
+        Icons.warning_rounded,
+      );
+      return;
+    }
+
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -965,6 +1048,17 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
   }
 
   void _createQuickGoal(GoalType type) async {
+    // Verificar límite de metas
+    if (!_goalService.canCreateMoreGoals) {
+      _showMessage(
+        'Límite Alcanzado',
+        'Has alcanzado el límite máximo de 15 metas. Elimina o completa algunas metas para crear nuevas.',
+        warningYellow,
+        Icons.warning_rounded,
+      );
+      return;
+    }
+
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -1198,6 +1292,147 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
               ),
               child: const Text(
                 'Pausar',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _toggleGoalStatus(FinancialGoal goal) async {
+    try {
+      if (goal.status == GoalStatus.active) {
+        await _goalService.pauseGoal(goal.id!);
+        _showMessage(
+          'Meta Pausada',
+          'La meta "${goal.name}" ha sido pausada correctamente. Puedes reanudarla cuando desees.',
+          warningYellow,
+          Icons.pause_rounded,
+        );
+      } else if (goal.status == GoalStatus.paused) {
+        await _goalService.resumeGoal(goal.id!);
+        _showMessage(
+          'Meta Reanudada',
+          'La meta "${goal.name}" ha sido reactivada correctamente.',
+          successGreen,
+          Icons.play_arrow_rounded,
+        );
+      }
+      await _refreshData();
+    } catch (e) {
+      _showMessage(
+        'Error',
+        'No se pudo cambiar el estado de la meta: ${e.toString()}',
+        dangerRed,
+        Icons.error_rounded,
+      );
+    }
+  }
+
+  void _deleteGoal(FinancialGoal goal) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.warning_rounded,
+                color: dangerRed,
+                size: 28,
+              ),
+              const SizedBox(width: 12),
+              const Text('Confirmar Eliminación'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '¿Estás seguro de que deseas eliminar la meta "${goal.name}"?',
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Esta acción no se puede deshacer. Se eliminarán todas las contribuciones asociadas.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: textMedium,
+                ),
+              ),
+              if (goal.currentAmount > 0) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: warningYellow.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_rounded,
+                        color: warningYellow,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Tienes ${FormatUtils.formatMoney(goal.currentAmount)} ahorrados en esta meta.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: warningYellow,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                try {
+                  await _goalService.deleteGoal(goal.id!);
+                  _showMessage(
+                    'Meta Eliminada',
+                    'La meta "${goal.name}" ha sido eliminada correctamente.',
+                    successGreen,
+                    Icons.check_circle_rounded,
+                  );
+                  await _refreshData();
+                } catch (e) {
+                  _showMessage(
+                    'Error',
+                    'No se pudo eliminar la meta: ${e.toString()}',
+                    dangerRed,
+                    Icons.error_rounded,
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: dangerRed,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Eliminar',
                 style: TextStyle(color: Colors.white),
               ),
             ),
