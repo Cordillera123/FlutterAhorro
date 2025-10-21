@@ -89,71 +89,70 @@ class _PieChartWidgetState extends State<PieChartWidget>
   }
 
   @override
-  Widget build(BuildContext context) {
-    if (widget.categoryStats.isEmpty) {
-      return _buildEmptyChart();
-    }
-
-    return Column(
-      children: [
-        AnimatedBuilder(
-          animation: _animation,
-          builder: (context, child) {
-            return GestureDetector(
-              onTapDown: _handleTapDown,
-              child: Container(
-                width: widget.size,
-                height: widget.size,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                    BoxShadow(
-                      color: Colors.purple.withOpacity(0.2),
-                      blurRadius: 30,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: AnimatedBuilder(
-                  animation: _pulseAnimation,
-                  builder: (context, child) {
-                    return Transform.scale(
-                      scale: _selectedCategory != null ? _pulseAnimation.value : 1.0,
-                      child: CustomPaint(
-                        painter: PieChartPainter(
-                          categoryStats: widget.categoryStats,
-                          animationValue: _animation.value,
-                          selectedIndex: _selectedCategory != null 
-                              ? widget.categoryStats.indexOf(_selectedCategory!)
-                              : -1,
-                          hoveredIndex: _hoveredIndex,
-                          colors: pieColors,
-                        ),
-                        size: Size(widget.size, widget.size),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            );
-          },
-        ),
-        if (widget.showLegend) ...[
-          const SizedBox(height: 24),
-          _buildLegend(),
-        ],
-        if (_selectedCategory != null) ...[
-          const SizedBox(height: 16),
-          _buildSelectedCategoryInfo(),
-        ],
-      ],
-    );
+Widget build(BuildContext context) {
+  if (widget.categoryStats.isEmpty) {
+    return _buildEmptyChart();
   }
+
+  return Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      AnimatedBuilder(
+        animation: _animation,
+        builder: (context, child) {
+          return GestureDetector(
+            onTapDown: _handleTapDown,
+            child: Container(
+              width: widget.size,
+              height: widget.size,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  ),
+                  BoxShadow(
+                    color: Colors.purple.withOpacity(0.15),
+                    blurRadius: 24,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: AnimatedBuilder(
+                animation: _pulseAnimation,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: _selectedCategory != null ? _pulseAnimation.value : 1.0,
+                    child: CustomPaint(
+                      painter: PieChartPainter(
+                        categoryStats: widget.categoryStats,
+                        animationValue: _animation.value,
+                        selectedIndex: _selectedCategory != null 
+                            ? widget.categoryStats.indexOf(_selectedCategory!)
+                            : -1,
+                        hoveredIndex: _hoveredIndex,
+                        colors: pieColors,
+                      ),
+                      size: Size(widget.size, widget.size),
+                    ),
+                  );
+                },
+              ),
+            ),
+          );
+        },
+      ),
+      
+      // Leyenda opcional
+      if (widget.showLegend) ...[
+        const SizedBox(height: 20),
+        _buildLegend(),
+      ],
+    ],
+  );
+}
 
   Widget _buildEmptyChart() {
     return Container(
@@ -254,113 +253,60 @@ class _PieChartWidgetState extends State<PieChartWidget>
     );
   }
 
-  Widget _buildSelectedCategoryInfo() {
-    if (_selectedCategory == null) return const SizedBox.shrink();
-
-    final color = pieColors[widget.categoryStats.indexOf(_selectedCategory!) % pieColors.length];
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
+  // Widget para cada item de detalle en el modal
+  Widget _buildDetailItem(String label, String value, IconData icon, Color color) {
+    return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            color.withOpacity(0.1),
-            color.withOpacity(0.2),
+            color.withOpacity(0.08),
+            color.withOpacity(0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: color.withOpacity(0.3),
-          width: 1,
+          color: color.withOpacity(0.2),
+          width: 1.5,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                _selectedCategory!.categoryIcon,
-                style: const TextStyle(fontSize: 24),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                _selectedCategory!.categoryName,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: color,
-                ),
-              ),
-            ],
+          Icon(
+            icon,
+            color: color,
+            size: 28,
           ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildInfoItem(
-                'Monto',
-                FormatUtils.formatMoney(_selectedCategory!.amount),
-                color,
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+              letterSpacing: 0.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+                color: color,
+                letterSpacing: -0.5,
               ),
-              Container(
-                width: 1,
-                height: 30,
-                color: color.withOpacity(0.3),
-              ),
-              _buildInfoItem(
-                'Porcentaje',
-                '${_selectedCategory!.percentage.toStringAsFixed(1)}%',
-                color,
-              ),
-              Container(
-                width: 1,
-                height: 30,
-                color: color.withOpacity(0.3),
-              ),
-              _buildInfoItem(
-                'Transacciones',
-                '${_selectedCategory!.transactionCount}',
-                color,
-              ),
-            ],
+              textAlign: TextAlign.center,
+              maxLines: 1,
+            ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildInfoItem(String label, String value, Color color) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: color.withOpacity(0.7),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: color,
-          ),
-        ),
-      ],
     );
   }
 
@@ -381,38 +327,262 @@ class _PieChartWidgetState extends State<PieChartWidget>
       if (normalizedAngle < 0) normalizedAngle += 2 * math.pi;
       
       double currentAngle = 0;
+      bool foundCategory = false; // ✅ NUEVO: Flag para detectar si encontramos categoría
+      
       for (int i = 0; i < widget.categoryStats.length; i++) {
         final category = widget.categoryStats[i];
         final segmentAngle = (category.percentage / 100) * 2 * math.pi;
         
         if (normalizedAngle >= currentAngle && normalizedAngle <= currentAngle + segmentAngle) {
           _selectCategory(category);
-          // Vibración háptica para feedback
           HapticFeedback.mediumImpact();
+          foundCategory = true;
           break;
         }
         
         currentAngle += segmentAngle;
+      }
+      
+      // ✅ NUEVO: Si tocamos el centro y hay categoría seleccionada, deseleccionar
+      if (!foundCategory && distance < widget.size * 0.3 && _selectedCategory != null) {
+        _selectCategory(null);
+        HapticFeedback.lightImpact();
       }
     }
   }
 
   void _selectCategory(CategoryStats? category) {
     setState(() {
-      _selectedCategory = _selectedCategory == category ? null : category;
+      _selectedCategory = category;
     });
 
     if (_selectedCategory != null) {
       _pulseController.reset();
       _pulseController.repeat(reverse: true);
-      // Vibración háptica para selección
-      HapticFeedback.lightImpact();
+      HapticFeedback.mediumImpact();
+      
+      // Mostrar el modal usando BottomSheet
+      _showCategoryBottomSheet(context);
     } else {
       _pulseController.stop();
       _pulseController.reset();
     }
 
     widget.onCategorySelected?.call(_selectedCategory);
+  }
+
+  void _showCategoryBottomSheet(BuildContext context) {
+    if (_selectedCategory == null) return;
+    
+    final color = pieColors[widget.categoryStats.indexOf(_selectedCategory!) % pieColors.length];
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext sheetContext) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border(
+              top: BorderSide(color: color, width: 4),
+            ),
+          ),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+          ),
+          child: SafeArea(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Indicator bar
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  
+                  // Header
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              color.withOpacity(0.25),
+                              color.withOpacity(0.15),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: color.withOpacity(0.4),
+                            width: 2,
+                          ),
+                        ),
+                        child: Text(
+                          _selectedCategory!.categoryIcon,
+                          style: const TextStyle(fontSize: 36),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _selectedCategory!.categoryName,
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                                color: color,
+                                letterSpacing: -0.5,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Detalles de gasto',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Divider
+                  Container(
+                    height: 2,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.transparent,
+                          color.withOpacity(0.3),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Grid de información - 2x2
+                  _buildDetailItem(
+                    'Monto Total',
+                    FormatUtils.formatMoney(_selectedCategory!.amount),
+                    Icons.attach_money_rounded,
+                    color,
+                  ),
+                  
+                  const SizedBox(height: 12),
+                  
+                  _buildDetailItem(
+                    'Porcentaje del Total',
+                    '${_selectedCategory!.percentage.toStringAsFixed(1)}%',
+                    Icons.pie_chart_rounded,
+                    color,
+                  ),
+                  
+                  const SizedBox(height: 12),
+                  
+                  _buildDetailItem(
+                    'Número de Transacciones',
+                    '${_selectedCategory!.transactionCount}',
+                    Icons.receipt_long_rounded,
+                    color,
+                  ),
+                  
+                  const SizedBox(height: 12),
+                  
+                  _buildDetailItem(
+                    'Promedio por Transacción',
+                    FormatUtils.formatMoney(
+                      _selectedCategory!.amount / _selectedCategory!.transactionCount
+                    ),
+                    Icons.analytics_rounded,
+                    color,
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Botón de cierre
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      setState(() {
+                        _selectedCategory = null;
+                      });
+                      _pulseController.stop();
+                      _pulseController.reset();
+                      widget.onCategorySelected?.call(null);
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [color, color.withOpacity(0.8)],
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: color.withOpacity(0.4),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'Entendido',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    ).whenComplete(() {
+      setState(() {
+        _selectedCategory = null;
+      });
+      _pulseController.stop();
+      _pulseController.reset();
+      widget.onCategorySelected?.call(null);
+    });
   }
 }
 
