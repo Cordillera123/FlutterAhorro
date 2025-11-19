@@ -2,6 +2,14 @@ import 'package:flutter/material.dart';
 import 'transaction.dart';
 import '../utils/format_utils.dart';
 
+// NUEVO: Clase auxiliar para manejar rangos de fechas
+class DateRange {
+  final DateTime start;
+  final DateTime end;
+
+  DateRange({required this.start, required this.end});
+}
+
 enum BudgetPeriod {
   weekly,
   monthly,
@@ -28,6 +36,7 @@ class Budget {
   final double alertThreshold; // Porcentaje para alertas (0.0 a 1.0)
   final DateTime createdAt;
   final DateTime? updatedAt;
+  final DateTime? lastResetDate; // NUEVO: Fecha del último reinicio
 
   Budget({
     this.id,
@@ -42,6 +51,7 @@ class Budget {
     this.alertThreshold = 0.8, // 80% por defecto
     required this.createdAt,
     this.updatedAt,
+    this.lastResetDate, // NUEVO: Inicialmente null
   });
 
   // Getters calculados
@@ -145,6 +155,81 @@ class Budget {
     return 'Activo';
   }
 
+  // NUEVO: Verificar si necesita reiniciarse
+  bool get needsReset {
+    final now = DateTime.now();
+    
+    // Si nunca se ha reiniciado, usar la fecha de creación
+    final lastReset = lastResetDate ?? createdAt;
+    
+    switch (period) {
+      case BudgetPeriod.weekly:
+        // Reiniciar cada lunes (weekday 1)
+        // Si estamos en lunes y el último reinicio no fue hoy
+        if (now.weekday == DateTime.monday) {
+          return !_isSameDay(lastReset, now);
+        }
+        return false;
+        
+      case BudgetPeriod.monthly:
+        // Reiniciar el primer día de cada mes
+        if (now.day == 1) {
+          return !_isSameDay(lastReset, now);
+        }
+        return false;
+        
+      case BudgetPeriod.yearly:
+        // Reiniciar el 1 de enero de cada año
+        if (now.month == 1 && now.day == 1) {
+          return !_isSameDay(lastReset, now);
+        }
+        return false;
+    }
+  }
+
+  // Método auxiliar para comparar fechas (solo día, mes, año)
+  bool _isSameDay(DateTime date1, DateTime date2) {
+    return date1.year == date2.year &&
+           date1.month == date2.month &&
+           date1.day == date2.day;
+  }
+
+  // NUEVO: Calcular las nuevas fechas de inicio y fin después del reinicio
+  DateRange getNextPeriodRange() {
+    final now = DateTime.now();
+    DateTime newStart;
+    DateTime newEnd;
+
+    switch (period) {
+      case BudgetPeriod.weekly:
+        // Nueva semana comienza el lunes actual
+        newStart = _getMondayOfWeek(now);
+        newEnd = newStart.add(const Duration(days: 6)); // Domingo
+        break;
+
+      case BudgetPeriod.monthly:
+        // Nuevo mes comienza el primer día del mes actual
+        newStart = DateTime(now.year, now.month, 1);
+        // Último día del mes
+        newEnd = DateTime(now.year, now.month + 1, 0);
+        break;
+
+      case BudgetPeriod.yearly:
+        // Nuevo año comienza el 1 de enero
+        newStart = DateTime(now.year, 1, 1);
+        newEnd = DateTime(now.year, 12, 31);
+        break;
+    }
+
+    return DateRange(start: newStart, end: newEnd);
+  }
+
+  // Método auxiliar para obtener el lunes de una semana
+  DateTime _getMondayOfWeek(DateTime date) {
+    final daysSinceMonday = date.weekday - DateTime.monday;
+    return DateTime(date.year, date.month, date.day - daysSinceMonday);
+  }
+
   // Calcular status basado en gasto actual
   BudgetStatus getStatus(double spentAmount) {
     final percentage = spentAmount / amount;
@@ -197,6 +282,7 @@ class Budget {
       'alertThreshold': alertThreshold,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
+      'lastResetDate': lastResetDate?.toIso8601String(), // NUEVO
     };
   }
 
@@ -216,6 +302,9 @@ class Budget {
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'])
           : null,
+      lastResetDate: json['lastResetDate'] != null // NUEVO
+          ? DateTime.parse(json['lastResetDate'])
+          : null,
     );
   }
 
@@ -232,6 +321,7 @@ class Budget {
     double? alertThreshold,
     DateTime? createdAt,
     DateTime? updatedAt,
+    DateTime? lastResetDate, // NUEVO
   }) {
     return Budget(
       id: id ?? this.id,
@@ -246,6 +336,7 @@ class Budget {
       alertThreshold: alertThreshold ?? this.alertThreshold,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
+      lastResetDate: lastResetDate ?? this.lastResetDate, // NUEVO
     );
   }
 }

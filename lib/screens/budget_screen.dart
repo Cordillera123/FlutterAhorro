@@ -83,8 +83,18 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
   }
 
   Future<void> _refreshData() async {
-    HapticFeedback.lightImpact();
-    await _loadData();
+    try {
+      HapticFeedback.lightImpact();
+      await _loadData();
+    } catch (e) {
+      print('Error al refrescar datos: $e');
+      // Si hay error, al menos intentar cargar lo básico
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -1106,8 +1116,8 @@ if (budgets.isNotEmpty)
       ),
     );
 
-    if (result == true) {
-      _refreshData();
+    if (result == true && mounted) {
+      await _refreshData();
     }
   }
 
@@ -1115,8 +1125,14 @@ if (budgets.isNotEmpty)
     try {
       await _budgetService.toggleBudget(budget.id!);
 
+      if (!mounted) return;
+
       String statusText = budget.isActive ? 'pausado' : 'activado';
       Color statusColor = budget.isActive ? warningYellow : successGreen;
+
+      await _refreshData();
+
+      if (!mounted) return;
 
       _showMessage(
         'Presupuesto $statusText',
@@ -1124,9 +1140,9 @@ if (budgets.isNotEmpty)
         statusColor,
         budget.isActive ? Icons.pause_circle_rounded : Icons.play_circle_rounded,
       );
-
-      _refreshData();
     } catch (e) {
+      if (!mounted) return;
+      
       _showMessage(
         'Error',
         'No se pudo cambiar el estado del presupuesto. Inténtalo de nuevo.',
@@ -1216,7 +1232,17 @@ if (budgets.isNotEmpty)
                         Navigator.pop(context);
 
                         try {
+                          // Eliminar el presupuesto
                           await _budgetService.deleteBudget(budget.id!);
+
+                          // Verificar que el widget aún está montado antes de continuar
+                          if (!mounted) return;
+
+                          // Refrescar los datos
+                          await _refreshData();
+
+                          // Verificar nuevamente antes de mostrar el mensaje
+                          if (!mounted) return;
 
                           _showMessage(
                             'Presupuesto eliminado',
@@ -1224,9 +1250,10 @@ if (budgets.isNotEmpty)
                             dangerRed,
                             Icons.delete_rounded,
                           );
-
-                          _refreshData();
                         } catch (e) {
+                          // Verificar que el widget está montado antes de mostrar error
+                          if (!mounted) return;
+                          
                           _showMessage(
                             'Error',
                             'No se pudo eliminar el presupuesto. Inténtalo de nuevo.',

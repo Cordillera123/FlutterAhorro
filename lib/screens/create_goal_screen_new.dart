@@ -33,9 +33,10 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
   GoalPriority _selectedPriority = GoalPriority.medium;
   String _selectedEmoji = '🎯';
   DateTime _targetDate = DateTime.now().add(const Duration(days: 365));
+  bool _autoSave = false;
+  AutoSaveFrequency _autoSaveFrequency = AutoSaveFrequency.monthly;
   bool _isLoading = false;
   bool _isEditMode = false;
-  bool _contributionConfirmed = false;
 
   // Colores
   static const Color primaryBlue = Color(0xFF3B82F6);
@@ -76,8 +77,12 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
   }
 
   void _setupListeners() {
-    // Listeners removidos - los campos se bloquean al confirmar
-    // Solo se pueden editar presionando el botón "Editar Montos"
+    // Listener para actualizar contribución sugerida cuando cambia el monto
+    _targetAmountController.addListener(() {
+      if (_contributionController.text.isEmpty) {
+        _updateSuggestedContribution();
+      }
+    });
   }
 
   void _loadGoalData() {
@@ -91,7 +96,8 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
       _selectedPriority = goal.priority;
       _selectedEmoji = goal.emoji;
       _targetDate = goal.targetDate;
-      _contributionConfirmed = true; // En modo edición ya está confirmado
+      _autoSave = goal.autoSave;
+      _autoSaveFrequency = goal.autoSaveFrequency;
     } else {
       _nameController.text = _getDefaultName(_selectedType);
       _descriptionController.text = _getDefaultDescription(_selectedType);
@@ -122,54 +128,11 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
     return value.toStringAsFixed(2);
   }
 
-  String? _getContributionError(double targetAmount, double contribution) {
-    if (targetAmount <= 0) return null;
-    if (contribution <= 0) return 'Ingresa una contribución válida';
-    if (contribution > targetAmount) return 'No puede exceder el monto objetivo';
-    
-    final now = DateTime.now();
-    final totalMonths = ((_targetDate.year - now.year) * 12 + _targetDate.month - now.month).clamp(1, 365);
-    final monthsNeeded = (targetAmount / contribution).ceil();
-    
-    if (monthsNeeded > totalMonths * 3) {
-      return 'Con esa contribución tardarás demasiado tiempo';
-    }
-    
-    return null;
-  }
-  
-  bool get _canConfirmContribution {
-    final targetAmount = _parseNumber(_targetAmountController.text);
-    final contribution = _parseNumber(_contributionController.text);
-    return targetAmount > 0 && 
-           contribution > 0 && 
-           _getContributionError(targetAmount, contribution) == null;
-  }
-
   bool get _canSubmit {
     return _nameController.text.isNotEmpty &&
-        _contributionConfirmed &&
+        _parseNumber(_targetAmountController.text) > 0 &&
+        _parseNumber(_contributionController.text) > 0 &&
         !_isLoading;
-  }
-  
-  void _resetContributionAndSelections() {
-    setState(() {
-      _contributionConfirmed = false;
-      // Resetear a valores por defecto
-      _selectedType = GoalType.purchase;
-      _selectedPriority = GoalPriority.medium;
-      _selectedEmoji = _emojisByType[GoalType.purchase]!.first;
-      _targetDate = DateTime.now().add(const Duration(days: 365));
-    });
-    
-    HapticFeedback.lightImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Puedes editar los montos nuevamente'),
-        backgroundColor: primaryBlue,
-        duration: Duration(seconds: 1),
-      ),
-    );
   }
 
   String _getDefaultName(GoalType type) {
@@ -249,16 +212,16 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
                     _buildBasicInfo(),
                     const SizedBox(height: 16),
                     _buildAmounts(),
-                    if (_contributionConfirmed) ...[
-                      const SizedBox(height: 16),
-                      _buildTypeSelector(),
-                      const SizedBox(height: 16),
-                      _buildPrioritySelector(),
-                      const SizedBox(height: 16),
-                      _buildEmojiSelector(),
-                      const SizedBox(height: 16),
-                      _buildDatePicker(),
-                    ],
+                    const SizedBox(height: 16),
+                    _buildTypeSelector(),
+                    const SizedBox(height: 16),
+                    _buildPrioritySelector(),
+                    const SizedBox(height: 16),
+                    _buildEmojiSelector(),
+                    const SizedBox(height: 16),
+                    _buildDatePicker(),
+                    const SizedBox(height: 16),
+                    _buildAutoSave(),
                     const SizedBox(height: 100),
                   ],
                 ),
@@ -369,7 +332,6 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
           const SizedBox(height: 16),
           TextFormField(
             controller: _targetAmountController,
-            enabled: !_contributionConfirmed,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(
               labelText: 'Monto objetivo',
@@ -377,9 +339,6 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              suffixIcon: _contributionConfirmed 
-                  ? const Icon(Icons.lock, color: successGreen)
-                  : null,
             ),
             validator: (value) {
               if (value == null || value.isEmpty || _parseNumber(value) <= 0) {
@@ -391,116 +350,33 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
           const SizedBox(height: 16),
           TextFormField(
             controller: _contributionController,
-            enabled: targetAmount > 0 && !_contributionConfirmed,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onChanged: (value) {
-              // Validación en tiempo real
-              setState(() {});
-            },
             decoration: InputDecoration(
               labelText: 'Contribución mensual',
               prefixText: '\$ ',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              helperText: _contributionConfirmed
-                  ? 'Montos confirmados y bloqueados'
-                  : (targetAmount > 0 
-                      ? 'Editable - ajusta según tu capacidad'
-                      : 'Primero ingresa el monto objetivo'),
-              errorText: _contributionConfirmed ? null : _getContributionError(targetAmount, contribution),
-              suffixIcon: _contributionConfirmed 
-                  ? const Icon(Icons.lock, color: successGreen)
-                  : null,
+              helperText: 'Editable - ajusta según tu capacidad',
             ),
             validator: (value) {
-              final error = _getContributionError(targetAmount, _parseNumber(value ?? ''));
-              return error;
+              if (value == null || value.isEmpty || _parseNumber(value) <= 0) {
+                return 'Ingresa una contribución válida';
+              }
+              if (_parseNumber(value) < 1000) {
+                return 'Mínimo \$1,000';
+              }
+              if (_parseNumber(value) > targetAmount) {
+                return 'No puede exceder el monto objetivo';
+              }
+              return null;
             },
           ),
           if (targetAmount > 0 && contribution > 0) ...[
             const SizedBox(height: 12),
             _buildContributionInfo(targetAmount, contribution),
-            const SizedBox(height: 16),
-            _buildConfirmButton(),
           ],
         ],
-      ),
-    );
-  }
-  
-  Widget _buildConfirmButton() {
-    final canConfirm = _canConfirmContribution;
-    
-    if (_contributionConfirmed) {
-      // Mostrar botón de editar cuando está confirmado
-      return SizedBox(
-        width: double.infinity,
-        height: 50,
-        child: ElevatedButton.icon(
-          onPressed: _resetContributionAndSelections,
-          icon: const Icon(
-            Icons.edit,
-            color: Colors.white,
-          ),
-          label: const Text(
-            'Editar Montos',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: warningYellow,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: 4,
-          ),
-        ),
-      );
-    }
-    
-    // Mostrar botón de confirmar cuando no está confirmado
-    return SizedBox(
-      width: double.infinity,
-      height: 50,
-      child: ElevatedButton.icon(
-        onPressed: canConfirm
-            ? () {
-                setState(() {
-                  _contributionConfirmed = true;
-                });
-                HapticFeedback.mediumImpact();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('✓ Contribución confirmada - Continúa configurando tu meta'),
-                    backgroundColor: successGreen,
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              }
-            : null,
-        icon: const Icon(
-          Icons.verified,
-          color: Colors.white,
-        ),
-        label: const Text(
-          'Confirmar Contribución Mensual',
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: canConfirm ? primaryBlue : Colors.grey,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: canConfirm ? 4 : 0,
-        ),
       ),
     );
   }
@@ -793,6 +669,71 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
     );
   }
 
+  Widget _buildAutoSave() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Ahorro Automático',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: textDark,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SwitchListTile(
+            value: _autoSave,
+            onChanged: (value) {
+              setState(() {
+                _autoSave = value;
+              });
+            },
+            title: const Text('Activar ahorro automático'),
+            subtitle: const Text('Contribuciones automáticas periódicas'),
+          ),
+          if (_autoSave) ...[
+            const SizedBox(height: 16),
+            ...AutoSaveFrequency.values.map((freq) {
+              final isSelected = _autoSaveFrequency == freq;
+              String label = '';
+              switch (freq) {
+                case AutoSaveFrequency.daily:
+                  label = 'Diario';
+                  break;
+                case AutoSaveFrequency.weekly:
+                  label = 'Semanal';
+                  break;
+                case AutoSaveFrequency.monthly:
+                  label = 'Mensual';
+                  break;
+              }
+              
+              return RadioListTile<AutoSaveFrequency>(
+                value: freq,
+                groupValue: _autoSaveFrequency,
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _autoSaveFrequency = value;
+                    });
+                  }
+                },
+                title: Text(label),
+              );
+            }).toList(),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildFAB() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -842,8 +783,8 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
         emoji: _selectedEmoji,
         monthlyContribution: _parseNumber(_contributionController.text),
         suggestedContribution: _parseNumber(_contributionController.text),
-        autoSave: false,
-        autoSaveFrequency: AutoSaveFrequency.monthly,
+        autoSave: _autoSave,
+        autoSaveFrequency: _autoSaveFrequency,
         createdAt: _isEditMode ? widget.goalToEdit!.createdAt : DateTime.now(),
       );
 

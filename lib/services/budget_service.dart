@@ -39,6 +39,9 @@ class BudgetService {
 
         // Ordenar por fecha de creación (más recientes primero)
         _budgets.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        
+        // NUEVO: Procesar reinicios automáticos después de cargar
+        await processAutomaticResets();
       } else {
         print('=== NO SE ENCONTRÓ JSON DE PRESUPUESTOS ===');
         _budgets = [];
@@ -47,6 +50,55 @@ class BudgetService {
       print('Error loading budgets: $e');
       _budgets = [];
     }
+  }
+
+  // NUEVO: Procesar reinicios automáticos de presupuestos
+  Future<void> processAutomaticResets() async {
+    bool hasChanges = false;
+    
+    print('=== PROCESANDO REINICIOS AUTOMÁTICOS ===');
+    
+    for (int i = 0; i < _budgets.length; i++) {
+      final budget = _budgets[i];
+      
+      // Solo procesar presupuestos activos
+      if (!budget.isActive) continue;
+      
+      if (budget.needsReset) {
+        print('🔄 Reiniciando presupuesto: ${budget.name} (${budget.periodName})');
+        
+        // Obtener el nuevo rango de fechas
+        final newRange = budget.getNextPeriodRange();
+        
+        // Actualizar el presupuesto con las nuevas fechas y marcar el reinicio
+        _budgets[i] = budget.copyWith(
+          startDate: newRange.start,
+          endDate: newRange.end,
+          lastResetDate: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        
+        hasChanges = true;
+        
+        print('✅ Reiniciado: ${budget.name}');
+        print('   Nuevo período: ${_formatDate(newRange.start)} - ${_formatDate(newRange.end)}');
+      }
+    }
+    
+    // Solo guardar si hubo cambios
+    if (hasChanges) {
+      await _saveBudgets();
+      print('💾 Cambios guardados: $hasChanges presupuestos reiniciados');
+    } else {
+      print('✓ No hay presupuestos que necesiten reiniciarse');
+    }
+    
+    print('========================================');
+  }
+
+  // Método auxiliar para formatear fechas en logs
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
   }
 
   // Guardar presupuestos en almacenamiento local
@@ -59,7 +111,12 @@ class BudgetService {
       // AGREGAR DEBUGGING DESPUÉS DE GUARDAR:
       print('=== GUARDANDO EN SHAREDPREFERENCES ===');
       print('Guardando ${_budgets.length} presupuestos');
-      print('JSON generado: ${budgetsJson.substring(0, 100)}...');
+      // Mostrar solo primeros 100 caracteres si el JSON es lo suficientemente largo
+      if (budgetsJson.length > 100) {
+        print('JSON generado: ${budgetsJson.substring(0, 100)}...');
+      } else {
+        print('JSON generado: $budgetsJson');
+      }
       print('=====================================');
     } catch (e) {
       print('Error saving budgets: $e');
