@@ -76,8 +76,12 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
   }
 
   void _setupListeners() {
-    // Listeners removidos - los campos se bloquean al confirmar
-    // Solo se pueden editar presionando el botón "Editar Montos"
+    // Listener para calcular contribución sugerida cuando cambia el monto objetivo
+    _targetAmountController.addListener(() {
+      if (!_contributionConfirmed) {
+        _updateSuggestedContribution();
+      }
+    });
   }
 
   void _loadGoalData() {
