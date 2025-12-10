@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/financial_goal.dart';
+import '../models/transaction.dart';
+import 'transaction_service.dart';
 
 class GoalService {
   static const String _goalsKey = 'financial_goals';
@@ -8,6 +10,7 @@ class GoalService {
 
   List<FinancialGoal> _goals = [];
   List<GoalContribution> _contributions = [];
+  final TransactionService _transactionService = TransactionService();
 
   List<FinancialGoal> get goals => _goals;
   List<FinancialGoal> get activeGoals => _goals.where((g) => g.status == GoalStatus.active).toList();
@@ -221,6 +224,18 @@ class GoalService {
     _contributions.add(contribution);
     await _saveContributions();
 
+    // NUEVO: Crear transacción de gasto (categoría: ahorros)
+    final transaction = Transaction(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      amount: amount,
+      type: TransactionType.expense,
+      description: note ?? 'Aporte a ${goal.name}',
+      date: DateTime.now(),
+      expenseCategory: ExpenseCategory.savings,
+      incomeCategory: null,
+    );
+    await _transactionService.addTransaction(transaction);
+
     // Actualizar el monto actual de la meta
     final updatedAmount = goal.currentAmount + amount;
     final updatedGoal = goal.copyWith(
@@ -267,6 +282,18 @@ class GoalService {
 
     _contributions.add(withdrawal);
     await _saveContributions();
+
+    // NUEVO: Crear transacción de ingreso cuando se retira de una meta
+    final transaction = Transaction(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      amount: amount,
+      type: TransactionType.income,
+      description: note ?? 'Retiro de ${goal.name}',
+      date: DateTime.now(),
+      expenseCategory: null,
+      incomeCategory: IncomeCategory.other,
+    );
+    await _transactionService.addTransaction(transaction);
 
     // Actualizar el monto actual de la meta
     final updatedGoal = goal.copyWith(

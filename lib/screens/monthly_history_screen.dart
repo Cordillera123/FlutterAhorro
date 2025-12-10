@@ -222,7 +222,7 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
                                         letterSpacing: -0.5,
                                       ),
                                     ),
-                                  ),
+                                   ),
                                 );
                               },
                             ),

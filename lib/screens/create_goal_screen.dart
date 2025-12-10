@@ -82,6 +82,13 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
         _updateSuggestedContribution();
       }
     });
+    
+    // Listener para detectar cuando el usuario empieza a editar la contribución
+    _contributionController.addListener(() {
+      if (!_contributionConfirmed) {
+        setState(() {}); // Actualizar UI para mostrar validaciones
+      }
+    });
   }
 
   void _loadGoalData() {
@@ -104,17 +111,23 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
 
   void _updateSuggestedContribution() {
     final targetAmount = _parseNumber(_targetAmountController.text);
-    if (targetAmount <= 0) return;
+    if (targetAmount <= 0) {
+      if (_contributionController.text.isNotEmpty) {
+        setState(() {
+          _contributionController.text = '';
+        });
+      }
+      return;
+    }
 
     final now = DateTime.now();
     final months = ((_targetDate.year - now.year) * 12 + _targetDate.month - now.month).clamp(1, 365);
     final suggested = targetAmount / months;
 
-    if (_contributionController.text.isEmpty) {
-      setState(() {
-        _contributionController.text = _formatNumber(suggested);
-      });
-    }
+    // Solo actualizar si el campo está vacío o si el usuario no lo ha editado manualmente
+    setState(() {
+      _contributionController.text = _formatNumber(suggested);
+    });
   }
 
   double _parseNumber(String text) {
@@ -127,16 +140,17 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
   }
 
   String? _getContributionError(double targetAmount, double contribution) {
-    if (targetAmount <= 0) return null;
-    if (contribution <= 0) return 'Ingresa una contribución válida';
-    if (contribution > targetAmount) return 'No puede exceder el monto objetivo';
+    if (targetAmount <= 0) return 'Primero ingresa el monto objetivo';
+    if (contribution <= 0) return 'Ingresa una contribución mayor a cero';
+    if (contribution > targetAmount) return 'La contribución no puede exceder el monto objetivo';
     
     final now = DateTime.now();
     final totalMonths = ((_targetDate.year - now.year) * 12 + _targetDate.month - now.month).clamp(1, 365);
     final monthsNeeded = (targetAmount / contribution).ceil();
     
+    // Si se necesitan más del triple de meses de lo planeado
     if (monthsNeeded > totalMonths * 3) {
-      return 'Con esa contribución tardarás demasiado tiempo';
+      return 'Con \$${_formatNumber(contribution)}/mes tardarás ${monthsNeeded} meses (muy largo)';
     }
     
     return null;
@@ -358,73 +372,120 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _contributionConfirmed ? successGreen.withOpacity(0.3) : borderLight,
+          width: _contributionConfirmed ? 2 : 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Montos',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: textDark,
-            ),
+          Row(
+            children: [
+              const Text(
+                'Montos',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: textDark,
+                ),
+              ),
+              const Spacer(),
+              if (_contributionConfirmed)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: successGreen.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.check_circle, color: successGreen, size: 16),
+                      SizedBox(width: 4),
+                      Text(
+                        'Confirmado',
+                        style: TextStyle(
+                          color: successGreen,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 16),
+          
+          // PASO 1: Monto Objetivo
           TextFormField(
             controller: _targetAmountController,
             enabled: !_contributionConfirmed,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(
-              labelText: 'Monto objetivo',
+              labelText: '1. Monto objetivo',
               prefixText: '\$ ',
+              hintText: '0.00',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
+              filled: true,
+              fillColor: _contributionConfirmed ? backgroundCard : Colors.white,
               suffixIcon: _contributionConfirmed 
-                  ? const Icon(Icons.lock, color: successGreen)
-                  : null,
+                  ? const Icon(Icons.lock, color: successGreen, size: 20)
+                  : const Icon(Icons.flag_outlined, color: primaryBlue, size: 20),
             ),
             validator: (value) {
-              if (value == null || value.isEmpty || _parseNumber(value) <= 0) {
-                return 'Ingresa un monto válido';
+              final amount = _parseNumber(value ?? '');
+              if (amount <= 0) {
+                return 'Ingresa un monto mayor a cero';
               }
               return null;
             },
           ),
           const SizedBox(height: 16),
+          
+          // PASO 2: Contribución Mensual (con cálculo automático)
           TextFormField(
             controller: _contributionController,
             enabled: targetAmount > 0 && !_contributionConfirmed,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onChanged: (value) {
-              // Validación en tiempo real
-              setState(() {});
-            },
             decoration: InputDecoration(
-              labelText: 'Contribución mensual',
+              labelText: '2. Contribución mensual',
               prefixText: '\$ ',
+              hintText: targetAmount > 0 ? 'Editable' : 'Calculada automáticamente',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
+              filled: true,
+              fillColor: _contributionConfirmed 
+                  ? backgroundCard 
+                  : (targetAmount > 0 ? Colors.white : backgroundCard),
               helperText: _contributionConfirmed
-                  ? 'Montos confirmados y bloqueados'
+                  ? null
                   : (targetAmount > 0 
-                      ? 'Editable - ajusta según tu capacidad'
-                      : 'Primero ingresa el monto objetivo'),
+                      ? '✏️ Sugerencia: \$${_formatNumber(targetAmount / ((_targetDate.year - DateTime.now().year) * 12 + _targetDate.month - DateTime.now().month).clamp(1, 365))}/mes'
+                      : null),
+              helperMaxLines: 2,
               errorText: _contributionConfirmed ? null : _getContributionError(targetAmount, contribution),
+              errorMaxLines: 2,
               suffixIcon: _contributionConfirmed 
-                  ? const Icon(Icons.lock, color: successGreen)
-                  : null,
+                  ? const Icon(Icons.lock, color: successGreen, size: 20)
+                  : (targetAmount > 0 
+                      ? const Icon(Icons.edit_outlined, color: primaryBlue, size: 20)
+                      : const Icon(Icons.calculate_outlined, color: textMedium, size: 20)),
             ),
-            validator: (value) {
-              final error = _getContributionError(targetAmount, _parseNumber(value ?? ''));
-              return error;
-            },
           ),
-          if (targetAmount > 0 && contribution > 0) ...[
-            const SizedBox(height: 12),
+          
+          // Información del progreso estimado
+          if (targetAmount > 0 && contribution > 0 && !_contributionConfirmed) ...[
+            const SizedBox(height: 16),
             _buildContributionInfo(targetAmount, contribution),
+          ],
+          
+          // Botón de confirmar/editar
+          if (targetAmount > 0) ...[
             const SizedBox(height: 16),
             _buildConfirmButton(),
           ],
@@ -440,27 +501,23 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
       // Mostrar botón de editar cuando está confirmado
       return SizedBox(
         width: double.infinity,
-        height: 50,
-        child: ElevatedButton.icon(
+        height: 52,
+        child: OutlinedButton.icon(
           onPressed: _resetContributionAndSelections,
-          icon: const Icon(
-            Icons.edit,
-            color: Colors.white,
-          ),
+          icon: const Icon(Icons.edit_outlined),
           label: const Text(
             'Editar Montos',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
             ),
           ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: warningYellow,
+          style: OutlinedButton.styleFrom(
+            foregroundColor: warningYellow,
+            side: const BorderSide(color: warningYellow, width: 2),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            elevation: 4,
           ),
         ),
       );
@@ -469,7 +526,7 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
     // Mostrar botón de confirmar cuando no está confirmado
     return SizedBox(
       width: double.infinity,
-      height: 50,
+      height: 52,
       child: ElevatedButton.icon(
         onPressed: canConfirm
             ? () {
@@ -479,19 +536,31 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
                 HapticFeedback.mediumImpact();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('✓ Contribución confirmada - Continúa configurando tu meta'),
+                    content: Row(
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.white),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Contribución confirmada\nAhora configura el tipo, prioridad y fecha',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
                     backgroundColor: successGreen,
-                    duration: Duration(seconds: 2),
+                    duration: Duration(seconds: 3),
+                    behavior: SnackBarBehavior.floating,
                   ),
                 );
               }
             : null,
-        icon: const Icon(
-          Icons.verified,
+        icon: Icon(
+          canConfirm ? Icons.arrow_forward : Icons.block,
           color: Colors.white,
         ),
         label: const Text(
-          'Confirmar Contribución Mensual',
+          'Confirmar y Continuar',
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.bold,
@@ -499,7 +568,7 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
           ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: canConfirm ? primaryBlue : Colors.grey,
+          backgroundColor: canConfirm ? primaryBlue : Colors.grey.shade400,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -516,32 +585,58 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
     
     Color statusColor;
     String statusText;
+    IconData statusIcon;
     
     if (monthsNeeded > totalMonths + 2) {
       statusColor = dangerRed;
-      statusText = '❌ Tardarás $monthsNeeded meses (+${monthsNeeded - totalMonths} extra)';
+      statusText = 'Tardarás $monthsNeeded meses (${monthsNeeded - totalMonths} meses extra)';
+      statusIcon = Icons.warning_amber_rounded;
     } else if (monthsNeeded > totalMonths) {
       statusColor = warningYellow;
-      statusText = '⚠️ Tardarás $monthsNeeded meses (+${monthsNeeded - totalMonths} extra)';
+      statusText = 'Tardarás $monthsNeeded meses (+${monthsNeeded - totalMonths} extra)';
+      statusIcon = Icons.info_outline_rounded;
     } else {
       statusColor = successGreen;
-      statusText = '✓ Alcanzarás tu meta en $monthsNeeded meses';
+      statusText = '¡Perfecto! Alcanzarás tu meta en $monthsNeeded meses';
+      statusIcon = Icons.check_circle_outline_rounded;
     }
     
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: statusColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: statusColor.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: statusColor.withOpacity(0.3), width: 1.5),
       ),
-      child: Text(
-        statusText,
-        style: TextStyle(
-          color: statusColor,
-          fontWeight: FontWeight.w600,
-          fontSize: 13,
-        ),
+      child: Row(
+        children: [
+          Icon(statusIcon, color: statusColor, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  statusText,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Total a ahorrar: ${FormatUtils.formatMoney(targetAmount)}',
+                  style: TextStyle(
+                    color: statusColor.withOpacity(0.8),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -738,6 +833,9 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
   }
 
   Widget _buildDatePicker() {
+    final now = DateTime.now();
+    final monthsUntilTarget = ((_targetDate.year - now.year) * 12 + _targetDate.month - now.month).clamp(1, 365);
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -755,39 +853,86 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
               color: textDark,
             ),
           ),
+          const SizedBox(height: 8),
+          Text(
+            'Define cuándo quieres alcanzar tu meta',
+            style: TextStyle(
+              fontSize: 13,
+              color: textMedium,
+            ),
+          ),
           const SizedBox(height: 16),
           InkWell(
             onTap: () async {
               final picked = await showDatePicker(
                 context: context,
                 initialDate: _targetDate,
-                firstDate: DateTime.now(),
+                firstDate: DateTime.now().add(const Duration(days: 1)),
                 lastDate: DateTime.now().add(const Duration(days: 3650)),
+                builder: (context, child) {
+                  return Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: const ColorScheme.light(
+                        primary: primaryBlue,
+                      ),
+                    ),
+                    child: child!,
+                  );
+                },
               );
-              if (picked != null) {
+              if (picked != null && picked != _targetDate) {
                 setState(() {
                   _targetDate = picked;
-                  _updateSuggestedContribution();
+                  // Recalcular contribución sugerida con la nueva fecha
+                  if (!_contributionConfirmed) {
+                    _updateSuggestedContribution();
+                  }
                 });
               }
             },
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                border: Border.all(color: borderLight),
+                color: backgroundCard,
+                border: Border.all(color: primaryBlue.withOpacity(0.3), width: 1.5),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.calendar_today, color: primaryBlue),
-                  const SizedBox(width: 12),
-                  Text(
-                    FormatUtils.formatDateFull(_targetDate),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: primaryBlue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.calendar_today, color: primaryBlue, size: 24),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          FormatUtils.formatDateFull(_targetDate),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: textDark,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'En $monthsUntilTarget ${monthsUntilTarget == 1 ? 'mes' : 'meses'}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: textMedium,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                  const Icon(Icons.arrow_forward_ios, color: primaryBlue, size: 18),
                 ],
               ),
             ),

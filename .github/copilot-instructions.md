@@ -140,8 +140,11 @@ flutter build apk
 # Build for iOS
 flutter build ios
 
-# Generate JSON serialization code
+# Generate JSON serialization code (when modifying @JsonSerializable models)
 flutter pub run build_runner build
+
+# Watch mode for continuous code generation
+flutter pub run build_runner watch --delete-conflicting-outputs
 ```
 
 ### Adding New Transaction Categories
@@ -181,6 +184,11 @@ void main() async {
 ```
 Run: `dart debug_budget_test.dart`
 
+**Available Debug Scripts**:
+- `debug_budget_test.dart` - Budget creation and validation
+- `debug_budget_reset_test.dart` - Auto-reset functionality
+- `debug_budget.dart` - General budget operations
+
 ### App Initialization Pattern
 Entry point in `lib/main.dart`:
 ```dart
@@ -211,10 +219,16 @@ Main navigation uses bottom nav bar with 5 tabs (see `main_navigation_screen.dar
 1. Home (HomeScreen) - Overview with recurring expense processing
 2. Budgets (BudgetsScreen) - Budget management
 3. Goals (GoalsScreen) - Savings goals
-4. Recurring (RecurringExpensesScreen) - Automatic expenses
-5. History (HistoryScreen) - Transaction history
-
+4. History (HistoryScreen) - Transaction history
+5. Recurring (RecurringExpensesScreen) - Automatic expenses
+6
 **PageView Pattern**: Uses PageController for swipe navigation between tabs with animation sync.
+
+### UI Entry Points
+- **Main Screens**: All screens accessible via `MainNavigationScreen` with PageView
+- **Modals**: Add/Edit screens use `showModalBottomSheet` or `Navigator.push`
+- **Success Screens**: Dedicated success screens (`budget_success_screen.dart`, `goal_success_screen.dart`, `transaction_success_screen.dart`) shown after create operations
+- **Splash Screen**: Initial screen loads in `main.dart`, transitions to `MainNavigationScreen`
 
 ### Color System
 Define color constants at top of each screen:
@@ -224,6 +238,11 @@ static const Color successGreen = Color(0xFF059669);
 static const Color warningYellow = Color(0xFFF59E0B);
 static const Color dangerRed = Color(0xFFDC2626);
 ```
+
+### Widget Components
+Reusable widgets in `lib/widgets/`:
+- **AppLogo**: Animated logo used in headers (`AppLogo(size: 80)`)
+- Custom widgets follow same animation/color patterns as screens
 
 ### Screen Widget Structure
 Large screens follow this `_build*()` decomposition:
