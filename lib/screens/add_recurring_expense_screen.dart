@@ -24,7 +24,8 @@ class AddRecurringExpenseScreen extends StatefulWidget {
   });
 
   @override
-  State<AddRecurringExpenseScreen> createState() => _AddRecurringExpenseScreenState();
+  State<AddRecurringExpenseScreen> createState() =>
+      _AddRecurringExpenseScreenState();
 }
 
 class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
@@ -33,7 +34,8 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
   final _descriptionController = TextEditingController();
   final _amountController = TextEditingController();
   final _customDaysController = TextEditingController();
-  final RecurringExpenseService _recurringExpenseService = RecurringExpenseService();
+  final RecurringExpenseService _recurringExpenseService =
+      RecurringExpenseService();
 
   ExpenseCategory _selectedCategory = ExpenseCategory.transport;
   RecurrenceFrequency _selectedFrequency = RecurrenceFrequency.daily;
@@ -116,7 +118,9 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
         _nameController.text = widget.prefilledName!;
       }
       if (widget.prefilledAmount != null) {
-        _amountController.text = FormatUtils.formatMoney(widget.prefilledAmount!);
+        _amountController.text = FormatUtils.formatMoney(
+          widget.prefilledAmount!,
+        );
       }
       if (widget.prefilledFrequency != null) {
         _selectedFrequency = widget.prefilledFrequency!;
@@ -196,7 +200,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
               Text(
                 'Información Básica',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: textDark,
                 ),
@@ -228,7 +232,10 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
             decoration: const InputDecoration(
               labelText: 'Descripción',
               hintText: 'Ej: Bus ida y vuelta al trabajo',
-              prefixIcon: Icon(Icons.description_outlined, color: primaryPurple),
+              prefixIcon: Icon(
+                Icons.description_outlined,
+                color: primaryPurple,
+              ),
             ),
             maxLines: 2,
             validator: (value) {
@@ -240,42 +247,42 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
           ),
           const SizedBox(height: 16),
 
-    // Monto
-    TextFormField(
-    controller: _amountController,
-    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-    inputFormatters: [
-    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
-    LengthLimitingTextInputFormatter(10),
-    _RecurringAmountInputFormatter(),
-    ],
-    decoration: const InputDecoration(
-    labelText: 'Monto',
-    hintText: '\$0.00',
-    prefixIcon: Icon(Icons.attach_money, color: primaryPurple),
-    ),
-    style: const TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: textDark,
-    ),
-    validator: (value) {
-    if (value == null || value.isEmpty) {
-    return 'Por favor ingresa un monto';
-    }
-    final amount = double.tryParse(value);
-    if (amount == null || amount <= 0) {
-    return 'El monto debe ser mayor a \$0.00';
-    }
-    if (amount > 999999.99) {
-    return 'El monto máximo es \$999,999.99';
-    }
-    if (amount < 0.01) {
-    return 'El monto mínimo es \$0.01';
-    }
-    return null;
-    },
-    ),
+          // Monto
+          TextFormField(
+            controller: _amountController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+              LengthLimitingTextInputFormatter(10),
+              _RecurringAmountInputFormatter(),
+            ],
+            decoration: const InputDecoration(
+              labelText: 'Monto',
+              hintText: '\$0.00',
+              prefixIcon: Icon(Icons.attach_money, color: primaryPurple),
+            ),
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: textDark,
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Por favor ingresa un monto';
+              }
+              final amount = double.tryParse(value);
+              if (amount == null || amount <= 0) {
+                return 'El monto debe ser mayor a \$0.00';
+              }
+              if (amount > 999999.99) {
+                return 'El monto máximo es \$999,999.99';
+              }
+              if (amount < 0.01) {
+                return 'El monto mínimo es \$0.01';
+              }
+              return null;
+            },
+          ),
         ],
       ),
     );
@@ -306,7 +313,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
               Text(
                 'Categoría',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: textDark,
                 ),
@@ -324,18 +331,38 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
     // ACTUALIZADO: Categorías filtradas para gastos recurrentes lógicos
     final categories = [
       // CATEGORÍAS PERFECTAS PARA GASTOS RECURRENTES
-      {'category': ExpenseCategory.transport, 'name': 'Transporte', 'icon': '🚗'},
+      {
+        'category': ExpenseCategory.transport,
+        'name': 'Transporte',
+        'icon': '🚗',
+      },
       {'category': ExpenseCategory.food, 'name': 'Alimentación', 'icon': '🍕'},
-      {'category': ExpenseCategory.utilities, 'name': 'Servicios Básicos', 'icon': '💡'},
+      {
+        'category': ExpenseCategory.utilities,
+        'name': 'Servicios Básicos',
+        'icon': '💡',
+      },
       {'category': ExpenseCategory.health, 'name': 'Salud', 'icon': '🏥'},
-      {'category': ExpenseCategory.education, 'name': 'Educación', 'icon': '📚'},
+      {
+        'category': ExpenseCategory.education,
+        'name': 'Educación',
+        'icon': '📚',
+      },
       {'category': ExpenseCategory.home, 'name': 'Hogar', 'icon': '🏠'},
-      
+
       // CATEGORÍAS CONDICIONALES (pueden ser recurrentes)
-      {'category': ExpenseCategory.entertainment, 'name': 'Entretenimiento', 'icon': '🎬'},
-      {'category': ExpenseCategory.technology, 'name': 'Tecnología', 'icon': '📱'},
+      {
+        'category': ExpenseCategory.entertainment,
+        'name': 'Entretenimiento',
+        'icon': '🎬',
+      },
+      {
+        'category': ExpenseCategory.technology,
+        'name': 'Tecnología',
+        'icon': '📱',
+      },
       {'category': ExpenseCategory.savings, 'name': 'Ahorros', 'icon': '💰'},
-      
+
       // CATEGORÍA GENERAL
       {'category': ExpenseCategory.other, 'name': 'Otros', 'icon': '📦'},
     ];
@@ -347,7 +374,8 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 2.0, // AJUSTADO: Reducido para mejor visualización con más categorías
+        childAspectRatio:
+            2.0, // AJUSTADO: Reducido para mejor visualización con más categorías
       ),
       itemCount: categories.length,
       itemBuilder: (context, index) {
@@ -365,9 +393,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
                   : backgroundCard,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isSelected
-                    ? primaryPurple
-                    : borderLight,
+                color: isSelected ? primaryPurple : borderLight,
                 width: isSelected ? 2 : 1,
               ),
             ),
@@ -423,7 +449,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
               Text(
                 'Frecuencia',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: textDark,
                 ),
@@ -442,9 +468,21 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
   Widget _buildFrequencySelector() {
     final frequencies = [
       {'frequency': RecurrenceFrequency.daily, 'name': 'Diario', 'icon': '📅'},
-      {'frequency': RecurrenceFrequency.weekly, 'name': 'Semanal', 'icon': '📆'},
-      {'frequency': RecurrenceFrequency.monthly, 'name': 'Mensual', 'icon': '🗓️'},
-      {'frequency': RecurrenceFrequency.custom, 'name': 'Personalizado', 'icon': '⚙️'},
+      {
+        'frequency': RecurrenceFrequency.weekly,
+        'name': 'Semanal',
+        'icon': '📆',
+      },
+      {
+        'frequency': RecurrenceFrequency.monthly,
+        'name': 'Mensual',
+        'icon': '🗓️',
+      },
+      {
+        'frequency': RecurrenceFrequency.custom,
+        'name': 'Personalizado',
+        'icon': '⚙️',
+      },
     ];
 
     return GridView.builder(
@@ -467,9 +505,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
           }),
           child: Container(
             decoration: BoxDecoration(
-              color: isSelected
-                  ? infoBlue.withOpacity(0.1)
-                  : backgroundCard,
+              color: isSelected ? infoBlue.withOpacity(0.1) : backgroundCard,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isSelected ? infoBlue : borderLight,
@@ -529,10 +565,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
       children: [
         const Text(
           'Selecciona los días de la semana:',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: textDark,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w600, color: textDark),
         ),
         const SizedBox(height: 12),
         Row(
@@ -610,10 +643,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
       children: [
         const Text(
           'Día del mes:',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: textDark,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w600, color: textDark),
         ),
         const SizedBox(height: 12),
         Container(
@@ -628,10 +658,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
             underline: const SizedBox.shrink(),
             items: List.generate(31, (index) {
               final day = index + 1;
-              return DropdownMenuItem(
-                value: day,
-                child: Text('Día $day'),
-              );
+              return DropdownMenuItem(value: day, child: Text('Día $day'));
             }),
             onChanged: (value) {
               if (value != null) {
@@ -652,10 +679,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
       children: [
         const Text(
           'Repetir cada cuántos días:',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: textDark,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w600, color: textDark),
         ),
         const SizedBox(height: 12),
         TextFormField(
@@ -708,7 +732,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
               Text(
                 'Período de Vigencia',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: textDark,
                 ),
@@ -736,10 +760,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
                       children: [
                         const Text(
                           'Fecha de inicio',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: textMedium,
-                          ),
+                          style: TextStyle(fontSize: 12, color: textMedium),
                         ),
                         Text(
                           FormatUtils.formatDateFull(_startDate),
@@ -776,10 +797,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
                       children: [
                         const Text(
                           'Fecha de fin (opcional)',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: textMedium,
-                          ),
+                          style: TextStyle(fontSize: 12, color: textMedium),
                         ),
                         Text(
                           _endDate != null
@@ -839,7 +857,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
               Text(
                 'Vista Previa',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: textDark,
                 ),
@@ -854,9 +872,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
             decoration: BoxDecoration(
               color: primaryPurple.withOpacity(0.05),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: primaryPurple.withOpacity(0.2),
-              ),
+              border: Border.all(color: primaryPurple.withOpacity(0.2)),
             ),
             child: Row(
               children: [
@@ -885,10 +901,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
                       ),
                       Text(
                         _descriptionController.text,
-                        style: const TextStyle(
-                          color: textMedium,
-                          fontSize: 13,
-                        ),
+                        style: const TextStyle(color: textMedium, fontSize: 13),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -913,18 +926,17 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
               ],
             ),
           ),
-          
+
           // Mostrar desglose de cálculos para gastos semanales
-          if (_selectedFrequency == RecurrenceFrequency.weekly && _selectedWeekDays.isNotEmpty)
+          if (_selectedFrequency == RecurrenceFrequency.weekly &&
+              _selectedWeekDays.isNotEmpty)
             Container(
               margin: const EdgeInsets.only(top: 12),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: infoBlue.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: infoBlue.withOpacity(0.2),
-                ),
+                border: Border.all(color: infoBlue.withOpacity(0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -940,24 +952,15 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
                   const SizedBox(height: 4),
                   Text(
                     '• Por día: ${FormatUtils.formatMoney(amount / _selectedWeekDays.length)}',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: textMedium,
-                    ),
+                    style: const TextStyle(fontSize: 11, color: textMedium),
                   ),
                   Text(
                     '• Por semana: ${FormatUtils.formatMoney(amount)}',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: textMedium,
-                    ),
+                    style: const TextStyle(fontSize: 11, color: textMedium),
                   ),
                   Text(
                     '• Estimado mensual: ${FormatUtils.formatMoney(amount * 4)}',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: textMedium,
-                    ),
+                    style: const TextStyle(fontSize: 11, color: textMedium),
                   ),
                 ],
               ),
@@ -981,21 +984,23 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
         ),
         child: _isLoading
             ? const SizedBox(
-          height: 20,
-          width: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-          ),
-        )
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
             : Text(
-          _isEditing ? 'Actualizar Gasto Recurrente' : 'Crear Gasto Recurrente',
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
+                _isEditing
+                    ? 'Actualizar Gasto Recurrente'
+                    : 'Crear Gasto Recurrente',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
       ),
     );
   }
@@ -1036,7 +1041,9 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
         return 'Todos los días';
       case RecurrenceFrequency.weekly:
         if (_selectedWeekDays.isNotEmpty) {
-          final dayNames = _selectedWeekDays.map((day) => _getWeekDayName(day)).join(', ');
+          final dayNames = _selectedWeekDays
+              .map((day) => _getWeekDayName(day))
+              .join(', ');
           return 'Cada $dayNames';
         }
         return 'Semanal';
@@ -1050,13 +1057,20 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
 
   String _getWeekDayName(WeekDay day) {
     switch (day) {
-      case WeekDay.monday: return 'Lun';
-      case WeekDay.tuesday: return 'Mar';
-      case WeekDay.wednesday: return 'Mié';
-      case WeekDay.thursday: return 'Jue';
-      case WeekDay.friday: return 'Vie';
-      case WeekDay.saturday: return 'Sáb';
-      case WeekDay.sunday: return 'Dom';
+      case WeekDay.monday:
+        return 'Lun';
+      case WeekDay.tuesday:
+        return 'Mar';
+      case WeekDay.wednesday:
+        return 'Mié';
+      case WeekDay.thursday:
+        return 'Jue';
+      case WeekDay.friday:
+        return 'Vie';
+      case WeekDay.saturday:
+        return 'Sáb';
+      case WeekDay.sunday:
+        return 'Dom';
     }
   }
 
@@ -1069,9 +1083,9 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: primaryPurple,
-            ),
+            colorScheme: Theme.of(
+              context,
+            ).colorScheme.copyWith(primary: primaryPurple),
           ),
           child: child!,
         );
@@ -1098,9 +1112,9 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: primaryPurple,
-            ),
+            colorScheme: Theme.of(
+              context,
+            ).colorScheme.copyWith(primary: primaryPurple),
           ),
           child: child!,
         );
@@ -1118,7 +1132,8 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     // Validaciones específicas
-    if (_selectedFrequency == RecurrenceFrequency.weekly && _selectedWeekDays.isEmpty) {
+    if (_selectedFrequency == RecurrenceFrequency.weekly &&
+        _selectedWeekDays.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Selecciona al menos un día de la semana'),
@@ -1136,7 +1151,9 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
       final amount = FormatUtils.parseAmount(_amountController.text);
 
       final expense = RecurringExpense(
-        id: _isEditing ? widget.expenseToEdit!.id : DateTime.now().millisecondsSinceEpoch.toString(),
+        id: _isEditing
+            ? widget.expenseToEdit!.id
+            : DateTime.now().millisecondsSinceEpoch.toString(),
         name: _nameController.text,
         description: _descriptionController.text,
         amount: amount,
@@ -1153,7 +1170,9 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
             : null,
         startDate: _startDate,
         endDate: _endDate,
-        createdAt: _isEditing ? widget.expenseToEdit!.createdAt : DateTime.now(),
+        createdAt: _isEditing
+            ? widget.expenseToEdit!.createdAt
+            : DateTime.now(),
         lastProcessed: _isEditing ? widget.expenseToEdit!.lastProcessed : null,
       );
 
@@ -1167,9 +1186,9 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-                _isEditing
-                    ? 'Gasto recurrente actualizado correctamente'
-                    : 'Gasto recurrente creado exitosamente'
+              _isEditing
+                  ? 'Gasto recurrente actualizado correctamente'
+                  : 'Gasto recurrente creado exitosamente',
             ),
             backgroundColor: successGreen,
           ),
@@ -1192,17 +1211,15 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
         });
       }
     }
-
   }
-
-
 }
+
 class _RecurringAmountInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue,
-      TextEditingValue newValue,
-      ) {
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     // Si está vacío, permitir
     if (newValue.text.isEmpty) {
       return newValue;

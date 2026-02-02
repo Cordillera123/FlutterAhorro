@@ -141,6 +141,7 @@ class TransactionService extends ChangeNotifier {
   void forceUpdate() {
     notifyListeners();
   }
+
   // Actualizar una transacción existente
   Future<void> updateTransaction(Transaction updatedTransaction) async {
     final index = _transactions.indexWhere((t) => t.id == updatedTransaction.id);
@@ -151,5 +152,24 @@ class TransactionService extends ChangeNotifier {
       await _saveTransactions();
       notifyListeners();
     }
+  }
+
+  /// Reasigna todas las transacciones de una categoría personalizada a "Otros"
+  /// Se usa cuando se elimina una categoría personalizada
+  Future<int> reassignCategoryToOther(String customCategoryId) async {
+    int count = 0;
+    for (int i = 0; i < _transactions.length; i++) {
+      if (_transactions[i].customCategoryId == customCategoryId) {
+        _transactions[i] = _transactions[i].copyWithCategoryAsOther();
+        count++;
+      }
+    }
+    
+    if (count > 0) {
+      await _saveTransactions();
+      notifyListeners();
+    }
+    
+    return count;
   }
 }

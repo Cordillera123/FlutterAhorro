@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../models/budget.dart';
 import '../models/transaction.dart';
 import '../services/budget_service.dart';
+import '../services/category_service.dart';
 import '../utils/format_utils.dart';
 
 class CreateBudgetScreen extends StatefulWidget {
@@ -20,16 +21,23 @@ class CreateBudgetScreen extends StatefulWidget {
   State<CreateBudgetScreen> createState() => _CreateBudgetScreenState();
 }
 
-class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProviderStateMixin {
+class _CreateBudgetScreenState extends State<CreateBudgetScreen>
+    with TickerProviderStateMixin {
   // Form controllers and services
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _amountController = TextEditingController();
   final BudgetService _budgetService = BudgetService();
+  final CategoryService _categoryService = CategoryService();
 
   // State variables
   BudgetPeriod _selectedPeriod = BudgetPeriod.monthly;
   ExpenseCategory _selectedCategory = ExpenseCategory.food;
+  // Soporte para categorías personalizadas
+  String? _selectedCustomCategoryId;
+  String? _selectedCustomCategoryName;
+  String? _selectedCustomCategoryEmoji;
+  
   bool _alertsEnabled = true;
   double _alertThreshold = 0.8;
   bool _isLoading = false;
@@ -64,7 +72,13 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
     }
 
     _initAnimations();
+    _loadCategories();
     _loadBudgetData();
+  }
+
+  Future<void> _loadCategories() async {
+    await _categoryService.loadCategories();
+    if (mounted) setState(() {});
   }
 
   @override
@@ -82,21 +96,19 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
       vsync: this,
     );
 
-    _fadeInAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-    ));
+    _fadeInAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
+    );
 
-    _slideAnimation = Tween<double>(
-      begin: 20.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
-    ));
+    _slideAnimation = Tween<double>(begin: 20.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
+      ),
+    );
 
     _animationController.forward();
   }
@@ -110,15 +122,20 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
       _selectedCategory = budget.category;
       _alertsEnabled = budget.alertsEnabled;
       _alertThreshold = budget.alertThreshold;
+      // Cargar categoría personalizada si existe
+      _selectedCustomCategoryId = budget.customCategoryId;
+      _selectedCustomCategoryName = budget.customCategoryName;
+      _selectedCustomCategoryEmoji = budget.customCategoryEmoji;
     } else {
       // Configurar valores por defecto
-      _nameController.text = 'Presupuesto ${_getCategoryName(_selectedCategory)}';
+      _nameController.text =
+          'Presupuesto ${_getCategoryName(_selectedCategory)}';
       // CORREGIDO: No establecer monto por defecto
       _amountController.text = '';
     }
   }
 
- void _setDefaultAmount() {
+  void _setDefaultAmount() {
     // CORREGIDO: Establecer en 0 por defecto
     _amountController.text = '';
   }
@@ -208,10 +225,12 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              _isEditMode ? 'Editar Presupuesto' : 'Crear Presupuesto',
+                              _isEditMode
+                                  ? 'Editar Presupuesto'
+                                  : 'Crear Presupuesto',
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 26,
+                                fontSize: 22,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: -0.5,
                               ),
@@ -223,7 +242,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
                               'Configura límites inteligentes para tus gastos',
                               style: TextStyle(
                                 color: Colors.white.withOpacity(0.9),
-                                fontSize: 15,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w400,
                               ),
                               maxLines: 1,
@@ -252,10 +271,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         color: Colors.white.withOpacity(0.2),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.3),
-          width: 2,
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
       ),
       child: Icon(
         _isEditMode ? Icons.edit_rounded : Icons.add_rounded,
@@ -278,10 +294,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(
-          color: borderLight,
-          width: 1,
-        ),
+        border: Border.all(color: borderLight, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,17 +322,14 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
                       'Nombre del Presupuesto',
                       style: TextStyle(
                         color: textDark,
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     SizedBox(height: 4),
                     Text(
                       'Dale un nombre descriptivo',
-                      style: TextStyle(
-                        color: textMedium,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: textMedium, fontSize: 13),
                     ),
                   ],
                 ),
@@ -331,10 +341,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
             controller: _nameController,
             decoration: InputDecoration(
               hintText: 'Ej: Presupuesto de comida mensual',
-              hintStyle: const TextStyle(
-                color: textMedium,
-                fontSize: 16,
-              ),
+              hintStyle: const TextStyle(color: textMedium, fontSize: 16),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: const BorderSide(color: borderLight),
@@ -385,10 +392,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(
-          color: borderLight,
-          width: 1,
-        ),
+        border: Border.all(color: borderLight, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -416,17 +420,14 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
                       'Monto del Presupuesto',
                       style: TextStyle(
                         color: textDark,
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     SizedBox(height: 4),
                     Text(
                       'Establece el límite de gasto',
-                      style: TextStyle(
-                        color: textMedium,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: textMedium, fontSize: 13),
                     ),
                   ],
                 ),
@@ -514,10 +515,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(
-          color: borderLight,
-          width: 1,
-        ),
+        border: Border.all(color: borderLight, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -545,17 +543,14 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
                       'Período del Presupuesto',
                       style: TextStyle(
                         color: textDark,
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     SizedBox(height: 4),
                     Text(
                       'Elige la duración del presupuesto',
-                      style: TextStyle(
-                        color: textMedium,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: textMedium, fontSize: 13),
                     ),
                   ],
                 ),
@@ -563,33 +558,33 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
             ],
           ),
           const SizedBox(height: 20),
-         Row(
-    children: [
-      Expanded(
-        child: _buildPeriodOption(
-          BudgetPeriod.weekly,
-          'Semanal',
-          Icons.date_range_rounded,
-        ),
-      ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: _buildPeriodOption(
-          BudgetPeriod.monthly,
-          'Mensual',
-          Icons.calendar_month_rounded,
-        ),
-      ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: _buildPeriodOption(
-          BudgetPeriod.yearly,
-          'Anual',
-          Icons.event_note_rounded,
-        ),
-      ),
-    ],
-  ),
+          Row(
+            children: [
+              Expanded(
+                child: _buildPeriodOption(
+                  BudgetPeriod.weekly,
+                  'Semanal',
+                  Icons.date_range_rounded,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildPeriodOption(
+                  BudgetPeriod.monthly,
+                  'Mensual',
+                  Icons.calendar_month_rounded,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildPeriodOption(
+                  BudgetPeriod.yearly,
+                  'Anual',
+                  Icons.event_note_rounded,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -603,7 +598,8 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
         HapticFeedback.lightImpact();
         setState(() {
           _selectedPeriod = period;
-          _nameController.text = 'Presupuesto ${_getCategoryName(_selectedCategory)} ${name.toLowerCase()}';
+          _nameController.text =
+              'Presupuesto ${_getCategoryName(_selectedCategory)} ${name.toLowerCase()}';
           // CORREGIDO: No establecer monto automáticamente
         });
       },
@@ -618,12 +614,12 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
           ),
           boxShadow: isSelected
               ? [
-            BoxShadow(
-              color: warningYellow.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ]
+                  BoxShadow(
+                    color: warningYellow.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
               : null,
         ),
         child: Column(
@@ -651,6 +647,25 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
   }
 
   Widget _buildCategorySelector() {
+    // Categorías del sistema
+    final systemCategories = ExpenseCategory.values.map((c) => {
+      'category': c,
+      'name': _getCategoryName(c),
+      'icon': _getCategoryIcon(c),
+      'isSystem': true,
+    }).toList();
+
+    // Categorías personalizadas
+    final customCategories = _categoryService.customCategories.map((c) => {
+      'customId': c.id,
+      'name': c.name,
+      'icon': c.emoji,
+      'isSystem': false,
+    }).toList();
+
+    // Combinar todas
+    final allCategories = [...systemCategories, ...customCategories];
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -663,10 +678,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(
-          color: borderLight,
-          width: 1,
-        ),
+        border: Border.all(color: borderLight, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -694,17 +706,14 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
                       'Categoría',
                       style: TextStyle(
                         color: textDark,
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     SizedBox(height: 4),
                     Text(
                       'Selecciona el tipo de gasto',
-                      style: TextStyle(
-                        color: textMedium,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: textMedium, fontSize: 13),
                     ),
                   ],
                 ),
@@ -721,24 +730,45 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
               mainAxisSpacing: 12,
               childAspectRatio: 2.0,
             ),
-            itemCount: ExpenseCategory.values.length,
+            itemCount: allCategories.length,
             itemBuilder: (context, index) {
-              final category = ExpenseCategory.values[index];
-              final isSelected = _selectedCategory == category;
+              final categoryData = allCategories[index];
+              final isSystem = categoryData['isSystem'] as bool;
+              
+              bool isSelected;
+              if (isSystem) {
+                isSelected = _selectedCustomCategoryId == null && 
+                             _selectedCategory == categoryData['category'];
+              } else {
+                isSelected = _selectedCustomCategoryId == categoryData['customId'];
+              }
 
               return GestureDetector(
                 onTap: () {
                   HapticFeedback.lightImpact();
                   setState(() {
-                    _selectedCategory = category;
-                    _nameController.text = 'Presupuesto ${_getCategoryName(category)} ${_getPeriodName(_selectedPeriod).toLowerCase()}';
-                    // CORREGIDO: No establecer monto automáticamente
+                    if (isSystem) {
+                      _selectedCategory = categoryData['category'] as ExpenseCategory;
+                      _selectedCustomCategoryId = null;
+                      _selectedCustomCategoryName = null;
+                      _selectedCustomCategoryEmoji = null;
+                      _nameController.text =
+                          'Presupuesto ${_getCategoryName(_selectedCategory)} ${_getPeriodName(_selectedPeriod).toLowerCase()}';
+                    } else {
+                      _selectedCustomCategoryId = categoryData['customId'] as String;
+                      _selectedCustomCategoryName = categoryData['name'] as String;
+                      _selectedCustomCategoryEmoji = categoryData['icon'] as String;
+                      _nameController.text =
+                          'Presupuesto ${categoryData['name']} ${_getPeriodName(_selectedPeriod).toLowerCase()}';
+                    }
                   });
                 },
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: isSelected ? infoBlue.withOpacity(0.1) : backgroundCard,
+                    color: isSelected
+                        ? infoBlue.withOpacity(0.1)
+                        : backgroundCard,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: isSelected ? infoBlue : borderLight,
@@ -746,25 +776,25 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
                     ),
                     boxShadow: isSelected
                         ? [
-                      BoxShadow(
-                        color: infoBlue.withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ]
+                            BoxShadow(
+                              color: infoBlue.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ]
                         : null,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        _getCategoryIcon(category),
+                        categoryData['icon'] as String,
                         style: const TextStyle(fontSize: 20),
                       ),
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          _getCategoryName(category),
+                          categoryData['name'] as String,
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
@@ -798,10 +828,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(
-          color: borderLight,
-          width: 1,
-        ),
+        border: Border.all(color: borderLight, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -829,17 +856,14 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
                       'Alertas Inteligentes',
                       style: TextStyle(
                         color: textDark,
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     SizedBox(height: 4),
                     Text(
                       'Configura cuándo recibir notificaciones',
-                      style: TextStyle(
-                        color: textMedium,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: textMedium, fontSize: 13),
                     ),
                   ],
                 ),
@@ -933,10 +957,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(
-          color: primaryBlue.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: primaryBlue.withOpacity(0.2), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -971,10 +992,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
                     SizedBox(height: 4),
                     Text(
                       'Así se verá tu presupuesto',
-                      style: TextStyle(
-                        color: textMedium,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: textMedium, fontSize: 14),
                     ),
                   ],
                 ),
@@ -987,9 +1005,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
             decoration: BoxDecoration(
               color: primaryBlue.withOpacity(0.05),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: primaryBlue.withOpacity(0.1),
-              ),
+              border: Border.all(color: primaryBlue.withOpacity(0.1)),
             ),
             child: Column(
               children: [
@@ -1090,9 +1106,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
       height: 56,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(
-          colors: [primaryBlue, darkBlue],
-        ),
+        gradient: const LinearGradient(colors: [primaryBlue, darkBlue]),
         boxShadow: [
           BoxShadow(
             color: primaryBlue.withOpacity(0.3),
@@ -1105,10 +1119,12 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(28),
-          onTap: _isLoading ? null : () {
-            HapticFeedback.mediumImpact();
-            _saveBudget();
-          },
+          onTap: _isLoading
+              ? null
+              : () {
+                  HapticFeedback.mediumImpact();
+                  _saveBudget();
+                },
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -1148,63 +1164,63 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
   }
 
   // Utility methods
- String _getCategoryName(ExpenseCategory category) {
-  switch (category) {
-    case ExpenseCategory.transport:
-      return 'Transporte';
-    case ExpenseCategory.food:
-      return 'Alimentación';
-    case ExpenseCategory.utilities:
-      return 'Servicios Básicos';
-    case ExpenseCategory.health:
-      return 'Salud';
-    case ExpenseCategory.education:
-      return 'Educación';
-    case ExpenseCategory.entertainment:
-      return 'Entretenimiento';
-    case ExpenseCategory.clothing:
-      return 'Ropa y Calzado';
-    case ExpenseCategory.home:
-      return 'Hogar y Muebles';
-    case ExpenseCategory.technology:
-      return 'Tecnología';
-    case ExpenseCategory.savings:
-      return 'Ahorros e Inversión';
-    case ExpenseCategory.gifts:
-      return 'Regalos y Donaciones';
-    case ExpenseCategory.other:
-      return 'Otros';
+  String _getCategoryName(ExpenseCategory category) {
+    switch (category) {
+      case ExpenseCategory.transport:
+        return 'Transporte';
+      case ExpenseCategory.food:
+        return 'Alimentación';
+      case ExpenseCategory.utilities:
+        return 'Servicios Básicos';
+      case ExpenseCategory.health:
+        return 'Salud';
+      case ExpenseCategory.education:
+        return 'Educación';
+      case ExpenseCategory.entertainment:
+        return 'Entretenimiento';
+      case ExpenseCategory.clothing:
+        return 'Ropa y Calzado';
+      case ExpenseCategory.home:
+        return 'Hogar y Muebles';
+      case ExpenseCategory.technology:
+        return 'Tecnología';
+      case ExpenseCategory.savings:
+        return 'Ahorros e Inversión';
+      case ExpenseCategory.gifts:
+        return 'Regalos y Donaciones';
+      case ExpenseCategory.other:
+        return 'Otros';
+    }
   }
-}
 
   String _getCategoryIcon(ExpenseCategory category) {
-  switch (category) {
-    case ExpenseCategory.transport:
-      return '🚗';
-    case ExpenseCategory.food:
-      return '🍕';
-    case ExpenseCategory.utilities:
-      return '💡';
-    case ExpenseCategory.health:
-      return '🏥';
-    case ExpenseCategory.education:
-      return '📚';
-    case ExpenseCategory.entertainment:
-      return '🎬';
-    case ExpenseCategory.clothing:
-      return '👕';
-    case ExpenseCategory.home:
-      return '🏠';
-    case ExpenseCategory.technology:
-      return '📱';
-    case ExpenseCategory.savings:
-      return '💰';
-    case ExpenseCategory.gifts:
-      return '🎁';
-    case ExpenseCategory.other:
-      return '📦';
+    switch (category) {
+      case ExpenseCategory.transport:
+        return '🚗';
+      case ExpenseCategory.food:
+        return '🍕';
+      case ExpenseCategory.utilities:
+        return '💡';
+      case ExpenseCategory.health:
+        return '🏥';
+      case ExpenseCategory.education:
+        return '📚';
+      case ExpenseCategory.entertainment:
+        return '🎬';
+      case ExpenseCategory.clothing:
+        return '👕';
+      case ExpenseCategory.home:
+        return '🏠';
+      case ExpenseCategory.technology:
+        return '📱';
+      case ExpenseCategory.savings:
+        return '💰';
+      case ExpenseCategory.gifts:
+        return '🎁';
+      case ExpenseCategory.other:
+        return '📦';
+    }
   }
-}
 
   String _getPeriodName(BudgetPeriod period) {
     switch (period) {
@@ -1236,19 +1252,27 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
         return;
       }
 
-      final dates = BudgetService.generateBudgetDates(_selectedPeriod, DateTime.now());
+      final dates = BudgetService.generateBudgetDates(
+        _selectedPeriod,
+        DateTime.now(),
+      );
 
       final budget = Budget(
         id: _isEditMode ? widget.budgetToEdit!.id : null,
         name: _nameController.text,
         amount: amount,
         period: _selectedPeriod,
-        category: _selectedCategory,
+        category: _selectedCustomCategoryId != null ? ExpenseCategory.other : _selectedCategory,
+        customCategoryId: _selectedCustomCategoryId,
+        customCategoryName: _selectedCustomCategoryName,
+        customCategoryEmoji: _selectedCustomCategoryEmoji,
         startDate: dates['start']!,
         endDate: dates['end']!,
         alertsEnabled: _alertsEnabled,
         alertThreshold: _alertThreshold,
-        createdAt: _isEditMode ? widget.budgetToEdit!.createdAt : DateTime.now(),
+        createdAt: _isEditMode
+            ? widget.budgetToEdit!.createdAt
+            : DateTime.now(),
       );
 
       if (_isEditMode) {
@@ -1263,10 +1287,8 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
         final result = await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => BudgetSuccessScreen(
-              budget: budget,
-              isEdit: _isEditMode,
-            ),
+            builder: (context) =>
+                BudgetSuccessScreen(budget: budget, isEdit: _isEditMode),
           ),
         );
 
@@ -1341,7 +1363,10 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
               GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 24,
+                  ),
                   decoration: BoxDecoration(
                     color: successGreen,
                     borderRadius: BorderRadius.circular(12),
@@ -1418,7 +1443,10 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
               GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 24,
+                  ),
                   decoration: BoxDecoration(
                     color: dangerRed,
                     borderRadius: BorderRadius.circular(12),
@@ -1440,12 +1468,13 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen> with TickerProv
     );
   }
 }
+
 class _BudgetAmountInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue,
-      TextEditingValue newValue,
-      ) {
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     // Si está vacío, permitir
     if (newValue.text.isEmpty) {
       return newValue;

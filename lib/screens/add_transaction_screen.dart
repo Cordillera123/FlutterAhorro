@@ -2,7 +2,9 @@ import 'package:ahorro_app/screens/transaction_success_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/transaction.dart';
+import '../models/custom_category.dart';
 import '../services/transaction_service.dart';
+import '../services/category_service.dart';
 import '../utils/format_utils.dart';
 
 class AddTransactionScreen extends StatefulWidget {
@@ -19,15 +21,22 @@ class AddTransactionScreen extends StatefulWidget {
   State<AddTransactionScreen> createState() => _AddTransactionScreenState();
 }
 
-class _AddTransactionScreenState extends State<AddTransactionScreen> with TickerProviderStateMixin {
+class _AddTransactionScreenState extends State<AddTransactionScreen>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
   final TransactionService _transactionService = TransactionService();
+  final CategoryService _categoryService = CategoryService();
 
   late TransactionType _selectedType;
   ExpenseCategory? _selectedExpenseCategory;
   IncomeCategory? _selectedIncomeCategory;
+  // Soporte para categorías personalizadas
+  String? _selectedCustomCategoryId;
+  String? _selectedCustomCategoryName;
+  String? _selectedCustomCategoryEmoji;
+  
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
   late AnimationController _animationController;
@@ -58,6 +67,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
     super.initState();
     _selectedType = widget.initialType;
     _initAnimations();
+    _loadCategories();
 
     // Si estamos editando una transacción, pre-llenar los campos
     if (widget.transactionToEdit != null) {
@@ -71,6 +81,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
     }
   }
 
+  Future<void> _loadCategories() async {
+    await _categoryService.loadCategories();
+    if (mounted) setState(() {});
+  }
+
   void _loadTransactionData() {
     final transaction = widget.transactionToEdit!;
     _amountController.text = transaction.amount.toString();
@@ -79,6 +94,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
     _selectedType = transaction.type;
     _selectedExpenseCategory = transaction.expenseCategory;
     _selectedIncomeCategory = transaction.incomeCategory;
+    // Cargar categoría personalizada si existe
+    _selectedCustomCategoryId = transaction.customCategoryId;
+    _selectedCustomCategoryName = transaction.customCategoryName;
+    _selectedCustomCategoryEmoji = transaction.customCategoryEmoji;
   }
 
   void _initAnimations() {
@@ -87,21 +106,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
       vsync: this,
     );
 
-    _fadeInAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-    ));
+    _fadeInAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
+    );
 
-    _slideAnimation = Tween<double>(
-      begin: 20.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
-    ));
+    _slideAnimation = Tween<double>(begin: 20.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
+      ),
+    );
 
     _animationController.forward();
   }
@@ -170,7 +187,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
     );
   }
 
-  Widget _buildModernAppBar(Color primaryColor, Color darkColor, Color deepColor) {
+  Widget _buildModernAppBar(
+    Color primaryColor,
+    Color darkColor,
+    Color deepColor,
+  ) {
     return SliverAppBar(
       expandedHeight: 140,
       floating: false,
@@ -206,14 +227,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                             Text(
                               widget.transactionToEdit != null
                                   ? (_selectedType == TransactionType.income
-                                      ? 'Editar Ingreso'
-                                      : 'Editar Gasto')
+                                        ? 'Editar Ingreso'
+                                        : 'Editar Gasto')
                                   : (_selectedType == TransactionType.income
-                                      ? 'Agregar Ingreso'
-                                      : 'Agregar Gasto'),
+                                        ? 'Agregar Ingreso'
+                                        : 'Agregar Gasto'),
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 26,
+                                fontSize: 22,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: -0.5,
                               ),
@@ -225,11 +246,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                               widget.transactionToEdit != null
                                   ? 'Modifica los datos de tu transacción'
                                   : (_selectedType == TransactionType.income
-                                      ? 'Registra tus ingresos fácilmente'
-                                      : 'Mantén control de tus gastos'),
+                                        ? 'Registra tus ingresos fácilmente'
+                                        : 'Mantén control de tus gastos'),
                               style: TextStyle(
                                 color: Colors.white.withOpacity(0.9),
-                                fontSize: 15,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w400,
                               ),
                               maxLines: 1,
@@ -293,10 +314,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(
-          color: borderLight,
-          width: 1,
-        ),
+        border: Border.all(color: borderLight, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -326,17 +344,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                       'Tipo de Transacción',
                       style: TextStyle(
                         color: textDark,
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     SizedBox(height: 4),
                     Text(
                       'Selecciona si es ingreso o gasto',
-                      style: TextStyle(
-                        color: textMedium,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: textMedium, fontSize: 13),
                     ),
                   ],
                 ),
@@ -354,6 +369,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                       _selectedType = TransactionType.income;
                       _selectedExpenseCategory = null;
                       _selectedIncomeCategory = IncomeCategory.salary;
+                      // Limpiar categoría personalizada
+                      _selectedCustomCategoryId = null;
+                      _selectedCustomCategoryName = null;
+                      _selectedCustomCategoryEmoji = null;
                     });
                   },
                   child: Container(
@@ -371,12 +390,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                       ),
                       boxShadow: _selectedType == TransactionType.income
                           ? [
-                        BoxShadow(
-                          color: primaryGreen.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ]
+                              BoxShadow(
+                                color: primaryGreen.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
                           : null,
                     ),
                     child: Row(
@@ -414,6 +433,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                       _selectedType = TransactionType.expense;
                       _selectedIncomeCategory = null;
                       _selectedExpenseCategory = ExpenseCategory.other;
+                      // Limpiar categoría personalizada
+                      _selectedCustomCategoryId = null;
+                      _selectedCustomCategoryName = null;
+                      _selectedCustomCategoryEmoji = null;
                     });
                   },
                   child: Container(
@@ -431,12 +454,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                       ),
                       boxShadow: _selectedType == TransactionType.expense
                           ? [
-                        BoxShadow(
-                          color: primaryRed.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ]
+                              BoxShadow(
+                                color: primaryRed.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
                           : null,
                     ),
                     child: Row(
@@ -488,10 +511,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(
-          color: borderLight,
-          width: 1,
-        ),
+        border: Border.all(color: borderLight, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -505,7 +525,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                   color: color.withOpacity(0.1),
                 ),
                 child: Icon(
-                  isIncome ? Icons.attach_money_rounded : Icons.money_off_rounded,
+                  isIncome
+                      ? Icons.attach_money_rounded
+                      : Icons.money_off_rounded,
                   color: color,
                   size: 20,
                 ),
@@ -519,17 +541,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                       'Monto',
                       style: TextStyle(
                         color: textDark,
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     SizedBox(height: 4),
                     Text(
                       'Máximo: \$999,999.99',
-                      style: TextStyle(
-                        color: textMedium,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: textMedium, fontSize: 13),
                     ),
                   ],
                 ),
@@ -542,7 +561,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-              LengthLimitingTextInputFormatter(10), // Máximo 10 caracteres (999999.99)
+              LengthLimitingTextInputFormatter(
+                10,
+              ), // Máximo 10 caracteres (999999.99)
               _AmountInputFormatter(),
             ],
             decoration: InputDecoration(
@@ -612,10 +633,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(
-          color: borderLight,
-          width: 1,
-        ),
+        border: Border.all(color: borderLight, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -643,17 +661,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                       'Descripción',
                       style: TextStyle(
                         color: textDark,
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     SizedBox(height: 4),
                     Text(
                       'Añade detalles sobre esta transacción',
-                      style: TextStyle(
-                        color: textMedium,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: textMedium, fontSize: 13),
                     ),
                   ],
                 ),
@@ -667,10 +682,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
               hintText: _selectedType == TransactionType.income
                   ? 'Ej: Salario de agosto, Freelance, etc.'
                   : 'Ej: Almuerzo, Transporte, etc.',
-              hintStyle: TextStyle(
-                color: textMedium,
-                fontSize: 16,
-              ),
+              hintStyle: TextStyle(color: textMedium, fontSize: 16),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide(color: borderLight),
@@ -721,10 +733,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(
-          color: borderLight,
-          width: 1,
-        ),
+        border: Border.all(color: borderLight, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -752,17 +761,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                       'Categoría',
                       style: TextStyle(
                         color: textDark,
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     SizedBox(height: 4),
                     Text(
                       'Organiza tu transacción por tipo',
-                      style: TextStyle(
-                        color: textMedium,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: textMedium, fontSize: 13),
                     ),
                   ],
                 ),
@@ -812,7 +818,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isSelected ? primaryGreen.withOpacity(0.1) : backgroundCard,
+              color: isSelected
+                  ? primaryGreen.withOpacity(0.1)
+                  : backgroundCard,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isSelected ? primaryGreen : borderLight,
@@ -820,19 +828,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
               ),
               boxShadow: isSelected
                   ? [
-                BoxShadow(
-                  color: primaryGreen.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ]
+                      BoxShadow(
+                        color: primaryGreen.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
                   : [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.05),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -840,7 +848,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                 Text(
                   category['icon'] as String,
                   style: TextStyle(
-                    fontSize: isSelected ? 24 : 22, // MEJORADO: Emoji más grande cuando está seleccionado
+                    fontSize: isSelected
+                        ? 24
+                        : 22, // MEJORADO: Emoji más grande cuando está seleccionado
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -848,7 +858,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                   child: Text(
                     category['name'] as String,
                     style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w600,
                       fontSize: 14, // MEJORADO: Texto más grande
                       color: isSelected ? primaryGreen : textDark,
                     ),
@@ -865,87 +877,123 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
   }
 
   Widget _buildExpenseCategoryGrid() {
-    final categories = [
-      {'category': ExpenseCategory.transport, 'name': 'Transporte', 'icon': '🚗'},
-      {'category': ExpenseCategory.food, 'name': 'Alimentación', 'icon': '🍕'},
-      {'category': ExpenseCategory.utilities, 'name': 'Servicios', 'icon': '💡'},
-      {'category': ExpenseCategory.health, 'name': 'Salud', 'icon': '🏥'},
-      {'category': ExpenseCategory.education, 'name': 'Educación', 'icon': '📚'},
-      {'category': ExpenseCategory.entertainment, 'name': 'Diversión', 'icon': '🎬'},
-      {'category': ExpenseCategory.clothing, 'name': 'Ropa', 'icon': '👕'},
-      {'category': ExpenseCategory.home, 'name': 'Hogar', 'icon': '🏠'},
-      {'category': ExpenseCategory.technology, 'name': 'Tecnología', 'icon': '📱'},
-      {'category': ExpenseCategory.savings, 'name': 'Ahorros', 'icon': '💰'},
-      {'category': ExpenseCategory.gifts, 'name': 'Regalos', 'icon': '🎁'},
-      {'category': ExpenseCategory.other, 'name': 'Otros', 'icon': '📦'},
+    // Categorías del sistema
+    final systemCategories = [
+      {'category': ExpenseCategory.transport, 'name': 'Transporte', 'icon': '🚗', 'isSystem': true},
+      {'category': ExpenseCategory.food, 'name': 'Alimentación', 'icon': '🍕', 'isSystem': true},
+      {'category': ExpenseCategory.utilities, 'name': 'Servicios', 'icon': '💡', 'isSystem': true},
+      {'category': ExpenseCategory.health, 'name': 'Salud', 'icon': '🏥', 'isSystem': true},
+      {'category': ExpenseCategory.education, 'name': 'Educación', 'icon': '📚', 'isSystem': true},
+      {'category': ExpenseCategory.entertainment, 'name': 'Diversión', 'icon': '🎬', 'isSystem': true},
+      {'category': ExpenseCategory.clothing, 'name': 'Ropa', 'icon': '👕', 'isSystem': true},
+      {'category': ExpenseCategory.home, 'name': 'Hogar', 'icon': '🏠', 'isSystem': true},
+      {'category': ExpenseCategory.technology, 'name': 'Tecnología', 'icon': '📱', 'isSystem': true},
+      {'category': ExpenseCategory.savings, 'name': 'Ahorros', 'icon': '💰', 'isSystem': true},
+      {'category': ExpenseCategory.gifts, 'name': 'Regalos', 'icon': '🎁', 'isSystem': true},
+      {'category': ExpenseCategory.other, 'name': 'Otros', 'icon': '📦', 'isSystem': true},
     ];
+
+    // Agregar categorías personalizadas
+    final customCategories = _categoryService.customCategories.map((c) => {
+      'customId': c.id,
+      'name': c.name,
+      'icon': c.emoji,
+      'isSystem': false,
+    }).toList();
+
+    // Combinar todas las categorías
+    final allCategories = [...systemCategories, ...customCategories];
+
+    // Agregar el botón "+" al final
+    final totalItems = allCategories.length + 1; // +1 para el botón de agregar
 
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        crossAxisSpacing: 8, // REDUCIDO de 12 a 8
-        mainAxisSpacing: 8,  // REDUCIDO de 12 a 8
-        childAspectRatio: 1.1, // REDUCIDO de 1.4 a 1.1 para menos altura
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 1.1,
       ),
-      itemCount: categories.length,
+      itemCount: totalItems,
       itemBuilder: (context, index) {
-        final category = categories[index];
-        final isSelected = _selectedExpenseCategory == category['category'];
+        // Si es el último item, mostrar botón de agregar
+        if (index == allCategories.length) {
+          return _buildAddCategoryButton();
+        }
+
+        final category = allCategories[index];
+        final isSystem = category['isSystem'] as bool;
+        
+        bool isSelected;
+        if (isSystem) {
+          isSelected = _selectedCustomCategoryId == null && 
+                       _selectedExpenseCategory == category['category'];
+        } else {
+          isSelected = _selectedCustomCategoryId == category['customId'];
+        }
 
         return GestureDetector(
           onTap: () {
             HapticFeedback.lightImpact();
             setState(() {
-              _selectedExpenseCategory = category['category'] as ExpenseCategory;
+              if (isSystem) {
+                _selectedExpenseCategory = category['category'] as ExpenseCategory;
+                _selectedCustomCategoryId = null;
+                _selectedCustomCategoryName = null;
+                _selectedCustomCategoryEmoji = null;
+              } else {
+                _selectedCustomCategoryId = category['customId'] as String;
+                _selectedCustomCategoryName = category['name'] as String;
+                _selectedCustomCategoryEmoji = category['icon'] as String;
+                _selectedExpenseCategory = null;
+              }
             });
           },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8), // REDUCIDO padding
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
             decoration: BoxDecoration(
               color: isSelected ? primaryRed.withOpacity(0.1) : backgroundCard,
-              borderRadius: BorderRadius.circular(14), // REDUCIDO de 16 a 14
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: isSelected ? primaryRed : borderLight,
                 width: isSelected ? 2 : 1,
               ),
               boxShadow: isSelected
                   ? [
-                BoxShadow(
-                  color: primaryRed.withOpacity(0.3),
-                  blurRadius: 6, // REDUCIDO de 8 a 6
-                  offset: const Offset(0, 3), // REDUCIDO de 4 a 3
-                ),
-              ]
+                      BoxShadow(
+                        color: primaryRed.withOpacity(0.3),
+                        blurRadius: 6,
+                        offset: const Offset(0, 3),
+                      ),
+                    ]
                   : [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.05),
-                  blurRadius: 3, // REDUCIDO
-                  offset: const Offset(0, 1), // REDUCIDO
-                ),
-              ],
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.05),
+                        blurRadius: 3,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min, // AGREGADO para minimizar espacio
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   category['icon'] as String,
-                  style: TextStyle(
-                    fontSize: isSelected ? 20 : 18, // REDUCIDO de 24/22 a 20/18
-                  ),
+                  style: TextStyle(fontSize: isSelected ? 20 : 18),
                 ),
-                const SizedBox(height: 4), // REDUCIDO de 6 a 4
+                const SizedBox(height: 4),
                 Flexible(
                   child: Text(
                     category['name'] as String,
                     style: TextStyle(
                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                      fontSize: 10, // REDUCIDO de 12 a 10
+                      fontSize: 10,
                       color: isSelected ? primaryRed : textDark,
-                      height: 1.1, // REDUCIDO de 1.2 a 1.1
+                      height: 1.1,
                     ),
                     textAlign: TextAlign.center,
                     maxLines: 2,
@@ -957,6 +1005,344 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
           ),
         );
       },
+    );
+  }
+
+  Widget _buildAddCategoryButton() {
+    return GestureDetector(
+      onTap: () => _showQuickAddCategoryDialog(),
+      child: Container(
+        decoration: BoxDecoration(
+          color: backgroundCard,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: primaryBlue.withOpacity(0.3),
+            width: 1,
+            style: BorderStyle.solid,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: primaryBlue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.add,
+                color: primaryBlue,
+                size: 18,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Agregar',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 10,
+                color: primaryBlue,
+                height: 1.1,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showQuickAddCategoryDialog() {
+    final nameController = TextEditingController();
+    String selectedEmoji = '📁';
+    final formKey = GlobalKey<FormState>();
+
+    final emojis = [
+      '🏋️', '🐕', '🐱', '💅', '🎮', '🎨', '🎵', '📷',
+      '✈️', '🏖️', '☕', '🍺', '🛒', '💊', '📱', '💻',
+      '🏠', '🚗', '🎓', '💼', '🎁', '💰', '📦', '⭐',
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Handle bar
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    // Título
+                    const Text(
+                      'Nueva categoría',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 20,
+                        color: textDark,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Crea una categoría personalizada para tus gastos',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    // Sección Emoji
+                    const Text(
+                      'Selecciona un emoji',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: textDark,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 8,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                      ),
+                      itemCount: emojis.length,
+                      itemBuilder: (context, index) {
+                        final emoji = emojis[index];
+                        final isSelected = emoji == selectedEmoji;
+                        return GestureDetector(
+                          onTap: () {
+                            setModalState(() {
+                              selectedEmoji = emoji;
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? primaryBlue.withOpacity(0.15)
+                                  : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isSelected ? primaryBlue : Colors.transparent,
+                                width: 2,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                emoji,
+                                style: TextStyle(fontSize: isSelected ? 22 : 18),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    // Sección Nombre
+                    const Text(
+                      'Nombre de la categoría',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: textDark,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: nameController,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        hintText: 'Ej: Mascotas, Gimnasio, Streaming...',
+                        hintStyle: TextStyle(color: Colors.grey.shade400),
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: primaryBlue, width: 2),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: primaryRed, width: 2),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 16,
+                        ),
+                        prefixIcon: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Text(
+                            selectedEmoji,
+                            style: const TextStyle(fontSize: 20),
+                          ),
+                        ),
+                      ),
+                      textCapitalization: TextCapitalization.sentences,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Ingresa un nombre para la categoría';
+                        }
+                        if (value.trim().length < 2) {
+                          return 'El nombre es muy corto (mín. 2 caracteres)';
+                        }
+                        if (value.trim().length > 20) {
+                          return 'El nombre es muy largo (máx. 20 caracteres)';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 28),
+                    // Botones
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              side: BorderSide(color: Colors.grey.shade300),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: Text(
+                              'Cancelar',
+                              style: TextStyle(
+                                color: Colors.grey.shade700,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              if (formKey.currentState!.validate()) {
+                                try {
+                                  final newCategory = await _categoryService.addCategory(
+                                    name: nameController.text.trim(),
+                                    emoji: selectedEmoji,
+                                  );
+                                  if (!mounted) return;
+                                  Navigator.pop(context);
+                                  // Seleccionar la nueva categoría
+                                  setState(() {
+                                    _selectedCustomCategoryId = newCategory.id;
+                                    _selectedCustomCategoryName = newCategory.name;
+                                    _selectedCustomCategoryEmoji = newCategory.emoji;
+                                    _selectedExpenseCategory = null;
+                                  });
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Row(
+                                        children: [
+                                          Text(newCategory.emoji, style: const TextStyle(fontSize: 18)),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              '¡Categoría "${newCategory.name}" creada!',
+                                              style: const TextStyle(fontWeight: FontWeight.w500),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      backgroundColor: const Color(0xFF059669),
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      margin: const EdgeInsets.all(16),
+                                    ),
+                                  );
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(e.toString().replaceAll('Exception: ', '')),
+                                      backgroundColor: primaryRed,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      margin: const EdgeInsets.all(16),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryBlue,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.add, size: 20),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Crear categoría',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -973,130 +1359,125 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(
-          color: borderLight,
-          width: 1,
-        ),
+        border: Border.all(color: borderLight, width: 1),
       ),
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-      Row(
-      children: [
-      Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: primaryBlue.withOpacity(0.1),
-      ),
-      child: const Icon(
-        Icons.calendar_today_rounded,
-        color: primaryBlue,
-        size: 20,
-      ),
-    ),
-    const SizedBox(width: 16),
-    const Expanded(
-    child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-    Text(
-    'Fecha',
-    style: TextStyle(
-    color: textDark,
-    fontSize: 18,
-    fontWeight: FontWeight.w700,),
-    ),
-      SizedBox(height: 4),
-      Text(
-        'Selecciona cuándo ocurrió',
-        style: TextStyle(
-          color: textMedium,
-          fontSize: 14,
-        ),
-      ),
-    ],
-    ),
-    ),
-      ],
-      ),
-            const SizedBox(height: 20),
-            GestureDetector(
-              onTap: () {
-                HapticFeedback.lightImpact();
-                _selectDate();
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.all(20),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: backgroundCard,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: borderLight),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  borderRadius: BorderRadius.circular(12),
+                  color: primaryBlue.withOpacity(0.1),
                 ),
-                child: Row(
+                child: const Icon(
+                  Icons.calendar_today_rounded,
+                  color: primaryBlue,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: primaryBlue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.event_rounded,
-                        color: primaryBlue,
-                        size: 20,
+                    Text(
+                      'Fecha',
+                      style: TextStyle(
+                        color: textDark,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            FormatUtils.formatDateFull(_selectedDate),
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: textDark,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            FormatUtils.formatDateForList(_selectedDate),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: textMedium,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: primaryBlue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Icon(
-                        Icons.arrow_drop_down_rounded,
-                        color: primaryBlue,
-                        size: 20,
-                      ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Selecciona cuándo ocurrió',
+                      style: TextStyle(color: textMedium, fontSize: 13),
                     ),
                   ],
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              _selectDate();
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: backgroundCard,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: borderLight),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: primaryBlue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.event_rounded,
+                      color: primaryBlue,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          FormatUtils.formatDateFull(_selectedDate),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: textDark,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          FormatUtils.formatDateForList(_selectedDate),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: textMedium,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: primaryBlue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(
+                      Icons.arrow_drop_down_rounded,
+                      color: primaryBlue,
+                      size: 20,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
+          ),
+        ],
       ),
     );
   }
@@ -1121,10 +1502,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: color.withOpacity(0.2), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1137,11 +1515,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                   borderRadius: BorderRadius.circular(12),
                   color: color.withOpacity(0.1),
                 ),
-                child: Icon(
-                  Icons.preview_rounded,
-                  color: color,
-                  size: 20,
-                ),
+                child: Icon(Icons.preview_rounded, color: color, size: 20),
               ),
               const SizedBox(width: 16),
               const Expanded(
@@ -1159,10 +1533,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                     SizedBox(height: 4),
                     Text(
                       'Así se verá tu transacción',
-                      style: TextStyle(
-                        color: textMedium,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: textMedium, fontSize: 14),
                     ),
                   ],
                 ),
@@ -1175,9 +1546,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
             decoration: BoxDecoration(
               color: color.withOpacity(0.05),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: color.withOpacity(0.1),
-              ),
+              border: Border.all(color: color.withOpacity(0.1)),
             ),
             child: Row(
               children: [
@@ -1191,7 +1560,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                   child: Center(
                     child: Text(
                       _getSelectedCategoryIcon(),
-                      style: const TextStyle(fontSize: 22), // MEJORADO: Emoji más grande
+                      style: const TextStyle(
+                        fontSize: 22,
+                      ), // MEJORADO: Emoji más grande
                     ),
                   ),
                 ),
@@ -1212,7 +1583,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                       ),
                       const SizedBox(height: 6), // MEJORADO: Más espacio
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: color.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
@@ -1252,9 +1626,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
                     ),
                     const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
-                        color: isIncome ? primaryGreen.withOpacity(0.1) : primaryRed.withOpacity(0.1),
+                        color: isIncome
+                            ? primaryGreen.withOpacity(0.1)
+                            : primaryRed.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -1287,9 +1666,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
       height: 64, // MEJORADO: Botón más alto
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(32),
-        gradient: LinearGradient(
-          colors: [color, darkColor],
-        ),
+        gradient: LinearGradient(colors: [color, darkColor]),
         boxShadow: [
           BoxShadow(
             color: color.withOpacity(0.4), // MEJORADO: Sombra más pronunciada
@@ -1307,10 +1684,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(32),
-          onTap: _isLoading ? null : () {
-            HapticFeedback.mediumImpact();
-            _saveTransaction();
-          },
+          onTap: _isLoading
+              ? null
+              : () {
+                  HapticFeedback.mediumImpact();
+                  _saveTransaction();
+                },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Row(
@@ -1408,27 +1787,49 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
   String _getSelectedCategoryIcon() {
     if (_selectedType == TransactionType.income) {
       switch (_selectedIncomeCategory) {
-        case IncomeCategory.salary: return '💼';
-        case IncomeCategory.extra: return '⭐';
-        case IncomeCategory.gift: return '🎁';
-        case IncomeCategory.other: return '💰';
-        default: return '💵';
+        case IncomeCategory.salary:
+          return '💼';
+        case IncomeCategory.extra:
+          return '⭐';
+        case IncomeCategory.gift:
+          return '🎁';
+        case IncomeCategory.other:
+          return '💰';
+        default:
+          return '💵';
       }
     } else {
+      // Si hay categoría personalizada seleccionada, usar su emoji
+      if (_selectedCustomCategoryId != null && _selectedCustomCategoryEmoji != null) {
+        return _selectedCustomCategoryEmoji!;
+      }
       switch (_selectedExpenseCategory) {
-        case ExpenseCategory.transport: return '🚗';
-        case ExpenseCategory.food: return '🍕';
-        case ExpenseCategory.utilities: return '💡';
-        case ExpenseCategory.health: return '🏥';
-        case ExpenseCategory.education: return '📚';
-        case ExpenseCategory.entertainment: return '🎬';
-        case ExpenseCategory.clothing: return '👕';
-        case ExpenseCategory.home: return '🏠';
-        case ExpenseCategory.technology: return '📱';
-        case ExpenseCategory.savings: return '💰';
-        case ExpenseCategory.gifts: return '�';
-        case ExpenseCategory.other: return '📦';
-        default: return '💸';
+        case ExpenseCategory.transport:
+          return '🚗';
+        case ExpenseCategory.food:
+          return '🍕';
+        case ExpenseCategory.utilities:
+          return '💡';
+        case ExpenseCategory.health:
+          return '🏥';
+        case ExpenseCategory.education:
+          return '📚';
+        case ExpenseCategory.entertainment:
+          return '🎬';
+        case ExpenseCategory.clothing:
+          return '👕';
+        case ExpenseCategory.home:
+          return '🏠';
+        case ExpenseCategory.technology:
+          return '📱';
+        case ExpenseCategory.savings:
+          return '💰';
+        case ExpenseCategory.gifts:
+          return '🎁';
+        case ExpenseCategory.other:
+          return '📦';
+        default:
+          return '💸';
       }
     }
   }
@@ -1436,27 +1837,49 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
   String _getSelectedCategoryName() {
     if (_selectedType == TransactionType.income) {
       switch (_selectedIncomeCategory) {
-        case IncomeCategory.salary: return 'Salario';
-        case IncomeCategory.extra: return 'Ingreso Extra';
-        case IncomeCategory.gift: return 'Regalo';
-        case IncomeCategory.other: return 'Otros Ingresos';
-        default: return 'Ingreso';
+        case IncomeCategory.salary:
+          return 'Salario';
+        case IncomeCategory.extra:
+          return 'Ingreso Extra';
+        case IncomeCategory.gift:
+          return 'Regalo';
+        case IncomeCategory.other:
+          return 'Otros Ingresos';
+        default:
+          return 'Ingreso';
       }
     } else {
+      // Si hay categoría personalizada seleccionada, usar su nombre
+      if (_selectedCustomCategoryId != null && _selectedCustomCategoryName != null) {
+        return _selectedCustomCategoryName!;
+      }
       switch (_selectedExpenseCategory) {
-        case ExpenseCategory.transport: return 'Transporte';
-        case ExpenseCategory.food: return 'Alimentación';
-        case ExpenseCategory.utilities: return 'Servicios Básicos';
-        case ExpenseCategory.health: return 'Salud';
-        case ExpenseCategory.education: return 'Educación';
-        case ExpenseCategory.entertainment: return 'Entretenimiento';
-        case ExpenseCategory.clothing: return 'Ropa y Calzado';
-        case ExpenseCategory.home: return 'Hogar y Muebles';
-        case ExpenseCategory.technology: return 'Tecnología';
-        case ExpenseCategory.savings: return 'Ahorros e Inversión';
-        case ExpenseCategory.gifts: return 'Regalos y Donaciones';
-        case ExpenseCategory.other: return 'Otros Gastos';
-        default: return 'Gasto';
+        case ExpenseCategory.transport:
+          return 'Transporte';
+        case ExpenseCategory.food:
+          return 'Alimentación';
+        case ExpenseCategory.utilities:
+          return 'Servicios Básicos';
+        case ExpenseCategory.health:
+          return 'Salud';
+        case ExpenseCategory.education:
+          return 'Educación';
+        case ExpenseCategory.entertainment:
+          return 'Entretenimiento';
+        case ExpenseCategory.clothing:
+          return 'Ropa y Calzado';
+        case ExpenseCategory.home:
+          return 'Hogar y Muebles';
+        case ExpenseCategory.technology:
+          return 'Tecnología';
+        case ExpenseCategory.savings:
+          return 'Ahorros e Inversión';
+        case ExpenseCategory.gifts:
+          return 'Regalos y Donaciones';
+        case ExpenseCategory.other:
+          return 'Otros Gastos';
+        default:
+          return 'Gasto';
       }
     }
   }
@@ -1464,12 +1887,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
   Future<void> _saveTransaction() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_selectedType == TransactionType.income && _selectedIncomeCategory == null) {
+    if (_selectedType == TransactionType.income &&
+        _selectedIncomeCategory == null) {
       _showErrorMessage('Por favor selecciona una categoría de ingreso');
       return;
     }
 
-    if (_selectedType == TransactionType.expense && _selectedExpenseCategory == null) {
+    // Para gastos: debe tener categoría del sistema O categoría personalizada
+    if (_selectedType == TransactionType.expense &&
+        _selectedExpenseCategory == null &&
+        _selectedCustomCategoryId == null) {
       _showErrorMessage('Por favor selecciona una categoría de gasto');
       return;
     }
@@ -1487,13 +1914,18 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
       }
 
       final transaction = Transaction(
-        id: widget.transactionToEdit?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        id:
+            widget.transactionToEdit?.id ??
+            DateTime.now().millisecondsSinceEpoch.toString(),
         amount: amount,
         type: _selectedType,
         description: _descriptionController.text,
         date: _selectedDate,
         expenseCategory: _selectedExpenseCategory,
         incomeCategory: _selectedIncomeCategory,
+        customCategoryId: _selectedCustomCategoryId,
+        customCategoryName: _selectedCustomCategoryName,
+        customCategoryEmoji: _selectedCustomCategoryEmoji,
       );
 
       // Si estamos editando, actualizar; si no, agregar nueva transacción
@@ -1520,7 +1952,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
       }
     } catch (e) {
       if (mounted) {
-        _showErrorMessage('Error al ${widget.transactionToEdit != null ? 'actualizar' : 'guardar'} la transacción: ${e.toString()}');
+        _showErrorMessage(
+          'Error al ${widget.transactionToEdit != null ? 'actualizar' : 'guardar'} la transacción: ${e.toString()}',
+        );
       }
     } finally {
       if (mounted) {
@@ -1530,7 +1964,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
       }
     }
   }
-
 
   void _showErrorMessage(String message) {
     showDialog(
@@ -1585,7 +2018,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
               GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 24,
+                  ),
                   decoration: BoxDecoration(
                     color: primaryRed,
                     borderRadius: BorderRadius.circular(12),
@@ -1607,14 +2043,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Ticker
     );
   }
   // Agregar esta clase al final de tu archivo AddTransactionScreen, antes del último }
-
 }
+
 class _AmountInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue,
-      TextEditingValue newValue,
-      ) {
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     // Si está vacío, permitir
     if (newValue.text.isEmpty) {
       return newValue;

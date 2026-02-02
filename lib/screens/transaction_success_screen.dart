@@ -13,7 +13,8 @@ class TransactionSuccessScreen extends StatefulWidget {
   });
 
   @override
-  State<TransactionSuccessScreen> createState() => _TransactionSuccessScreenState();
+  State<TransactionSuccessScreen> createState() =>
+      _TransactionSuccessScreenState();
 }
 
 class _TransactionSuccessScreenState extends State<TransactionSuccessScreen>
@@ -43,21 +44,16 @@ class _TransactionSuccessScreenState extends State<TransactionSuccessScreen>
       vsync: this,
     );
 
-    _checkAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _successController,
-      curve: Curves.elasticOut,
-    ));
+    _checkAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _successController, curve: Curves.elasticOut),
+    );
 
-    _scaleAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _successController,
-      curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
-    ));
+    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _successController,
+        curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
+      ),
+    );
   }
 
   void _startAnimation() async {
@@ -121,11 +117,15 @@ class _TransactionSuccessScreenState extends State<TransactionSuccessScreen>
                 duration: const Duration(milliseconds: 300),
                 child: Text(
                   _showSuccess
-                      ? (widget.isEdit ? '¡Transacción actualizada!' : '¡Transacción guardada!')
-                      : (widget.isEdit ? 'Actualizando transacción...' : 'Guardando transacción...'),
+                      ? (widget.isEdit
+                            ? '¡Transacción actualizada!'
+                            : '¡Transacción guardada!')
+                      : (widget.isEdit
+                            ? 'Actualizando transacción...'
+                            : 'Guardando transacción...'),
                   key: ValueKey(_showSuccess),
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 22,
                     fontWeight: FontWeight.w700,
                     color: _showSuccess ? primaryColor : Colors.grey[600],
                   ),
@@ -148,19 +148,13 @@ class _TransactionSuccessScreenState extends State<TransactionSuccessScreen>
                 const SizedBox(height: 8),
                 Text(
                   widget.transaction.description,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   textAlign: TextAlign.center,
                 ),
               ] else ...[
                 Text(
                   'Actualizando tu balance...',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
               ],
             ],
@@ -178,10 +172,7 @@ class _TransactionSuccessScreenState extends State<TransactionSuccessScreen>
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
-              colors: [
-                color.withOpacity(0.1),
-                color.withOpacity(0.3),
-              ],
+              colors: [color.withOpacity(0.1), color.withOpacity(0.3)],
             ),
           ),
           child: Stack(
@@ -275,10 +266,7 @@ class CheckmarkPainter extends CustomPainter {
   final double progress;
   final Color color;
 
-  CheckmarkPainter({
-    required this.progress,
-    required this.color,
-  });
+  CheckmarkPainter({required this.progress, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {

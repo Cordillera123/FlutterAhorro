@@ -15,7 +15,8 @@ class BudgetsScreen extends StatefulWidget {
   State<BudgetsScreen> createState() => _BudgetsScreenState();
 }
 
-class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateMixin {
+class _BudgetsScreenState extends State<BudgetsScreen>
+    with TickerProviderStateMixin {
   final BudgetService _budgetService = BudgetService();
   final TransactionService _transactionService = TransactionService();
   bool _isLoading = true;
@@ -49,28 +50,26 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
       vsync: this,
     );
 
-    _fadeInAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-    ));
+    _fadeInAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
+    );
 
-    _slideAnimation = Tween<double>(
-      begin: 20.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
-    ));
+    _slideAnimation = Tween<double>(begin: 20.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
+      ),
+    );
   }
 
   Future<void> _loadData() async {
     await _budgetService.loadBudgets();
     await _transactionService.loadTransactions();
     _summary = _budgetService.getBudgetSummary();
-    
+
     // Debug para verificar la carga de datos
     _budgetService.debugPrintBudgets();
 
@@ -166,7 +165,12 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
                     child: Opacity(
                       opacity: _fadeInAnimation.value,
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24), // Reducido padding bottom
+                        padding: const EdgeInsets.fromLTRB(
+                          20,
+                          8,
+                          20,
+                          24,
+                        ), // Reducido padding bottom
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -229,7 +233,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
                               'Mis Presupuestos',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 26,
+                                fontSize: 22,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: -0.5,
                               ),
@@ -241,7 +245,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
                               'Controla tus gastos de manera inteligente',
                               style: TextStyle(
                                 color: Colors.white70,
-                                fontSize: 15,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w400,
                               ),
                               maxLines: 1,
@@ -275,16 +279,9 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           color: Colors.white.withOpacity(0.2),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.3),
-            width: 2,
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
         ),
-        child: const Icon(
-          Icons.add_rounded,
-          color: Colors.white,
-          size: 24,
-        ),
+        child: const Icon(Icons.add_rounded, color: Colors.white, size: 24),
       ),
     );
   }
@@ -303,10 +300,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -336,7 +330,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
                       'Resumen de Presupuestos',
                       style: TextStyle(
                         color: Colors.grey[600],
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -348,7 +342,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
                             '${_summary?.totalBudgets ?? 0} presupuestos activos',
                             style: const TextStyle(
                               color: textDark,
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: FontWeight.w700,
                             ),
                             overflow: TextOverflow.ellipsis,
@@ -356,12 +350,19 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: (_summary?.isNearLimit ?? false) ? warningYellow.withOpacity(0.1) : primaryBlue.withOpacity(0.1),
+                            color: (_summary?.isNearLimit ?? false)
+                                ? warningYellow.withOpacity(0.1)
+                                : primaryBlue.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: (_summary?.isNearLimit ?? false) ? warningYellow.withOpacity(0.3) : primaryBlue.withOpacity(0.3),
+                              color: (_summary?.isNearLimit ?? false)
+                                  ? warningYellow.withOpacity(0.3)
+                                  : primaryBlue.withOpacity(0.3),
                             ),
                           ),
                           child: Text(
@@ -369,7 +370,9 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: (_summary?.isNearLimit ?? false) ? warningYellow : primaryBlue,
+                              color: (_summary?.isNearLimit ?? false)
+                                  ? warningYellow
+                                  : primaryBlue,
                             ),
                           ),
                         ),
@@ -407,30 +410,32 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
     );
   }
 
-
-  Widget _buildSummaryMetric(String title, String amount, Color color, IconData icon) {
+  Widget _buildSummaryMetric(
+    String title,
+    String amount,
+    Color color,
+    IconData icon,
+  ) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: color.withOpacity(0.2), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(icon, color: color, size: 20),
+              Icon(icon, color: color, size: 18),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   title,
@@ -443,13 +448,15 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
             child: Text(
               amount,
               style: TextStyle(
                 color: color,
-                fontSize: 18,
+                fontSize: 15,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -470,7 +477,9 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
         borderRadius: BorderRadius.circular(20),
         color: Colors.white,
         border: Border.all(
-          color: isHealthy ? successGreen.withOpacity(0.2) : warningYellow.withOpacity(0.2),
+          color: isHealthy
+              ? successGreen.withOpacity(0.2)
+              : warningYellow.withOpacity(0.2),
           width: 1,
         ),
         boxShadow: [
@@ -486,7 +495,9 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: (isHealthy ? successGreen : warningYellow).withOpacity(0.1),
+              color: (isHealthy ? successGreen : warningYellow).withOpacity(
+                0.1,
+              ),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -504,7 +515,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
                   isHealthy ? 'Presupuestos Saludables' : 'Atención Requerida',
                   style: TextStyle(
                     color: isHealthy ? successGreen : warningYellow,
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -513,10 +524,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
                   isHealthy
                       ? 'Todos tus presupuestos están bajo control'
                       : '$exceededCount excedidos, $warningCount en advertencia',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 13),
                 ),
               ],
             ),
@@ -533,7 +541,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
         const Text(
           'Acciones Rápidas',
           style: TextStyle(
-            fontSize: 22,
+            fontSize: 18,
             fontWeight: FontWeight.w700,
             color: textDark,
             letterSpacing: -0.5,
@@ -547,10 +555,8 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
                 'Presupuesto Mensual',
                 'Para gastos del mes',
                 Icons.calendar_month_rounded,
-                const LinearGradient(
-                  colors: [primaryBlue, darkBlue],
-                ),
-                    () => _createQuickBudget(BudgetPeriod.monthly),
+                const LinearGradient(colors: [primaryBlue, darkBlue]),
+                () => _createQuickBudget(BudgetPeriod.monthly),
               ),
             ),
             const SizedBox(width: 12),
@@ -559,10 +565,8 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
                 'Presupuesto Semanal',
                 'Control semanal',
                 Icons.date_range_rounded,
-                const LinearGradient(
-                  colors: [successGreen, Color(0xFF047857)],
-                ),
-                    () => _createQuickBudget(BudgetPeriod.weekly),
+                const LinearGradient(colors: [successGreen, Color(0xFF047857)]),
+                () => _createQuickBudget(BudgetPeriod.weekly),
               ),
             ),
           ],
@@ -572,21 +576,21 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
   }
 
   Widget _buildQuickActionCard(
-      String title,
-      String subtitle,
-      IconData icon,
-      Gradient gradient,
-      VoidCallback onTap,
-      ) {
+    String title,
+    String subtitle,
+    IconData icon,
+    Gradient gradient,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
         onTap();
       },
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           gradient: gradient,
           boxShadow: [
             BoxShadow(
@@ -598,24 +602,24 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              color: Colors.white,
-              size: 28,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
+            Icon(icon, color: Colors.white, size: 22),
+            const SizedBox(height: 10),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+                maxLines: 1,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               subtitle,
               style: TextStyle(
@@ -634,49 +638,50 @@ class _BudgetsScreenState extends State<BudgetsScreen> with TickerProviderStateM
 
   Widget _buildBudgetsList() {
     // CORREGIDO: Mostrar todos los presupuestos activos (incluyendo pausados)
-      final budgets = _budgetService.budgets;
-  
-  print('Displaying ${budgets.length} budgets');
+    final budgets = _budgetService.budgets;
+
+    print('Displaying ${budgets.length} budgets');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-       Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    const Expanded(
-      child: Text(
-        'Mis Presupuestos', // CAMBIAR por: 'Todos los Presupuestos'
-        style: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.w700,
-          color: textDark,
-          letterSpacing: -0.5,
-        ),
-        overflow: TextOverflow.ellipsis,
-      ),
-    ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Expanded(
+              child: Text(
+                'Mis Presupuestos', // CAMBIAR por: 'Todos los Presupuestos'
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: textDark,
+                  letterSpacing: -0.5,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
             // En la misma sección, cambiar el container del contador:
-if (budgets.isNotEmpty)
-  Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-    decoration: BoxDecoration(
-      color: primaryBlue.withOpacity(0.1),
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(
-        color: primaryBlue.withOpacity(0.2),
-      ),
-    ),
-    child: Text(
-      // CAMBIAR ESTA LÍNEA:
-      '${_budgetService.activeBudgets.length} activos / ${budgets.length} total',
-      style: const TextStyle(
-        color: primaryBlue,
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-      ),
-    ),
-  ),
+            if (budgets.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: primaryBlue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: primaryBlue.withOpacity(0.2)),
+                ),
+                child: Text(
+                  // CAMBIAR ESTA LÍNEA:
+                  '${_budgetService.activeBudgets.length} activos / ${budgets.length} total',
+                  style: const TextStyle(
+                    color: primaryBlue,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
           ],
         ),
         const SizedBox(height: 20),
@@ -692,287 +697,318 @@ if (budgets.isNotEmpty)
     final progress = _budgetService.getBudgetProgress(budget);
 
     return Opacity(
-        opacity: budget.isActive ? 1.0 : 0.7,
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+      opacity: budget.isActive ? 1.0 : 0.7,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: Border.all(
+            color: budget.isActive
+                ? Budget.getStatusColor(progress.status).withOpacity(0.2)
+                : Colors.grey.withOpacity(0.3), // Borde gris para pausados
+            width: 1,
           ),
-        ],
-        border: Border.all(
-          color: budget.isActive
-              ? Budget.getStatusColor(progress.status).withOpacity(0.2)
-              : Colors.grey.withOpacity(0.3), // Borde gris para pausados
-          width: 1,
         ),
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: budget.isActive
-                            ? Budget.getStatusColor(progress.status).withOpacity(0.1)
-                            : Colors.grey.withOpacity(0.1), // Gris para pausados
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Center(
-                        child: Text(
-                          budget.categoryIcon,
-                          style: TextStyle(
-                            fontSize: 24,
-                            color: budget.isActive ? null : Colors.grey, // Gris para pausados
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: budget.isActive
+                              ? Budget.getStatusColor(
+                                  progress.status,
+                                ).withOpacity(0.1)
+                              : Colors.grey.withOpacity(
+                                  0.1,
+                                ), // Gris para pausados
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(
+                          child: Text(
+                            budget.categoryIcon,
+                            style: TextStyle(
+                              fontSize: 20,
+                              color: budget.isActive
+                                  ? null
+                                  : Colors.grey, // Gris para pausados
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  budget.name,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: budget.isActive ? textDark : Colors.grey, // Gris para pausados
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              // Indicador de estado mejorado
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: budget.isActive
-                                      ? Budget.getStatusColor(progress.status).withOpacity(0.1)
-                                      : Colors.orange.withOpacity(0.1), // Naranja para pausados
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: budget.isActive
-                                        ? Budget.getStatusColor(progress.status).withOpacity(0.3)
-                                        : Colors.orange.withOpacity(0.3),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      budget.isActive
-                                          ? Icons.check_circle
-                                          : Icons.pause_circle,
-                                      size: 12,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    budget.name,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
                                       color: budget.isActive
-                                          ? Budget.getStatusColor(progress.status)
-                                          : Colors.orange,
+                                          ? textDark
+                                          : Colors.grey, // Gris para pausados
                                     ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      budget.isActive
-                                          ? Budget.getStatusMessage(progress.status)
-                                          : 'Pausado',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                // Indicador de estado mejorado
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: budget.isActive
+                                        ? Budget.getStatusColor(
+                                            progress.status,
+                                          ).withOpacity(0.1)
+                                        : Colors.orange.withOpacity(
+                                            0.1,
+                                          ), // Naranja para pausados
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: budget.isActive
+                                          ? Budget.getStatusColor(
+                                              progress.status,
+                                            ).withOpacity(0.3)
+                                          : Colors.orange.withOpacity(0.3),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        budget.isActive
+                                            ? Icons.check_circle
+                                            : Icons.pause_circle,
+                                        size: 10,
                                         color: budget.isActive
-                                            ? Budget.getStatusColor(progress.status)
+                                            ? Budget.getStatusColor(
+                                                progress.status,
+                                              )
                                             : Colors.orange,
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        budget.isActive
+                                            ? Budget.getStatusMessage(
+                                                progress.status,
+                                              )
+                                            : 'Pausado',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          color: budget.isActive
+                                              ? Budget.getStatusColor(
+                                                  progress.status,
+                                                )
+                                              : Colors.orange,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            '${budget.categoryName} • ${budget.periodName}',
-                            style: TextStyle(
-                              color: budget.isActive ? textMedium : Colors.grey,
-                              fontSize: 14,
+                              ],
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Text(
-                                '${FormatUtils.formatMoney(progress.spentAmount)} de ${FormatUtils.formatMoney(budget.amount)}',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: budget.isActive
-                                      ? Budget.getStatusColor(progress.status)
-                                      : Colors.grey,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${budget.categoryName} • ${budget.periodName}',
+                              style: TextStyle(
+                                color: budget.isActive
+                                    ? textMedium
+                                    : Colors.grey,
+                                fontSize: 13,
                               ),
-                              const Spacer(),
-                              Text(
-                                '${(progress.percentage * 100).toStringAsFixed(0)}%',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: budget.isActive
-                                      ? Budget.getStatusColor(progress.status)
-                                      : Colors.grey,
-                                  fontWeight: FontWeight.w700,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      '${FormatUtils.formatMoney(progress.spentAmount)} de ${FormatUtils.formatMoney(budget.amount)}',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: budget.isActive
+                                            ? Budget.getStatusColor(
+                                                progress.status,
+                                              )
+                                            : Colors.grey,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                // Barra de progreso mejorada
-                Container(
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: FractionallySizedBox(
-                    alignment: Alignment.centerLeft,
-                    widthFactor: progress.percentage.clamp(0.0, 1.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: budget.isActive
-                            ? Budget.getStatusColor(progress.status)
-                            : Colors.grey,
-                        borderRadius: BorderRadius.circular(4),
-                        // Patrón rayado para presupuestos pausados
-                        gradient: budget.isActive
-                            ? null
-                            : LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Colors.grey.withOpacity(0.6),
-                            Colors.grey.withOpacity(0.8),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '${(progress.percentage * 100).toStringAsFixed(0)}%',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: budget.isActive
+                                        ? Budget.getStatusColor(progress.status)
+                                        : Colors.grey,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Barra de progreso mejorada
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: progress.percentage.clamp(0.0, 1.0),
+                      backgroundColor: Colors.grey[200],
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        budget.isActive
+                            ? Budget.getStatusColor(progress.status)
+                            : Colors.grey,
+                      ),
+                      minHeight: 6,
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  budget.isActive
-                      ? progress.progressMessage
-                      : 'Presupuesto pausado - Se puede reactivar en cualquier momento',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[600],
-                    fontStyle: FontStyle.italic,
+                  const SizedBox(height: 10),
+                  Text(
+                    budget.isActive
+                        ? progress.progressMessage
+                        : 'Presupuesto pausado - Se puede reactivar en cualquier momento',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                      fontStyle: FontStyle.italic,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-          // Sección de botones con estilo diferenciado
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: budget.isActive
-                  ? const Color(0xFFF8FAFC)
-                  : Colors.grey.withOpacity(0.05), // Fondo más gris para pausados
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
-              ),
-              border: Border(
-                top: BorderSide(
-                  color: budget.isActive
-                      ? const Color(0xFFE5E7EB)
-                      : Colors.grey.withOpacity(0.2),
-                  width: 1,
-                ),
+                ],
               ),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _buildBudgetActionButton(
-                    Icons.edit_outlined,
-                    'Editar',
-                    primaryBlue,
-                        () => _editBudget(budget),
+            // Sección de botones con estilo diferenciado
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+              decoration: BoxDecoration(
+                color: budget.isActive
+                    ? const Color(0xFFF8FAFC)
+                    : Colors.grey.withOpacity(
+                        0.05,
+                      ), // Fondo más gris para pausados
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
+                border: Border(
+                  top: BorderSide(
+                    color: budget.isActive
+                        ? const Color(0xFFE5E7EB)
+                        : Colors.grey.withOpacity(0.2),
+                    width: 1,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildBudgetActionButton(
-                    budget.isActive ? Icons.pause : Icons.play_arrow,
-                    budget.isActive ? 'Pausar' : 'Activar',
-                    budget.isActive ? warningYellow : successGreen,
-                        () => _toggleBudget(budget),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildBudgetActionButton(
+                      Icons.edit_outlined,
+                      'Editar',
+                      primaryBlue,
+                      () => _editBudget(budget),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildBudgetActionButton(
-                    Icons.delete_outline,
-                    'Eliminar',
-                    dangerRed,
-                        () => _deleteBudget(budget),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildBudgetActionButton(
+                      budget.isActive ? Icons.pause : Icons.play_arrow,
+                      budget.isActive ? 'Pausar' : 'Activar',
+                      budget.isActive ? warningYellow : successGreen,
+                      () => _toggleBudget(budget),
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildBudgetActionButton(
+                      Icons.delete_outline,
+                      'Eliminar',
+                      dangerRed,
+                      () => _deleteBudget(budget),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
         ),
+      ),
     );
   }
 
-  Widget _buildBudgetActionButton(IconData icon, String label, Color color, VoidCallback onPressed) {
+  Widget _buildBudgetActionButton(
+    IconData icon,
+    String label,
+    Color color,
+    VoidCallback onPressed,
+  ) {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
         onPressed();
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: color.withOpacity(0.2),
-            width: 1,
-          ),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withOpacity(0.2), width: 1),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: color),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: color,
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 4),
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
               ),
             ),
           ],
@@ -988,9 +1024,7 @@ if (budgets.isNotEmpty)
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         color: Colors.white,
-        border: Border.all(
-          color: primaryBlue.withOpacity(0.1),
-        ),
+        border: Border.all(color: primaryBlue.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
             color: primaryBlue.withOpacity(0.05),
@@ -1002,14 +1036,12 @@ if (budgets.isNotEmpty)
       child: Column(
         children: [
           // Logo de la app en lugar del ícono genérico
-          const AppLogo.medium(
-            showText: false,
-          ),
+          const AppLogo.medium(showText: false),
           const SizedBox(height: 24),
           const Text(
             'Controla tus gastos',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.w700,
               color: textDark,
             ),
@@ -1021,7 +1053,7 @@ if (budgets.isNotEmpty)
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.grey[600],
-              fontSize: 15,
+              fontSize: 14,
               height: 1.5,
             ),
           ),
@@ -1033,10 +1065,7 @@ if (budgets.isNotEmpty)
               icon: const Icon(Icons.add_rounded, size: 22),
               label: const Text(
                 'Crear Primer Presupuesto',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryBlue,
@@ -1054,7 +1083,6 @@ if (budgets.isNotEmpty)
     );
   }
 
-
   // Métodos de navegación y acciones
   void _navigateToCreateBudget() async {
     // Validar límite antes de navegar
@@ -1070,9 +1098,7 @@ if (budgets.isNotEmpty)
 
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const CreateBudgetScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const CreateBudgetScreen()),
     );
 
     if (result == true) {
@@ -1095,9 +1121,7 @@ if (budgets.isNotEmpty)
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CreateBudgetScreen(
-          preselectedPeriod: period,
-        ),
+        builder: (context) => CreateBudgetScreen(preselectedPeriod: period),
       ),
     );
 
@@ -1110,9 +1134,7 @@ if (budgets.isNotEmpty)
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CreateBudgetScreen(
-          budgetToEdit: budget,
-        ),
+        builder: (context) => CreateBudgetScreen(budgetToEdit: budget),
       ),
     );
 
@@ -1138,11 +1160,13 @@ if (budgets.isNotEmpty)
         'Presupuesto $statusText',
         'El presupuesto "${budget.name}" ha sido $statusText correctamente.',
         statusColor,
-        budget.isActive ? Icons.pause_circle_rounded : Icons.play_circle_rounded,
+        budget.isActive
+            ? Icons.pause_circle_rounded
+            : Icons.play_circle_rounded,
       );
     } catch (e) {
       if (!mounted) return;
-      
+
       _showMessage(
         'Error',
         'No se pudo cambiar el estado del presupuesto. Inténtalo de nuevo.',
@@ -1253,7 +1277,7 @@ if (budgets.isNotEmpty)
                         } catch (e) {
                           // Verificar que el widget está montado antes de mostrar error
                           if (!mounted) return;
-                          
+
                           _showMessage(
                             'Error',
                             'No se pudo eliminar el presupuesto. Inténtalo de nuevo.',
@@ -1307,16 +1331,9 @@ if (budgets.isNotEmpty)
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(15),
                   color: color.withOpacity(0.1),
-                  border: Border.all(
-                    color: color.withOpacity(0.3),
-                    width: 2,
-                  ),
+                  border: Border.all(color: color.withOpacity(0.3), width: 2),
                 ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 30,
-                ),
+                child: Icon(icon, color: color, size: 30),
               ),
               const SizedBox(height: 20),
               Text(
@@ -1342,7 +1359,10 @@ if (budgets.isNotEmpty)
               GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 24,
+                  ),
                   decoration: BoxDecoration(
                     color: color,
                     borderRadius: BorderRadius.circular(12),

@@ -13,7 +13,8 @@ class GoalsScreen extends StatefulWidget {
   State<GoalsScreen> createState() => _GoalsScreenState();
 }
 
-class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin {
+class _GoalsScreenState extends State<GoalsScreen>
+    with TickerProviderStateMixin {
   final GoalService _goalService = GoalService();
   bool _isLoading = true;
   GoalSummary? _summary;
@@ -48,21 +49,19 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
       vsync: this,
     );
 
-    _fadeInAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-    ));
+    _fadeInAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
+    );
 
-    _slideAnimation = Tween<double>(
-      begin: 20.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
-    ));
+    _slideAnimation = Tween<double>(begin: 20.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
+      ),
+    );
   }
 
   Future<void> _loadData() async {
@@ -184,7 +183,7 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
                               'Mis Metas',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 28,
+                                fontSize: 24,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: -0.5,
                               ),
@@ -194,7 +193,7 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
                               'Alcanza tus sueños paso a paso',
                               style: TextStyle(
                                 color: Colors.white70,
-                                fontSize: 16,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
@@ -224,16 +223,9 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           color: Colors.white.withOpacity(0.2),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.3),
-            width: 2,
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
         ),
-        child: const Icon(
-          Icons.add_rounded,
-          color: Colors.white,
-          size: 24,
-        ),
+        child: const Icon(Icons.add_rounded, color: Colors.white, size: 24),
       ),
     );
   }
@@ -241,7 +233,7 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
   Widget _buildSummaryCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         color: Colors.white,
@@ -270,7 +262,7 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
                   size: 24,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -279,24 +271,25 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
                       'Resumen de Metas',
                       style: TextStyle(
                         color: textDark,
-                        fontSize: 20,
+                        fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     SizedBox(height: 4),
                     Text(
                       'Tu progreso hacia la libertad financiera',
-                      style: TextStyle(
-                        color: textMedium,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: textMedium, fontSize: 13),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           Row(
             children: [
               Expanded(
@@ -307,7 +300,7 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
                   Icons.track_changes_rounded,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: _buildSummaryMetric(
                   'Ahorrado',
@@ -318,7 +311,7 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -329,7 +322,7 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
                   Icons.trending_up_rounded,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: _buildSummaryMetric(
                   'Metas Activas',
@@ -345,41 +338,48 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildSummaryMetric(String title, String amount, Color color, IconData icon) {
+  Widget _buildSummaryMetric(
+    String title,
+    String amount,
+    Color color,
+    IconData icon,
+  ) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: color.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.1),
-        ),
+        border: Border.all(color: color.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 20,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            amount,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: color,
+          Icon(icon, color: color, size: 18),
+          const SizedBox(height: 6),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              amount,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: color,
+              ),
+              maxLines: 1,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
             title,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               color: textMedium,
               fontWeight: FontWeight.w500,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -393,7 +393,7 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
     final activeGoals = _summary?.activeGoals ?? 0;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         color: Colors.white,
@@ -414,7 +414,9 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              color: (isHealthy ? successGreen : warningYellow).withOpacity(0.1),
+              color: (isHealthy ? successGreen : warningYellow).withOpacity(
+                0.1,
+              ),
             ),
             child: Icon(
               isHealthy ? Icons.check_circle_rounded : Icons.warning_rounded,
@@ -422,7 +424,7 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
               size: 24,
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -430,22 +432,23 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
                 Text(
                   isHealthy ? 'Metas en buen camino' : 'Necesita atención',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: isHealthy ? successGreen : warningYellow,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   isHealthy
                       ? '$onTrackGoals de $activeGoals metas van según lo planeado'
                       : urgentGoals > 0
-                          ? '$urgentGoals metas urgentes requieren atención'
-                          : 'Algunas metas están atrasadas',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: textMedium,
-                  ),
+                      ? '$urgentGoals metas urgentes requieren atención'
+                      : 'Algunas metas están atrasadas',
+                  style: const TextStyle(fontSize: 12, color: textMedium),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -462,7 +465,7 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
         const Text(
           'Acciones Rápidas',
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.w700,
             color: textDark,
           ),
@@ -532,7 +535,7 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
         onTap();
       },
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           gradient: gradient,
@@ -546,22 +549,24 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              color: Colors.white,
-              size: 24,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
+            Icon(icon, color: Colors.white, size: 22),
+            const SizedBox(height: 10),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+                maxLines: 1,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               subtitle,
               style: TextStyle(
@@ -569,6 +574,8 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
                 fontSize: 12,
                 fontWeight: FontWeight.w400,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -587,7 +594,7 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
         Text(
           'Mis Metas ($totalGoals/15)',
           style: const TextStyle(
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.w700,
             color: textDark,
           ),
@@ -606,7 +613,7 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
             Text(
               'Metas Pausadas (${pausedGoals.length})',
               style: const TextStyle(
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: textMedium,
               ),
@@ -621,7 +628,7 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
 
   Widget _buildGoalCard(FinancialGoal goal) {
     final isPaused = goal.status == GoalStatus.paused;
-    
+
     return Opacity(
       opacity: isPaused ? 0.7 : 1.0,
       child: Container(
@@ -637,269 +644,317 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
             ),
           ],
           border: Border.all(
-            color: isPaused 
-              ? Colors.grey.withOpacity(0.3)
-              : goal.priorityColor.withOpacity(0.2),
+            color: isPaused
+                ? Colors.grey.withOpacity(0.3)
+                : goal.priorityColor.withOpacity(0.2),
             width: isPaused ? 2 : 1,
           ),
         ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: goal.priorityColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Center(
-                        child: Text(
-                          goal.emoji,
-                          style: const TextStyle(fontSize: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Emoji - tamaño fijo
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: goal.priorityColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(
+                          child: Text(
+                            goal.emoji,
+                            style: const TextStyle(fontSize: 18),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  goal.name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 16,
-                                    color: textDark,
+                      const SizedBox(width: 10),
+                      // Nombre y tipo - flexible para adaptarse
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    goal.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 15,
+                                      color: textDark,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
-                              if (isPaused) ...[
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: warningYellow.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(
-                                      color: warningYellow.withOpacity(0.3),
+                                if (isPaused) ...[
+                                  const SizedBox(width: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 5,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: warningYellow.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(
+                                        color: warningYellow.withOpacity(0.3),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'PAUSADA',
+                                      style: TextStyle(
+                                        color: warningYellow,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                   ),
-                                  child: Text(
-                                    'PAUSADA',
-                                    style: TextStyle(
-                                      color: warningYellow,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${goal.typeName} • ${goal.priorityName}',
+                              style: TextStyle(
+                                color: goal.priorityColor,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            // Montos movidos aquí para mejor distribución
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      FormatUtils.formatMoney(
+                                        goal.currentAmount,
+                                      ),
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w800,
+                                        color: goal.progressColor,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  ' de ',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: textMedium,
+                                  ),
+                                ),
+                                Flexible(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      FormatUtils.formatMoney(
+                                        goal.targetAmount,
+                                      ),
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: textDark,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ],
-                            ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${(goal.progressPercentage * 100).toStringAsFixed(1)}% completado',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: textDark,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${goal.typeName} • ${goal.priorityName}',
-                            style: TextStyle(
-                              color: goal.priorityColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              goal.timeInfo,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: goal.isOverdue ? dangerRed : textMedium,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.end,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          FormatUtils.formatMoney(goal.currentAmount),
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: goal.progressColor,
-                          ),
-                        ),
-                        Text(
-                          'de ${FormatUtils.formatMoney(goal.targetAmount)}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: textMedium,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '${(goal.progressPercentage * 100).toStringAsFixed(1)}% completado',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: textDark,
-                          ),
-                        ),
-                        Text(
-                          goal.timeInfo,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: goal.isOverdue ? dangerRed : textMedium,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
+                      const SizedBox(height: 6),
+                      ClipRRect(
                         borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: goal.progressPercentage,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: goal.progressColor,
-                            borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: goal.progressPercentage.clamp(0.0, 1.0),
+                          backgroundColor: Colors.grey[200],
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            goal.progressColor,
                           ),
+                          minHeight: 6,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: goal.priorityColor.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(12),
+                    ],
                   ),
-                  child: Text(
-                    goal.mainTip,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: goal.priorityColor,
-                      fontWeight: FontWeight.w500,
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: goal.priorityColor.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      goal.mainTip,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: goal.priorityColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: backgroundCard,
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
+                ],
               ),
             ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    if (goal.status == GoalStatus.active) ...[
-                      Expanded(
-                        child: _buildGoalActionButton(
-                          Icons.add_rounded,
-                          'Aportar',
-                          successGreen,
-                          () => _addContribution(goal),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                    ],
-                    Expanded(
-                      child: _buildGoalActionButton(
-                        Icons.edit_rounded,
-                        'Editar',
-                        primaryBlue,
-                        () => _editGoal(goal),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildGoalActionButton(
-                        goal.status == GoalStatus.active 
-                          ? Icons.pause_rounded 
-                          : Icons.play_arrow_rounded,
-                        goal.status == GoalStatus.active ? 'Pausar' : 'Reanudar',
-                        goal.status == GoalStatus.active ? warningYellow : successGreen,
-                        () => _toggleGoalStatus(goal),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildGoalActionButton(
-                        Icons.delete_rounded,
-                        'Eliminar',
-                        dangerRed,
-                        () => _deleteGoal(goal),
-                      ),
-                    ),
-                  ],
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+              decoration: BoxDecoration(
+                color: backgroundCard,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
                 ),
-              ],
+              ),
+              child: Row(
+                children: [
+                  if (goal.status == GoalStatus.active) ...[
+                    Expanded(
+                      child: _buildGoalActionButton(
+                        Icons.add_rounded,
+                        'Aportar',
+                        successGreen,
+                        () => _addContribution(goal),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  Expanded(
+                    child: _buildGoalActionButton(
+                      Icons.edit_rounded,
+                      'Editar',
+                      primaryBlue,
+                      () => _editGoal(goal),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: _buildGoalActionButton(
+                      goal.status == GoalStatus.active
+                          ? Icons.pause_rounded
+                          : Icons.play_arrow_rounded,
+                      goal.status == GoalStatus.active ? 'Pausar' : 'Reanudar',
+                      goal.status == GoalStatus.active
+                          ? warningYellow
+                          : successGreen,
+                      () => _toggleGoalStatus(goal),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: _buildGoalActionButton(
+                      Icons.delete_rounded,
+                      'Eliminar',
+                      dangerRed,
+                      () => _deleteGoal(goal),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  ); // Cierre del widget Opacity
-}
+    );
+  }
 
-  Widget _buildGoalActionButton(IconData icon, String label, Color color, VoidCallback onPressed) {
+  Widget _buildGoalActionButton(
+    IconData icon,
+    String label,
+    Color color,
+    VoidCallback onPressed,
+  ) {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
         onPressed();
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: color.withOpacity(0.2),
-          ),
+          border: Border.all(color: color.withOpacity(0.2)),
         ),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              color: color,
-              size: 16,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+            Icon(icon, color: color, size: 15),
+            const SizedBox(height: 2),
+            SizedBox(
+              width: double.infinity,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               ),
             ),
           ],
@@ -926,9 +981,7 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
       child: Column(
         children: [
           // Logo de la app para dar coherencia visual
-          const AppLogo.medium(
-            showText: false,
-          ),
+          const AppLogo.medium(showText: false),
           const SizedBox(height: 20),
           const Text(
             'Sin metas activas',
@@ -941,11 +994,7 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
           const SizedBox(height: 8),
           const Text(
             'Crea tu primera meta financiera y comienza a ahorrar para tus sueños',
-            style: TextStyle(
-              fontSize: 14,
-              color: textMedium,
-              height: 1.5,
-            ),
+            style: TextStyle(fontSize: 14, color: textMedium, height: 1.5),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
@@ -979,9 +1028,7 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
       height: 56,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(
-          colors: [primaryBlue, darkBlue],
-        ),
+        gradient: const LinearGradient(colors: [primaryBlue, darkBlue]),
         boxShadow: [
           BoxShadow(
             color: primaryBlue.withOpacity(0.3),
@@ -1001,11 +1048,7 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.add_rounded,
-                color: Colors.white,
-                size: 24,
-              ),
+              Icon(Icons.add_rounded, color: Colors.white, size: 24),
               SizedBox(width: 10),
               Text(
                 'Nueva Meta',
@@ -1037,9 +1080,7 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
 
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const CreateGoalScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const CreateGoalScreen()),
     );
 
     if (result == true) {
@@ -1163,13 +1204,17 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
             ),
             ElevatedButton(
               onPressed: () async {
-                final amount = double.tryParse(amountController.text.replaceAll(',', ''));
+                final amount = double.tryParse(
+                  amountController.text.replaceAll(',', ''),
+                );
                 if (amount != null && amount > 0) {
                   try {
                     await _goalService.addContribution(
                       goal.id!,
                       amount,
-                      note: noteController.text.isNotEmpty ? noteController.text : null,
+                      note: noteController.text.isNotEmpty
+                          ? noteController.text
+                          : null,
                     );
                     if (mounted) {
                       Navigator.pop(context);
@@ -1264,7 +1309,10 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
             ElevatedButton(
               onPressed: () async {
                 try {
-                  await _goalService.changeGoalStatus(goal.id!, GoalStatus.paused);
+                  await _goalService.changeGoalStatus(
+                    goal.id!,
+                    GoalStatus.paused,
+                  );
                   if (mounted) {
                     Navigator.pop(context);
                     _refreshData();
@@ -1340,103 +1388,145 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          title: Row(
-            children: [
-              Icon(
-                Icons.warning_rounded,
-                color: dangerRed,
-                size: 28,
-              ),
-              const SizedBox(width: 12),
-              const Text('Confirmar Eliminación'),
-            ],
-          ),
+          contentPadding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
           content: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '¿Estás seguro de que deseas eliminar la meta "${goal.name}"?',
-                style: const TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Esta acción no se puede deshacer. Se eliminarán todas las contribuciones asociadas.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: textMedium,
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: dangerRed.withOpacity(0.1),
+                  border: Border.all(
+                    color: dangerRed.withOpacity(0.3),
+                    width: 2,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.delete_rounded,
+                  color: dangerRed,
+                  size: 24,
                 ),
               ),
+              const SizedBox(height: 16),
+              const Text(
+                '¿Eliminar?',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: dangerRed,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                '¿Eliminar "${goal.name}"?',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: textDark,
+                  fontWeight: FontWeight.w600,
+                  height: 1.3,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Esta acción no se puede deshacer.',
+                style: TextStyle(fontSize: 11, color: textMedium),
+                textAlign: TextAlign.center,
+              ),
               if (goal.currentAmount > 0) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: warningYellow.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.info_rounded,
-                        color: warningYellow,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Tienes ${FormatUtils.formatMoney(goal.currentAmount)} ahorrados en esta meta.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: warningYellow,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    'Ahorrado: ${FormatUtils.formatMoney(goal.currentAmount)}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: warningYellow,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ],
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text(
+                          'Cancelar',
+                          style: TextStyle(
+                            color: textMedium,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () async {
+                        Navigator.of(context).pop();
+                        try {
+                          await _goalService.deleteGoal(goal.id!);
+                          _showMessage(
+                            'Eliminada',
+                            'La meta ha sido eliminada.',
+                            successGreen,
+                            Icons.check_circle_rounded,
+                          );
+                          await _refreshData();
+                        } catch (e) {
+                          _showMessage(
+                            'Error',
+                            'No se pudo eliminar la meta.',
+                            dangerRed,
+                            Icons.error_rounded,
+                          );
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: dangerRed,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text(
+                          'Eliminar',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-                try {
-                  await _goalService.deleteGoal(goal.id!);
-                  _showMessage(
-                    'Meta Eliminada',
-                    'La meta "${goal.name}" ha sido eliminada correctamente.',
-                    successGreen,
-                    Icons.check_circle_rounded,
-                  );
-                  await _refreshData();
-                } catch (e) {
-                  _showMessage(
-                    'Error',
-                    'No se pudo eliminar la meta: ${e.toString()}',
-                    dangerRed,
-                    Icons.error_rounded,
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: dangerRed,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'Eliminar',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
         );
       },
     );
@@ -1460,16 +1550,9 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(15),
                   color: color.withOpacity(0.1),
-                  border: Border.all(
-                    color: color.withOpacity(0.3),
-                    width: 2,
-                  ),
+                  border: Border.all(color: color.withOpacity(0.3), width: 2),
                 ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 30,
-                ),
+                child: Icon(icon, color: color, size: 30),
               ),
               const SizedBox(height: 20),
               Text(
@@ -1495,7 +1578,10 @@ class _GoalsScreenState extends State<GoalsScreen> with TickerProviderStateMixin
               GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 24,
+                  ),
                   decoration: BoxDecoration(
                     color: color,
                     borderRadius: BorderRadius.circular(12),

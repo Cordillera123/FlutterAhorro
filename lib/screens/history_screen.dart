@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/transaction.dart';
 import '../services/transaction_service.dart';
+import '../services/category_service.dart';
 import '../utils/format_utils.dart';
 import 'add_transaction_screen.dart';
 
@@ -12,8 +13,10 @@ class HistoryScreen extends StatefulWidget {
   State<HistoryScreen> createState() => _HistoryScreenState();
 }
 
-class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateMixin {
+class _HistoryScreenState extends State<HistoryScreen>
+    with TickerProviderStateMixin {
   final TransactionService _transactionService = TransactionService();
+  final CategoryService _categoryService = CategoryService();
   List<Transaction> _filteredTransactions = [];
   String _selectedFilter = 'Todas';
   bool _isLoading = true;
@@ -44,6 +47,16 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
     super.initState();
     _initAnimations();
     _loadTransactions();
+    // Escuchar cambios en CategoryService (para actualizar nombres/emojis)
+    _categoryService.addListener(_onCategoryChanged);
+  }
+
+  void _onCategoryChanged() {
+    if (mounted) {
+      setState(() {
+        // Forzar rebuild para mostrar nombres/emojis actualizados
+      });
+    }
   }
 
   void _initAnimations() {
@@ -52,21 +65,19 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
       vsync: this,
     );
 
-    _fadeInAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-    ));
+    _fadeInAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
+    );
 
-    _slideAnimation = Tween<double>(
-      begin: 20.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
-    ));
+    _slideAnimation = Tween<double>(begin: 20.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
+      ),
+    );
   }
 
   Future<void> _loadTransactions() async {
@@ -104,6 +115,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
 
   @override
   void dispose() {
+    _categoryService.removeListener(_onCategoryChanged);
     _animationController.dispose();
     super.dispose();
   }
@@ -203,11 +215,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                primaryBlue,
-                darkBlue,
-                deepBlue,
-              ],
+              colors: [primaryBlue, darkBlue, deepBlue],
             ),
             borderRadius: BorderRadius.only(
               bottomLeft: Radius.circular(32),
@@ -230,7 +238,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                               'Historial',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 26,
+                                fontSize: 22,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: -0.5,
                               ),
@@ -242,7 +250,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                               'Revisa todas tus transacciones',
                               style: TextStyle(
                                 color: Colors.white70,
-                                fontSize: 15,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w400,
                               ),
                               maxLines: 1,
@@ -257,7 +265,9 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                           _buildHeaderAction(
                             Icons.delete_sweep_rounded,
                             'Eliminar todas',
-                            _filteredTransactions.isNotEmpty ? _showDeleteAllDialog : null,
+                            _filteredTransactions.isNotEmpty
+                                ? _showDeleteAllDialog
+                                : null,
                           ),
                           const SizedBox(width: 8),
                           _buildHeaderAction(
@@ -278,9 +288,13 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildHeaderAction(IconData icon, String tooltip, VoidCallback? onPressed) {
+  Widget _buildHeaderAction(
+    IconData icon,
+    String tooltip,
+    VoidCallback? onPressed,
+  ) {
     final isEnabled = onPressed != null;
-    
+
     return GestureDetector(
       onTap: () {
         if (isEnabled) {
@@ -293,21 +307,19 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
         height: 44,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          color: isEnabled 
-              ? Colors.white.withOpacity(0.2) 
+          color: isEnabled
+              ? Colors.white.withOpacity(0.2)
               : Colors.white.withOpacity(0.1),
           border: Border.all(
-            color: isEnabled 
-                ? Colors.white.withOpacity(0.3) 
+            color: isEnabled
+                ? Colors.white.withOpacity(0.3)
                 : Colors.white.withOpacity(0.1),
             width: 1,
           ),
         ),
         child: Icon(
           icon,
-          color: isEnabled 
-              ? Colors.white 
-              : Colors.white.withOpacity(0.5),
+          color: isEnabled ? Colors.white : Colors.white.withOpacity(0.5),
           size: 22,
         ),
       ),
@@ -330,10 +342,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(
-          color: borderLight,
-          width: 1,
-        ),
+        border: Border.all(color: borderLight, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -363,17 +372,14 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                       'Filtrar Transacciones',
                       style: TextStyle(
                         color: textDark,
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     SizedBox(height: 4),
                     Text(
                       'Encuentra lo que buscas rápidamente',
-                      style: TextStyle(
-                        color: textMedium,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: textMedium, fontSize: 13),
                     ),
                   ],
                 ),
@@ -396,7 +402,10 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                   },
                   child: Container(
                     margin: const EdgeInsets.only(right: 12),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: isSelected ? primaryBlue : backgroundCard,
                       borderRadius: BorderRadius.circular(16),
@@ -406,12 +415,12 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                       ),
                       boxShadow: isSelected
                           ? [
-                        BoxShadow(
-                          color: primaryBlue.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ]
+                              BoxShadow(
+                                color: primaryBlue.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
                           : null,
                     ),
                     child: Text(
@@ -460,10 +469,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                   offset: const Offset(0, 8),
                 ),
               ],
-              border: Border.all(
-                color: borderLight,
-                width: 1,
-              ),
+              border: Border.all(color: borderLight, width: 1),
             ),
             child: Column(
               children: [
@@ -492,7 +498,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                             'Resumen Financiero',
                             style: TextStyle(
                               color: textDark,
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -501,7 +507,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                             '${_filteredTransactions.length} transacciones encontradas',
                             style: const TextStyle(
                               color: textMedium,
-                              fontSize: 14,
+                              fontSize: 13,
                             ),
                           ),
                         ],
@@ -535,10 +541,14 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: balance >= 0 ? successGreen.withOpacity(0.1) : dangerRed.withOpacity(0.1),
+                    color: balance >= 0
+                        ? successGreen.withOpacity(0.1)
+                        : dangerRed.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: balance >= 0 ? successGreen.withOpacity(0.2) : dangerRed.withOpacity(0.2),
+                      color: balance >= 0
+                          ? successGreen.withOpacity(0.2)
+                          : dangerRed.withOpacity(0.2),
                       width: 1,
                     ),
                   ),
@@ -546,7 +556,9 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        balance >= 0 ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+                        balance >= 0
+                            ? Icons.trending_up_rounded
+                            : Icons.trending_down_rounded,
                         color: balance >= 0 ? successGreen : dangerRed,
                         size: 20,
                       ),
@@ -555,7 +567,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                         'Balance: ${FormatUtils.formatMoney(balance.abs())}',
                         style: TextStyle(
                           color: balance >= 0 ? successGreen : dangerRed,
-                          fontSize: 16,
+                          fontSize: 15,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -571,32 +583,32 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildSummaryCard(String title, String amount, Color color, IconData icon) {
+  Widget _buildSummaryCard(
+    String title,
+    String amount,
+    Color color,
+    IconData icon,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: color.withOpacity(0.2), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Icon(icon, color: color, size: 20),
-            ],
+            children: [Icon(icon, color: color, size: 20)],
           ),
           const SizedBox(height: 12),
           Text(
             title,
             style: TextStyle(
               color: color,
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -608,7 +620,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
               amount,
               style: TextStyle(
                 color: color,
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -634,14 +646,16 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
           const Text(
             'Transacciones',
             style: TextStyle(
-              fontSize: 22,
+              fontSize: 18,
               fontWeight: FontWeight.w700,
               color: textDark,
               letterSpacing: -0.5,
             ),
           ),
           const SizedBox(height: 20),
-          ...groupedTransactions.entries.map((entry) => _buildDateGroup(entry.key, entry.value)),
+          ...groupedTransactions.entries.map(
+            (entry) => _buildDateGroup(entry.key, entry.value),
+          ),
         ],
       ),
     );
@@ -662,10 +676,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
           decoration: BoxDecoration(
             color: backgroundCard,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: borderLight,
-              width: 1,
-            ),
+            border: Border.all(color: borderLight, width: 1),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -691,7 +702,9 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: totalAmount >= 0 ? successGreen.withOpacity(0.1) : dangerRed.withOpacity(0.1),
+                  color: totalAmount >= 0
+                      ? successGreen.withOpacity(0.1)
+                      : dangerRed.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -708,7 +721,9 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
         ),
 
         // Transacciones del día
-        ...transactions.map((transaction) => _buildTransactionItem(transaction)),
+        ...transactions.map(
+          (transaction) => _buildTransactionItem(transaction),
+        ),
         const SizedBox(height: 16),
       ],
     );
@@ -729,15 +744,12 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(
-          color: borderLight,
-          width: 1,
-        ),
+        border: Border.all(color: borderLight, width: 1),
       ),
       child: Dismissible(
         key: Key(transaction.id),
         direction: DismissDirection.horizontal,
-        
+
         // Swipe derecha = Editar (background azul)
         background: Container(
           alignment: Alignment.centerLeft,
@@ -749,11 +761,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.edit_rounded,
-                color: Colors.white,
-                size: 24,
-              ),
+              const Icon(Icons.edit_rounded, color: Colors.white, size: 24),
               const SizedBox(height: 4),
               Text(
                 'Editar',
@@ -766,7 +774,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
             ],
           ),
         ),
-        
+
         // Swipe izquierda = Eliminar (background rojo)
         secondaryBackground: Container(
           alignment: Alignment.centerRight,
@@ -778,11 +786,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.delete_rounded,
-                color: Colors.white,
-                size: 24,
-              ),
+              const Icon(Icons.delete_rounded, color: Colors.white, size: 24),
               const SizedBox(height: 4),
               Text(
                 'Eliminar',
@@ -795,7 +799,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
             ],
           ),
         ),
-        
+
         confirmDismiss: (direction) async {
           if (direction == DismissDirection.endToStart) {
             // Swipe izquierda = eliminar
@@ -807,13 +811,13 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
           }
           return false;
         },
-        
+
         onDismissed: (direction) {
           if (direction == DismissDirection.endToStart) {
             _deleteTransaction(transaction);
           }
         },
-        
+
         child: GestureDetector(
           onLongPress: () => _showTransactionOptions(transaction),
           child: Padding(
@@ -831,7 +835,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                   ),
                   child: Center(
                     child: Text(
-                      transaction.categoryIcon,
+                      _getCategoryEmoji(transaction),
                       style: const TextStyle(fontSize: 24),
                     ),
                   ),
@@ -845,7 +849,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                         transaction.description,
                         style: const TextStyle(
                           fontWeight: FontWeight.w700,
-                          fontSize: 16,
+                          fontSize: 15,
                           color: textDark,
                         ),
                         maxLines: 1,
@@ -853,21 +857,15 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        transaction.categoryName,
-                        style: const TextStyle(
-                          color: textMedium,
-                          fontSize: 14,
-                        ),
+                        _getCategoryName(transaction),
+                        style: const TextStyle(color: textMedium, fontSize: 13),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 8),
                       Text(
                         FormatUtils.formatDateForList(transaction.date),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: textMedium,
-                        ),
+                        style: TextStyle(fontSize: 12, color: textMedium),
                       ),
                     ],
                   ),
@@ -880,7 +878,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                       '${isIncome ? '+' : '-'}${FormatUtils.formatMoney(transaction.amount)}',
                       style: TextStyle(
                         fontWeight: FontWeight.w800,
-                        fontSize: 18,
+                        fontSize: 16,
                         color: isIncome ? successGreen : dangerRed,
                       ),
                     ),
@@ -894,6 +892,30 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
     );
   }
 
+  /// Obtiene el nombre actualizado de la categoría
+  String _getCategoryName(Transaction transaction) {
+    if (transaction.hasCustomCategory) {
+      final info = _categoryService.getCategoryInfo(
+        transaction.customCategoryId,
+        transaction.expenseCategory,
+      );
+      return info['name']!;
+    }
+    return transaction.categoryName;
+  }
+
+  /// Obtiene el emoji actualizado de la categoría
+  String _getCategoryEmoji(Transaction transaction) {
+    if (transaction.hasCustomCategory) {
+      final info = _categoryService.getCategoryInfo(
+        transaction.customCategoryId,
+        transaction.expenseCategory,
+      );
+      return info['emoji']!;
+    }
+    return transaction.categoryIcon;
+  }
+
   Widget _buildEmptyState() {
     String message;
     String subtitle;
@@ -902,12 +924,14 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
     switch (_selectedFilter) {
       case 'Ingresos':
         message = 'Sin ingresos registrados';
-        subtitle = 'Agrega tu primer ingreso para empezar a ver resultados aquí';
+        subtitle =
+            'Agrega tu primer ingreso para empezar a ver resultados aquí';
         icon = Icons.trending_up_rounded;
         break;
       case 'Gastos':
         message = 'Sin gastos registrados';
-        subtitle = 'Cuando registres gastos, aparecerán aquí organizados por fecha';
+        subtitle =
+            'Cuando registres gastos, aparecerán aquí organizados por fecha';
         icon = Icons.trending_down_rounded;
         break;
       case 'Este mes':
@@ -927,9 +951,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         color: Colors.white,
-        border: Border.all(
-          color: borderLight,
-        ),
+        border: Border.all(color: borderLight),
         boxShadow: [
           BoxShadow(
             color: primaryBlue.withOpacity(0.05),
@@ -945,21 +967,15 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
             height: 80,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
-              gradient: const LinearGradient(
-                colors: [primaryBlue, darkBlue],
-              ),
+              gradient: const LinearGradient(colors: [primaryBlue, darkBlue]),
             ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 40,
-            ),
+            child: Icon(icon, color: Colors.white, size: 40),
           ),
           const SizedBox(height: 24),
           Text(
             message,
             style: const TextStyle(
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.w700,
               color: textDark,
             ),
@@ -971,7 +987,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: textMedium,
-              fontSize: 15,
+              fontSize: 14,
               height: 1.5,
             ),
           ),
@@ -984,9 +1000,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [primaryBlue, darkBlue],
-                ),
+                gradient: const LinearGradient(colors: [primaryBlue, darkBlue]),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
@@ -1000,11 +1014,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.add_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+                  Icon(Icons.add_rounded, color: Colors.white, size: 20),
                   SizedBox(width: 8),
                   Text(
                     'Agregar Transacción',
@@ -1023,7 +1033,9 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
     );
   }
 
-  Map<String, List<Transaction>> _groupTransactionsByDate(List<Transaction> transactions) {
+  Map<String, List<Transaction>> _groupTransactionsByDate(
+    List<Transaction> transactions,
+  ) {
     final Map<String, List<Transaction>> grouped = {};
 
     for (final transaction in transactions) {
@@ -1043,9 +1055,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1055,10 +1065,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(15),
                 color: dangerRed.withOpacity(0.1),
-                border: Border.all(
-                  color: dangerRed.withOpacity(0.3),
-                  width: 2,
-                ),
+                border: Border.all(color: dangerRed.withOpacity(0.3), width: 2),
               ),
               child: const Icon(
                 Icons.delete_rounded,
@@ -1202,7 +1209,10 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
               GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 24,
+                  ),
                   decoration: BoxDecoration(
                     color: successGreen,
                     borderRadius: BorderRadius.circular(12),
@@ -1228,9 +1238,8 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const AddTransactionScreen(
-          initialType: TransactionType.income,
-        ),
+        builder: (context) =>
+            const AddTransactionScreen(initialType: TransactionType.income),
       ),
     );
 
@@ -1394,10 +1403,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: color.withOpacity(0.2),
-            width: 1,
-          ),
+          border: Border.all(color: color.withOpacity(0.2), width: 1),
         ),
         child: Column(
           children: [
@@ -1408,11 +1414,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                 color: color,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 24,
-              ),
+              child: Icon(icon, color: Colors.white, size: 24),
             ),
             const SizedBox(height: 12),
             Text(
@@ -1443,18 +1445,13 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
 
   // Método para mostrar el diálogo de eliminar todas las transacciones
   void _showDeleteAllDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => _buildDeleteAllDialog(),
-    );
+    showDialog(context: context, builder: (context) => _buildDeleteAllDialog());
   }
 
   Widget _buildDeleteAllDialog() {
     return AlertDialog(
       backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       contentPadding: const EdgeInsets.all(24),
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1466,11 +1463,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
               color: dangerRed.withOpacity(0.1),
               borderRadius: BorderRadius.circular(32),
             ),
-            child: Icon(
-              Icons.warning_rounded,
-              color: dangerRed,
-              size: 32,
-            ),
+            child: Icon(Icons.warning_rounded, color: dangerRed, size: 32),
           ),
           const SizedBox(height: 20),
           const Text(
@@ -1531,9 +1524,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                   ),
                   child: const Text(
                     'Continuar',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -1547,14 +1538,12 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
   // Segunda confirmación con texto
   void _showDeleteAllConfirmationDialog() {
     final confirmController = TextEditingController();
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         contentPadding: const EdgeInsets.all(24),
         content: StatefulBuilder(
           builder: (context, setState) {
@@ -1649,7 +1638,9 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                     const SizedBox(width: 16),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: confirmController.text.trim().toUpperCase() == 'ELIMINAR'
+                        onPressed:
+                            confirmController.text.trim().toUpperCase() ==
+                                'ELIMINAR'
                             ? () {
                                 Navigator.pop(context);
                                 _deleteAllTransactions();
@@ -1665,9 +1656,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                         ),
                         child: const Text(
                           'Eliminar Todo',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),
@@ -1675,7 +1664,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                 ),
               ],
             );
-          }
+          },
         ),
       ),
     );

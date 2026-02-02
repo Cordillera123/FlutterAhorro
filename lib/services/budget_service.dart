@@ -147,12 +147,20 @@ class BudgetService {
     }
 
     // 2. CORREGIDO: Validación más específica - solo bloquear duplicados EXACTOS
-    final duplicateBudgets = _budgets.where((b) => 
-      b.category == budget.category &&
-      b.period == budget.period &&
-      b.isActive && // Solo considerar presupuestos activos (no pausados)
-      _isSamePeriodExact(b, budget) // Función mejorada para detectar períodos exactos
-    ).toList();
+    final duplicateBudgets = _budgets.where((b) {
+      // Primero verificar período y estado activo
+      if (b.period != budget.period || !b.isActive) return false;
+      if (!_isSamePeriodExact(b, budget)) return false;
+      
+      // Verificar categoría (sistema o personalizada)
+      if (budget.hasCustomCategory) {
+        // Nuevo presupuesto tiene categoría personalizada
+        return b.customCategoryId == budget.customCategoryId;
+      } else {
+        // Nuevo presupuesto tiene categoría del sistema
+        return b.category == budget.category && b.customCategoryId == null;
+      }
+    }).toList();
 
     print('Presupuestos duplicados encontrados: ${duplicateBudgets.length}');
 
@@ -251,13 +259,20 @@ class BudgetService {
     }
 
     // Validar que no haya conflictos con otros presupuestos al actualizar
-    final conflictingBudgets = _budgets.where((b) => 
-      b.id != budget.id && // Excluir el presupuesto actual
-      b.category == budget.category &&
-      b.period == budget.period &&
-      b.isActive && // CORREGIDO: Solo considerar presupuestos activos
-      _isSamePeriodExact(b, budget) // CORREGIDO: Usar función mejorada
-    ).toList();
+    final conflictingBudgets = _budgets.where((b) {
+      // Excluir el presupuesto actual
+      if (b.id == budget.id) return false;
+      // Solo presupuestos activos con mismo período exacto
+      if (b.period != budget.period || !b.isActive) return false;
+      if (!_isSamePeriodExact(b, budget)) return false;
+      
+      // Verificar categoría (sistema o personalizada)
+      if (budget.hasCustomCategory) {
+        return b.customCategoryId == budget.customCategoryId;
+      } else {
+        return b.category == budget.category && b.customCategoryId == null;
+      }
+    }).toList();
 
     if (conflictingBudgets.isNotEmpty) {
       throw Exception('Ya existe otro presupuesto ${budget.periodName.toLowerCase()} de ${budget.categoryName} para este período');
@@ -316,12 +331,26 @@ class BudgetService {
     final transactions = _transactionService.transactions;
 
     // Filtrar transacciones del período y categoría del presupuesto
-    final budgetTransactions = transactions.where((transaction) =>
-    transaction.type == TransactionType.expense &&
-        transaction.expenseCategory == budget.category &&
-        transaction.date.isAfter(budget.startDate.subtract(const Duration(days: 1))) &&
-        transaction.date.isBefore(budget.endDate.add(const Duration(days: 1)))
-    ).toList();
+    final budgetTransactions = transactions.where((transaction) {
+      // Debe ser un gasto
+      if (transaction.type != TransactionType.expense) return false;
+      
+      // Verificar que esté dentro del período
+      if (!transaction.date.isAfter(budget.startDate.subtract(const Duration(days: 1))) ||
+          !transaction.date.isBefore(budget.endDate.add(const Duration(days: 1)))) {
+        return false;
+      }
+      
+      // Verificar categoría
+      if (budget.hasCustomCategory) {
+        // Presupuesto con categoría personalizada
+        return transaction.customCategoryId == budget.customCategoryId;
+      } else {
+        // Presupuesto con categoría del sistema
+        return transaction.expenseCategory == budget.category && 
+               transaction.customCategoryId == null;
+      }
+    }).toList();
 
     // Calcular monto gastado
     final spentAmount = budgetTransactions.fold(0.0, (sum, t) => sum + t.amount);

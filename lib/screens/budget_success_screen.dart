@@ -46,21 +46,16 @@ class _BudgetSuccessScreenState extends State<BudgetSuccessScreen>
       vsync: this,
     );
 
-    _checkAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _successController,
-      curve: Curves.elasticOut,
-    ));
+    _checkAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _successController, curve: Curves.elasticOut),
+    );
 
-    _scaleAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _successController,
-      curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
-    ));
+    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _successController,
+        curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
+      ),
+    );
   }
 
   void _startAnimation() async {
@@ -120,14 +115,14 @@ class _BudgetSuccessScreenState extends State<BudgetSuccessScreen>
                 child: Text(
                   _showSuccess
                       ? widget.isEdit
-                      ? '¡Presupuesto actualizado!'
-                      : '¡Presupuesto creado!'
+                            ? '¡Presupuesto actualizado!'
+                            : '¡Presupuesto creado!'
                       : widget.isEdit
                       ? 'Actualizando presupuesto...'
                       : 'Creando presupuesto...',
                   key: ValueKey(_showSuccess),
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 22,
                     fontWeight: FontWeight.w700,
                     color: _showSuccess ? successGreen : Colors.grey[600],
                   ),
@@ -160,10 +155,7 @@ class _BudgetSuccessScreenState extends State<BudgetSuccessScreen>
                 const SizedBox(height: 4),
                 Text(
                   widget.budget.name,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   textAlign: TextAlign.center,
                 ),
               ] else ...[
@@ -171,10 +163,7 @@ class _BudgetSuccessScreenState extends State<BudgetSuccessScreen>
                   widget.isEdit
                       ? 'Guardando cambios...'
                       : 'Configurando tu control de gastos...',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
               ],
             ],
@@ -289,10 +278,7 @@ class CheckmarkPainter extends CustomPainter {
   final double progress;
   final Color color;
 
-  CheckmarkPainter({
-    required this.progress,
-    required this.color,
-  });
+  CheckmarkPainter({required this.progress, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {

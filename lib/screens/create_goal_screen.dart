@@ -9,11 +9,7 @@ class CreateGoalScreen extends StatefulWidget {
   final FinancialGoal? goalToEdit;
   final GoalType? preselectedType;
 
-  const CreateGoalScreen({
-    super.key,
-    this.goalToEdit,
-    this.preselectedType,
-  });
+  const CreateGoalScreen({super.key, this.goalToEdit, this.preselectedType});
 
   @override
   State<CreateGoalScreen> createState() => _CreateGoalScreenState();
@@ -82,7 +78,7 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
         _updateSuggestedContribution();
       }
     });
-    
+
     // Listener para detectar cuando el usuario empieza a editar la contribución
     _contributionController.addListener(() {
       if (!_contributionConfirmed) {
@@ -121,7 +117,9 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
     }
 
     final now = DateTime.now();
-    final months = ((_targetDate.year - now.year) * 12 + _targetDate.month - now.month).clamp(1, 365);
+    final months =
+        ((_targetDate.year - now.year) * 12 + _targetDate.month - now.month)
+            .clamp(1, 365);
     final suggested = targetAmount / months;
 
     // Solo actualizar si el campo está vacío o si el usuario no lo ha editado manualmente
@@ -142,26 +140,29 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
   String? _getContributionError(double targetAmount, double contribution) {
     if (targetAmount <= 0) return 'Primero ingresa el monto objetivo';
     if (contribution <= 0) return 'Ingresa una contribución mayor a cero';
-    if (contribution > targetAmount) return 'La contribución no puede exceder el monto objetivo';
-    
+    if (contribution > targetAmount)
+      return 'La contribución no puede exceder el monto objetivo';
+
     final now = DateTime.now();
-    final totalMonths = ((_targetDate.year - now.year) * 12 + _targetDate.month - now.month).clamp(1, 365);
+    final totalMonths =
+        ((_targetDate.year - now.year) * 12 + _targetDate.month - now.month)
+            .clamp(1, 365);
     final monthsNeeded = (targetAmount / contribution).ceil();
-    
+
     // Si se necesitan más del triple de meses de lo planeado
     if (monthsNeeded > totalMonths * 3) {
       return 'Con \$${_formatNumber(contribution)}/mes tardarás ${monthsNeeded} meses (muy largo)';
     }
-    
+
     return null;
   }
-  
+
   bool get _canConfirmContribution {
     final targetAmount = _parseNumber(_targetAmountController.text);
     final contribution = _parseNumber(_contributionController.text);
-    return targetAmount > 0 && 
-           contribution > 0 && 
-           _getContributionError(targetAmount, contribution) == null;
+    return targetAmount > 0 &&
+        contribution > 0 &&
+        _getContributionError(targetAmount, contribution) == null;
   }
 
   bool get _canSubmit {
@@ -169,7 +170,7 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
         _contributionConfirmed &&
         !_isLoading;
   }
-  
+
   void _resetContributionAndSelections() {
     setState(() {
       _contributionConfirmed = false;
@@ -179,7 +180,7 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
       _selectedEmoji = _emojisByType[GoalType.purchase]!.first;
       _targetDate = DateTime.now().add(const Duration(days: 365));
     });
-    
+
     HapticFeedback.lightImpact();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -192,52 +193,78 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
 
   String _getDefaultName(GoalType type) {
     switch (type) {
-      case GoalType.purchase: return 'Mi nueva compra';
-      case GoalType.savings: return 'Fondo de ahorro';
-      case GoalType.emergency: return 'Fondo de emergencia';
-      case GoalType.vacation: return 'Vacaciones soñadas';
-      case GoalType.education: return 'Inversión en educación';
-      case GoalType.custom: return 'Meta personalizada';
+      case GoalType.purchase:
+        return 'Mi nueva compra';
+      case GoalType.savings:
+        return 'Fondo de ahorro';
+      case GoalType.emergency:
+        return 'Fondo de emergencia';
+      case GoalType.vacation:
+        return 'Vacaciones soñadas';
+      case GoalType.education:
+        return 'Inversión en educación';
+      case GoalType.custom:
+        return 'Meta personalizada';
     }
   }
 
   String _getDefaultDescription(GoalType type) {
     switch (type) {
-      case GoalType.purchase: return 'Ahorrando para comprar algo especial';
-      case GoalType.savings: return 'Construyendo mi patrimonio personal';
-      case GoalType.emergency: return 'Preparándome para imprevistos';
-      case GoalType.vacation: return 'Mi próxima aventura inolvidable';
-      case GoalType.education: return 'Invirtiendo en mi futuro profesional';
-      case GoalType.custom: return 'Una meta importante para mí';
+      case GoalType.purchase:
+        return 'Ahorrando para comprar algo especial';
+      case GoalType.savings:
+        return 'Construyendo mi patrimonio personal';
+      case GoalType.emergency:
+        return 'Preparándome para imprevistos';
+      case GoalType.vacation:
+        return 'Mi próxima aventura inolvidable';
+      case GoalType.education:
+        return 'Invirtiendo en mi futuro profesional';
+      case GoalType.custom:
+        return 'Una meta importante para mí';
     }
   }
 
   String _getTypeName(GoalType type) {
     switch (type) {
-      case GoalType.purchase: return 'Compra';
-      case GoalType.savings: return 'Ahorro';
-      case GoalType.emergency: return 'Emergencia';
-      case GoalType.vacation: return 'Viaje';
-      case GoalType.education: return 'Educación';
-      case GoalType.custom: return 'Personalizada';
+      case GoalType.purchase:
+        return 'Compra';
+      case GoalType.savings:
+        return 'Ahorro';
+      case GoalType.emergency:
+        return 'Emergencia';
+      case GoalType.vacation:
+        return 'Viaje';
+      case GoalType.education:
+        return 'Educación';
+      case GoalType.custom:
+        return 'Personalizada';
     }
   }
 
   String _getPriorityName(GoalPriority priority) {
     switch (priority) {
-      case GoalPriority.low: return 'Baja';
-      case GoalPriority.medium: return 'Media';
-      case GoalPriority.high: return 'Alta';
-      case GoalPriority.urgent: return 'Urgente';
+      case GoalPriority.low:
+        return 'Baja';
+      case GoalPriority.medium:
+        return 'Media';
+      case GoalPriority.high:
+        return 'Alta';
+      case GoalPriority.urgent:
+        return 'Urgente';
     }
   }
 
   Color _getPriorityColor(GoalPriority priority) {
     switch (priority) {
-      case GoalPriority.low: return successGreen;
-      case GoalPriority.medium: return primaryBlue;
-      case GoalPriority.high: return warningYellow;
-      case GoalPriority.urgent: return dangerRed;
+      case GoalPriority.low:
+        return successGreen;
+      case GoalPriority.medium:
+        return primaryBlue;
+      case GoalPriority.high:
+        return warningYellow;
+      case GoalPriority.urgent:
+        return dangerRed;
     }
   }
 
@@ -303,10 +330,7 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
       flexibleSpace: FlexibleSpaceBar(
         title: Text(
           _isEditMode ? 'Editar Meta' : 'Nueva Meta',
-          style: const TextStyle(
-            color: textDark,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(color: textDark, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
@@ -326,7 +350,7 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
           const Text(
             'Información Básica',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: textDark,
             ),
@@ -366,14 +390,16 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
   Widget _buildAmounts() {
     final targetAmount = _parseNumber(_targetAmountController.text);
     final contribution = _parseNumber(_contributionController.text);
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: _contributionConfirmed ? successGreen.withOpacity(0.3) : borderLight,
+          color: _contributionConfirmed
+              ? successGreen.withOpacity(0.3)
+              : borderLight,
           width: _contributionConfirmed ? 2 : 1,
         ),
       ),
@@ -385,7 +411,7 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
               const Text(
                 'Montos',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: textDark,
                 ),
@@ -393,7 +419,10 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
               const Spacer(),
               if (_contributionConfirmed)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: successGreen.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -417,7 +446,7 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // PASO 1: Monto Objetivo
           TextFormField(
             controller: _targetAmountController,
@@ -432,9 +461,13 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
               ),
               filled: true,
               fillColor: _contributionConfirmed ? backgroundCard : Colors.white,
-              suffixIcon: _contributionConfirmed 
+              suffixIcon: _contributionConfirmed
                   ? const Icon(Icons.lock, color: successGreen, size: 20)
-                  : const Icon(Icons.flag_outlined, color: primaryBlue, size: 20),
+                  : const Icon(
+                      Icons.flag_outlined,
+                      color: primaryBlue,
+                      size: 20,
+                    ),
             ),
             validator: (value) {
               final amount = _parseNumber(value ?? '');
@@ -445,7 +478,7 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
             },
           ),
           const SizedBox(height: 16),
-          
+
           // PASO 2: Contribución Mensual (con cálculo automático)
           TextFormField(
             controller: _contributionController,
@@ -454,36 +487,50 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
             decoration: InputDecoration(
               labelText: '2. Contribución mensual',
               prefixText: '\$ ',
-              hintText: targetAmount > 0 ? 'Editable' : 'Calculada automáticamente',
+              hintText: targetAmount > 0
+                  ? 'Editable'
+                  : 'Calculada automáticamente',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
               filled: true,
-              fillColor: _contributionConfirmed 
-                  ? backgroundCard 
+              fillColor: _contributionConfirmed
+                  ? backgroundCard
                   : (targetAmount > 0 ? Colors.white : backgroundCard),
               helperText: _contributionConfirmed
                   ? null
-                  : (targetAmount > 0 
-                      ? '✏️ Sugerencia: \$${_formatNumber(targetAmount / ((_targetDate.year - DateTime.now().year) * 12 + _targetDate.month - DateTime.now().month).clamp(1, 365))}/mes'
-                      : null),
+                  : (targetAmount > 0
+                        ? '✏️ Sugerencia: \$${_formatNumber(targetAmount / ((_targetDate.year - DateTime.now().year) * 12 + _targetDate.month - DateTime.now().month).clamp(1, 365))}/mes'
+                        : null),
               helperMaxLines: 2,
-              errorText: _contributionConfirmed ? null : _getContributionError(targetAmount, contribution),
+              errorText: _contributionConfirmed
+                  ? null
+                  : _getContributionError(targetAmount, contribution),
               errorMaxLines: 2,
-              suffixIcon: _contributionConfirmed 
+              suffixIcon: _contributionConfirmed
                   ? const Icon(Icons.lock, color: successGreen, size: 20)
-                  : (targetAmount > 0 
-                      ? const Icon(Icons.edit_outlined, color: primaryBlue, size: 20)
-                      : const Icon(Icons.calculate_outlined, color: textMedium, size: 20)),
+                  : (targetAmount > 0
+                        ? const Icon(
+                            Icons.edit_outlined,
+                            color: primaryBlue,
+                            size: 20,
+                          )
+                        : const Icon(
+                            Icons.calculate_outlined,
+                            color: textMedium,
+                            size: 20,
+                          )),
             ),
           ),
-          
+
           // Información del progreso estimado
-          if (targetAmount > 0 && contribution > 0 && !_contributionConfirmed) ...[
+          if (targetAmount > 0 &&
+              contribution > 0 &&
+              !_contributionConfirmed) ...[
             const SizedBox(height: 16),
             _buildContributionInfo(targetAmount, contribution),
           ],
-          
+
           // Botón de confirmar/editar
           if (targetAmount > 0) ...[
             const SizedBox(height: 16),
@@ -493,10 +540,10 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
       ),
     );
   }
-  
+
   Widget _buildConfirmButton() {
     final canConfirm = _canConfirmContribution;
-    
+
     if (_contributionConfirmed) {
       // Mostrar botón de editar cuando está confirmado
       return SizedBox(
@@ -507,10 +554,7 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
           icon: const Icon(Icons.edit_outlined),
           label: const Text(
             'Editar Montos',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
           ),
           style: OutlinedButton.styleFrom(
             foregroundColor: warningYellow,
@@ -522,7 +566,7 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
         ),
       );
     }
-    
+
     // Mostrar botón de confirmar cuando no está confirmado
     return SizedBox(
       width: double.infinity,
@@ -580,27 +624,31 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
 
   Widget _buildContributionInfo(double targetAmount, double contribution) {
     final now = DateTime.now();
-    final totalMonths = ((_targetDate.year - now.year) * 12 + _targetDate.month - now.month).clamp(1, 365);
+    final totalMonths =
+        ((_targetDate.year - now.year) * 12 + _targetDate.month - now.month)
+            .clamp(1, 365);
     final monthsNeeded = (targetAmount / contribution).ceil();
-    
+
     Color statusColor;
     String statusText;
     IconData statusIcon;
-    
+
     if (monthsNeeded > totalMonths + 2) {
       statusColor = dangerRed;
-      statusText = 'Tardarás $monthsNeeded meses (${monthsNeeded - totalMonths} meses extra)';
+      statusText =
+          'Tardarás $monthsNeeded meses (${monthsNeeded - totalMonths} meses extra)';
       statusIcon = Icons.warning_amber_rounded;
     } else if (monthsNeeded > totalMonths) {
       statusColor = warningYellow;
-      statusText = 'Tardarás $monthsNeeded meses (+${monthsNeeded - totalMonths} extra)';
+      statusText =
+          'Tardarás $monthsNeeded meses (+${monthsNeeded - totalMonths} extra)';
       statusIcon = Icons.info_outline_rounded;
     } else {
       statusColor = successGreen;
       statusText = '¡Perfecto! Alcanzarás tu meta en $monthsNeeded meses';
       statusIcon = Icons.check_circle_outline_rounded;
     }
-    
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -654,7 +702,7 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
           const Text(
             'Tipo de Meta',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: textDark,
             ),
@@ -673,24 +721,32 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
             itemBuilder: (context, index) {
               final type = GoalType.values[index];
               final isSelected = _selectedType == type;
-              
+
               return GestureDetector(
                 onTap: () {
                   setState(() {
                     _selectedType = type;
                     _selectedEmoji = _emojisByType[type]!.first;
-                    if (_nameController.text == _getDefaultName(_selectedType) || _nameController.text.isEmpty) {
+                    if (_nameController.text ==
+                            _getDefaultName(_selectedType) ||
+                        _nameController.text.isEmpty) {
                       _nameController.text = _getDefaultName(type);
                     }
-                    if (_descriptionController.text == _getDefaultDescription(_selectedType) || _descriptionController.text.isEmpty) {
-                      _descriptionController.text = _getDefaultDescription(type);
+                    if (_descriptionController.text ==
+                            _getDefaultDescription(_selectedType) ||
+                        _descriptionController.text.isEmpty) {
+                      _descriptionController.text = _getDefaultDescription(
+                        type,
+                      );
                     }
                   });
                 },
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: isSelected ? primaryBlue.withOpacity(0.1) : backgroundCard,
+                    color: isSelected
+                        ? primaryBlue.withOpacity(0.1)
+                        : backgroundCard,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isSelected ? primaryBlue : borderLight,
@@ -700,7 +756,10 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(_emojisByType[type]!.first, style: const TextStyle(fontSize: 20)),
+                      Text(
+                        _emojisByType[type]!.first,
+                        style: const TextStyle(fontSize: 20),
+                      ),
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
@@ -737,7 +796,7 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
           const Text(
             'Prioridad',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: textDark,
             ),
@@ -755,19 +814,30 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
                   });
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: isSelected ? _getPriorityColor(priority).withOpacity(0.2) : backgroundCard,
+                    color: isSelected
+                        ? _getPriorityColor(priority).withOpacity(0.2)
+                        : backgroundCard,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isSelected ? _getPriorityColor(priority) : borderLight,
+                      color: isSelected
+                          ? _getPriorityColor(priority)
+                          : borderLight,
                     ),
                   ),
                   child: Text(
                     _getPriorityName(priority),
                     style: TextStyle(
-                      color: isSelected ? _getPriorityColor(priority) : textDark,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected
+                          ? _getPriorityColor(priority)
+                          : textDark,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                     ),
                   ),
                 ),
@@ -792,7 +862,7 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
           const Text(
             'Emoji',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: textDark,
             ),
@@ -813,7 +883,9 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: isSelected ? primaryBlue.withOpacity(0.2) : backgroundCard,
+                    color: isSelected
+                        ? primaryBlue.withOpacity(0.2)
+                        : backgroundCard,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isSelected ? primaryBlue : borderLight,
@@ -834,8 +906,10 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
 
   Widget _buildDatePicker() {
     final now = DateTime.now();
-    final monthsUntilTarget = ((_targetDate.year - now.year) * 12 + _targetDate.month - now.month).clamp(1, 365);
-    
+    final monthsUntilTarget =
+        ((_targetDate.year - now.year) * 12 + _targetDate.month - now.month)
+            .clamp(1, 365);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -848,7 +922,7 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
           const Text(
             'Fecha Objetivo',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: textDark,
             ),
@@ -856,10 +930,7 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
           const SizedBox(height: 8),
           Text(
             'Define cuándo quieres alcanzar tu meta',
-            style: TextStyle(
-              fontSize: 13,
-              color: textMedium,
-            ),
+            style: TextStyle(fontSize: 13, color: textMedium),
           ),
           const SizedBox(height: 16),
           InkWell(
@@ -894,7 +965,10 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: backgroundCard,
-                border: Border.all(color: primaryBlue.withOpacity(0.3), width: 1.5),
+                border: Border.all(
+                  color: primaryBlue.withOpacity(0.3),
+                  width: 1.5,
+                ),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -905,7 +979,11 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
                       color: primaryBlue.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.calendar_today, color: primaryBlue, size: 24),
+                    child: const Icon(
+                      Icons.calendar_today,
+                      color: primaryBlue,
+                      size: 24,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -932,7 +1010,11 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
                       ],
                     ),
                   ),
-                  const Icon(Icons.arrow_forward_ios, color: primaryBlue, size: 18),
+                  const Icon(
+                    Icons.arrow_forward_ios,
+                    color: primaryBlue,
+                    size: 18,
+                  ),
                 ],
               ),
             ),
@@ -1006,10 +1088,8 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
         final result = await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => GoalSuccessScreen(
-              goal: goal,
-              isEdit: _isEditMode,
-            ),
+            builder: (context) =>
+                GoalSuccessScreen(goal: goal, isEdit: _isEditMode),
           ),
         );
         Navigator.pop(context, result);
@@ -1017,10 +1097,7 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: dangerRed,
-          ),
+          SnackBar(content: Text(e.toString()), backgroundColor: dangerRed),
         );
       }
     } finally {

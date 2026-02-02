@@ -4,11 +4,13 @@ import '../models/transaction.dart';
 import '../services/transaction_service.dart';
 import '../services/recurring_expense_service.dart';
 import '../services/stats_service.dart';
+import '../services/category_service.dart';
 import '../utils/format_utils.dart';
 import '../widgets/app_logo.dart';
 import 'add_transaction_screen.dart';
 import 'recurring_expenses_screen.dart';
 import 'stats_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,8 +21,11 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final TransactionService _transactionService = TransactionService();
-  final RecurringExpenseService _recurringExpenseService = RecurringExpenseService();
+  final RecurringExpenseService _recurringExpenseService =
+      RecurringExpenseService();
   final StatsService _statsService = StatsService();
+  final CategoryService _categoryService = CategoryService();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _isLoading = true;
   bool _isRefreshing = false;
   late AnimationController _animationController;
@@ -36,6 +41,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     // NUEVO: Escuchar cambios en el TransactionService
     _transactionService.addListener(_onTransactionServiceChanged);
+    // Escuchar cambios en CategoryService (para actualizar nombres/emojis)
+    _categoryService.addListener(_onCategoryServiceChanged);
   }
 
   // NUEVO: Método que se ejecuta cuando el TransactionService notifica cambios
@@ -44,6 +51,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       _updateStats();
       setState(() {
         // Forzar rebuild cuando cambien los datos del servicio
+      });
+    }
+  }
+
+  // Método que se ejecuta cuando CategoryService notifica cambios
+  void _onCategoryServiceChanged() {
+    if (mounted) {
+      setState(() {
+        // Forzar rebuild para mostrar nombres/emojis actualizados
       });
     }
   }
@@ -58,21 +74,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       vsync: this,
     );
 
-    _fadeInAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-    ));
+    _fadeInAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
+    );
 
-    _slideAnimation = Tween<double>(
-      begin: 20.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
-    ));
+    _slideAnimation = Tween<double>(begin: 20.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
+      ),
+    );
   }
 
   Future<void> _loadData() async {
@@ -80,7 +94,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       await _transactionService.loadTransactions();
       await _recurringExpenseService.loadRecurringExpenses();
       await _recurringExpenseService.processRecurringExpensesForToday();
-      
+
       _updateStats();
 
       if (mounted) {
@@ -112,6 +126,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void dispose() {
     // NUEVO: Remover el listener cuando se destruye el widget
     _transactionService.removeListener(_onTransactionServiceChanged);
+    _categoryService.removeListener(_onCategoryServiceChanged);
     _animationController.dispose();
     super.dispose();
   }
@@ -122,15 +137,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (_isLoading) {
       return Scaffold(
         backgroundColor: const Color(0xFFF1F5F9),
-        body: const Center(
-          child: AppLogoLoading(),
-        ),
+        body: const Center(child: AppLogoLoading()),
       );
     }
 
     // Vista principal con overlay de actualización opcional
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: const Color(0xFFF8FAFC),
+      drawer: _buildDrawer(),
       body: Stack(
         children: [
           RefreshIndicator(
@@ -194,7 +209,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Color(0xFF4CAF50),
+                        ),
                         strokeWidth: 3,
                       ),
                       const SizedBox(height: 16),
@@ -230,11 +247,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF81C784),
-                Color(0xFF4CAF50),
-                Color(0xFF388E3C),
-              ],
+              colors: [Color(0xFF81C784), Color(0xFF4CAF50), Color(0xFF388E3C)],
             ),
             borderRadius: BorderRadius.only(
               bottomLeft: Radius.circular(32),
@@ -257,7 +270,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               FormatUtils.getGreeting(),
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 26,
+                                fontSize: 22,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: -0.5,
                               ),
@@ -269,7 +282,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               'Controla tus finanzas con serenidad',
                               style: TextStyle(
                                 color: Colors.white.withOpacity(0.9),
-                                fontSize: 15,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w400,
                               ),
                               maxLines: 1,
@@ -297,7 +310,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        // TODO: Navigate to profile
+        _scaffoldKey.currentState?.openDrawer();
       },
       child: Container(
         width: 48,
@@ -305,17 +318,171 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           color: Colors.white.withOpacity(0.2),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.3),
-            width: 2,
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
         ),
-        child: const Icon(
-          Icons.person_rounded,
-          color: Colors.white,
-          size: 24,
+        child: const Icon(Icons.menu, color: Colors.white, size: 24),
+      ),
+    );
+  }
+
+  Widget _buildDrawer() {
+    return Drawer(
+      backgroundColor: Colors.white,
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Header del drawer
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF81C784), Color(0xFF4CAF50), Color(0xFF388E3C)],
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Center(
+                      child: Text('💰', style: TextStyle(fontSize: 28)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Mi Ahorro',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Gestiona tus finanzas',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Opciones del menú
+            _buildDrawerItem(
+              icon: Icons.category_outlined,
+              title: 'Categorías de gastos',
+              subtitle: 'Personaliza tus categorías',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                );
+              },
+            ),
+            _buildDrawerItem(
+              icon: Icons.repeat_outlined,
+              title: 'Gastos recurrentes',
+              subtitle: 'Configura pagos automáticos',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const RecurringExpensesScreen()),
+                );
+              },
+            ),
+            _buildDrawerItem(
+              icon: Icons.bar_chart_outlined,
+              title: 'Estadísticas',
+              subtitle: 'Analiza tus gastos',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const StatsScreen()),
+                );
+              },
+            ),
+            const Divider(height: 32),
+            _buildDrawerItem(
+              icon: Icons.settings_outlined,
+              title: 'Configuración',
+              subtitle: 'Gestionar categorías y más',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                );
+              },
+            ),
+            const Spacer(),
+            // Footer
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                'Versión 1.0.0',
+                style: TextStyle(
+                  color: Colors.grey.shade500,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: const Color(0xFF4CAF50).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, color: const Color(0xFF4CAF50), size: 22),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 15,
+          color: Color(0xFF1E293B),
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          fontSize: 12,
+          color: Colors.grey.shade600,
+        ),
+      ),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: Colors.grey.shade400,
+        size: 20,
+      ),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
     );
   }
 
@@ -327,7 +494,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           'Balance Total',
           style: TextStyle(
             color: Colors.white.withOpacity(0.9),
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -340,7 +507,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 FormatUtils.formatMoney(_transactionService.totalBalance),
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 32,
+                  fontSize: 28,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -1,
                 ),
@@ -366,10 +533,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
       ),
       child: Row(
         children: [
@@ -403,11 +567,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(
-                      _getGrowthIcon(),
-                      color: _getGrowthColor(),
-                      size: 16,
-                    ),
+                    Icon(_getGrowthIcon(), color: _getGrowthColor(), size: 16),
                     const SizedBox(width: 4),
                     Text(
                       _getGrowthText(),
@@ -431,7 +591,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final stats = _financialStats;
     final currentIncome = stats?.currentIncome ?? 0.0;
     final currentExpenses = stats?.currentExpenses ?? 0.0;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -441,7 +601,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             const Text(
               'Este mes',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF1E293B),
               ),
@@ -514,10 +674,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(
-          color: color.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: color.withOpacity(0.1), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -562,7 +719,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   amount,
                   style: TextStyle(
                     color: color,
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -581,7 +738,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         const Text(
           'Acciones Rápidas',
           style: TextStyle(
-            fontSize: 22,
+            fontSize: 18,
             fontWeight: FontWeight.w700,
             color: Color(0xFF1E293B),
             letterSpacing: -0.5,
@@ -668,11 +825,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(
-                icon,
-                color: Colors.white,
-                size: 28,
-              ),
+              Icon(icon, color: Colors.white, size: 28),
               Flexible(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -682,7 +835,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       title,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 15,
+                        fontSize: 14,
                         fontWeight: FontWeight.w700,
                         height: 1.2,
                       ),
@@ -712,7 +865,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildRecentTransactions() {
-    final recentTransactions = _transactionService.transactions.take(5).toList();
+    final recentTransactions = _transactionService.transactions
+        .take(5)
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -724,7 +879,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               child: Text(
                 'Transacciones Recientes',
                 style: TextStyle(
-                  fontSize: 22,
+                  fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF1E293B),
                   letterSpacing: -0.5,
@@ -739,7 +894,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   // TODO: Navigate to full history
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF3B82F6).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
@@ -763,7 +921,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         if (recentTransactions.isEmpty)
           _buildEmptyState()
         else
-          ...recentTransactions.map((transaction) => _buildTransactionItem(transaction)),
+          ...recentTransactions.map(
+            (transaction) => _buildTransactionItem(transaction),
+          ),
       ],
     );
   }
@@ -775,9 +935,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         color: Colors.white,
-        border: Border.all(
-          color: const Color(0xFF4CAF50).withOpacity(0.1),
-        ),
+        border: Border.all(color: const Color(0xFF4CAF50).withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF4CAF50).withOpacity(0.05),
@@ -807,7 +965,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           const Text(
             'Comienza tu viaje financiero',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.w700,
               color: Color(0xFF1E293B),
             ),
@@ -818,7 +976,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             'Agrega tu primera transacción para comenzar a controlar tus finanzas de manera inteligente y serena',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 15,
+              fontSize: 14,
               color: Colors.grey[600],
               height: 1.5,
             ),
@@ -831,10 +989,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               icon: const Icon(Icons.add_rounded, size: 22),
               label: const Text(
                 'Agregar Primer Salario',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF3B82F6),
@@ -854,6 +1009,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildTransactionItem(Transaction transaction) {
     final isIncome = transaction.type == TransactionType.income;
+    
+    // Obtener nombre/emoji actualizado de la categoría
+    final categoryInfo = _categoryService.getCategoryInfo(
+      transaction.customCategoryId,
+      transaction.expenseCategory,
+    );
+    final categoryName = transaction.hasCustomCategory 
+        ? categoryInfo['name']! 
+        : transaction.categoryName;
+    final categoryEmoji = transaction.hasCustomCategory 
+        ? categoryInfo['emoji']! 
+        : transaction.categoryIcon;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -861,9 +1028,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         color: Colors.white,
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.1),
-        ),
+        border: Border.all(color: Colors.grey.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.05),
@@ -885,7 +1050,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
             child: Center(
               child: Text(
-                transaction.categoryIcon,
+                categoryEmoji,
                 style: const TextStyle(fontSize: 20),
               ),
             ),
@@ -907,11 +1072,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  transaction.categoryName,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[600],
-                  ),
+                  categoryName,
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -937,10 +1099,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               const SizedBox(height: 4),
               Text(
                 FormatUtils.formatDateForList(transaction.date),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[500],
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
               ),
             ],
           ),
@@ -955,9 +1114,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const AddTransactionScreen(
-          initialType: TransactionType.income,
-        ),
+        builder: (context) =>
+            const AddTransactionScreen(initialType: TransactionType.income),
       ),
     );
     // No se necesita código adicional - el listener actualiza automáticamente
@@ -967,9 +1125,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const AddTransactionScreen(
-          initialType: TransactionType.expense,
-        ),
+        builder: (context) =>
+            const AddTransactionScreen(initialType: TransactionType.expense),
       ),
     );
     // No se necesita código adicional - el listener actualiza automáticamente
@@ -979,9 +1136,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const AddTransactionScreen(
-          initialType: TransactionType.income,
-        ),
+        builder: (context) =>
+            const AddTransactionScreen(initialType: TransactionType.income),
       ),
     );
     // No se necesita código adicional - el listener actualiza automáticamente
@@ -990,9 +1146,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Future<void> _navigateToRecurringExpenses() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const RecurringExpensesScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const RecurringExpensesScreen()),
     );
 
     // Para gastos recurrentes, sí necesitamos refresh manual
@@ -1004,19 +1158,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   void _navigateToStats() async {
     HapticFeedback.lightImpact();
-    
+
     final result = await Navigator.push(
       context,
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const StatsScreen(),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const StatsScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;
           const curve = Curves.easeInOut;
 
-          var tween = Tween(begin: begin, end: end).chain(
-            CurveTween(curve: curve),
-          );
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
 
           return SlideTransition(
             position: animation.drive(tween),
@@ -1034,15 +1190,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (stats == null || !stats.hasData) {
       return 'Agrega transacciones para ver tu progreso';
     }
-    
+
     if (!stats.hasCurrentData) {
       return 'Aún no tienes transacciones este mes';
     }
-    
+
     if (!stats.hasPreviousData) {
       return 'Tu primer mes registrado';
     }
-    
+
     return FormatUtils.getGrowthMessage(stats.balanceGrowthPercentage);
   }
 
@@ -1051,7 +1207,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (stats == null || !stats.hasData || !stats.hasPreviousData) {
       return Icons.show_chart_rounded;
     }
-    
+
     return FormatUtils.getGrowthIcon(stats.balanceGrowthPercentage);
   }
 
@@ -1060,7 +1216,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (stats == null || !stats.hasData || !stats.hasPreviousData) {
       return const Color(0xFF64748B);
     }
-    
+
     return FormatUtils.getGrowthColor(stats.balanceGrowthPercentage);
   }
 
@@ -1069,15 +1225,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (stats == null || !stats.hasData) {
       return 'Sin datos';
     }
-    
+
     if (!stats.hasCurrentData) {
       return 'Este mes: \$0';
     }
-    
+
     if (!stats.hasPreviousData) {
       return 'Primer mes';
     }
-    
+
     final percentage = stats.balanceGrowthPercentage;
     return '${FormatUtils.formatPercentageWithSign(percentage)} este mes';
   }
@@ -1087,7 +1243,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (stats == null || !stats.hasData || !stats.hasPreviousData) {
       return '';
     }
-    
+
     return FormatUtils.formatPercentageWithSign(stats.incomeGrowthPercentage);
   }
 
@@ -1096,7 +1252,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (stats == null || !stats.hasData || !stats.hasPreviousData) {
       return '';
     }
-    
+
     return FormatUtils.formatPercentageWithSign(stats.expenseGrowthPercentage);
   }
 }

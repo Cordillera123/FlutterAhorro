@@ -6,11 +6,7 @@ class GoalSuccessScreen extends StatefulWidget {
   final FinancialGoal goal;
   final bool isEdit;
 
-  const GoalSuccessScreen({
-    super.key,
-    required this.goal,
-    this.isEdit = false,
-  });
+  const GoalSuccessScreen({super.key, required this.goal, this.isEdit = false});
 
   @override
   State<GoalSuccessScreen> createState() => _GoalSuccessScreenState();
@@ -47,21 +43,16 @@ class _GoalSuccessScreenState extends State<GoalSuccessScreen>
       vsync: this,
     );
 
-    _checkAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _successController,
-      curve: Curves.elasticOut,
-    ));
+    _checkAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _successController, curve: Curves.elasticOut),
+    );
 
-    _scaleAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _successController,
-      curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
-    ));
+    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _successController,
+        curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
+      ),
+    );
   }
 
   void _startAnimation() async {
@@ -121,14 +112,14 @@ class _GoalSuccessScreenState extends State<GoalSuccessScreen>
                 child: Text(
                   _showSuccess
                       ? widget.isEdit
-                      ? '¡Meta actualizada!'
-                      : '¡Meta creada!'
+                            ? '¡Meta actualizada!'
+                            : '¡Meta creada!'
                       : widget.isEdit
                       ? 'Actualizando meta...'
                       : 'Creando tu meta...',
                   key: ValueKey(_showSuccess),
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 22,
                     fontWeight: FontWeight.w700,
                     color: _showSuccess ? successGreen : Colors.grey[600],
                   ),
@@ -178,10 +169,14 @@ class _GoalSuccessScreenState extends State<GoalSuccessScreen>
                   ),
                   textAlign: TextAlign.center,
                 ),
-                if (widget.goal.autoSave && widget.goal.monthlyContribution > 0) ...[
+                if (widget.goal.autoSave &&
+                    widget.goal.monthlyContribution > 0) ...[
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: successGreen.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -201,10 +196,7 @@ class _GoalSuccessScreenState extends State<GoalSuccessScreen>
                   widget.isEdit
                       ? 'Guardando cambios...'
                       : 'Configurando tu objetivo financiero...',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
               ],
             ],
@@ -261,11 +253,7 @@ class _GoalSuccessScreenState extends State<GoalSuccessScreen>
 
               // Icono central
               Center(
-                child: Icon(
-                  Icons.flag_rounded,
-                  color: purpleAccent,
-                  size: 32,
-                ),
+                child: Icon(Icons.flag_rounded, color: purpleAccent, size: 32),
               ),
             ],
           ),
@@ -319,10 +307,7 @@ class CheckmarkPainter extends CustomPainter {
   final double progress;
   final Color color;
 
-  CheckmarkPainter({
-    required this.progress,
-    required this.color,
-  });
+  CheckmarkPainter({required this.progress, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {

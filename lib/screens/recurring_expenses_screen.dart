@@ -10,14 +10,18 @@ class RecurringExpensesScreen extends StatefulWidget {
   const RecurringExpensesScreen({super.key});
 
   @override
-  State<RecurringExpensesScreen> createState() => _RecurringExpensesScreenState();
+  State<RecurringExpensesScreen> createState() =>
+      _RecurringExpensesScreenState();
 }
 
-class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with TickerProviderStateMixin {
-  final RecurringExpenseService _recurringExpenseService = RecurringExpenseService();
+class _RecurringExpensesScreenState extends State<RecurringExpensesScreen>
+    with TickerProviderStateMixin {
+  final RecurringExpenseService _recurringExpenseService =
+      RecurringExpenseService();
   bool _isLoading = true;
   Map<String, dynamic> _summary = {};
-  Map<String, dynamic> _budgetImpact = {}; // NUEVO: Para almacenar impacto en presupuestos
+  Map<String, dynamic> _budgetImpact =
+      {}; // NUEVO: Para almacenar impacto en presupuestos
   late AnimationController _animationController;
   late Animation<double> _fadeInAnimation;
   late Animation<double> _slideAnimation;
@@ -53,27 +57,25 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
       vsync: this,
     );
 
-    _fadeInAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-    ));
+    _fadeInAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
+    );
 
-    _slideAnimation = Tween<double>(
-      begin: 20.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
-    ));
+    _slideAnimation = Tween<double>(begin: 20.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
+      ),
+    );
   }
 
   Future<void> _loadData() async {
     await _recurringExpenseService.loadRecurringExpenses();
     _summary = _recurringExpenseService.getRecurringExpensesSummary();
-    
+
     // NUEVO: Cargar impacto en presupuestos
     try {
       _budgetImpact = await _recurringExpenseService.getBudgetImpactSummary();
@@ -191,11 +193,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                primaryPurple,
-                darkPurple,
-                deepPurple,
-              ],
+              colors: [primaryPurple, darkPurple, deepPurple],
             ),
             borderRadius: BorderRadius.only(
               bottomLeft: Radius.circular(32),
@@ -218,7 +216,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
                               'Gastos Automáticos',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 26,
+                                fontSize: 22,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: -0.5,
                               ),
@@ -230,7 +228,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
                               'Configura y controla tus gastos recurrentes',
                               style: TextStyle(
                                 color: Colors.white70,
-                                fontSize: 15,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w400,
                               ),
                               maxLines: 1,
@@ -266,7 +264,11 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
     );
   }
 
-  Widget _buildHeaderAction(IconData icon, String tooltip, VoidCallback onPressed) {
+  Widget _buildHeaderAction(
+    IconData icon,
+    String tooltip,
+    VoidCallback onPressed,
+  ) {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -278,16 +280,9 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
           color: Colors.white.withOpacity(0.2),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.3),
-            width: 1,
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
         ),
-        child: Icon(
-          icon,
-          color: Colors.white,
-          size: 22,
-        ),
+        child: Icon(icon, color: Colors.white, size: 22),
       ),
     );
   }
@@ -306,10 +301,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(
-          color: borderLight,
-          width: 1,
-        ),
+        border: Border.all(color: borderLight, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,17 +331,14 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
                       'Resumen de Gastos Automáticos',
                       style: TextStyle(
                         color: textDark,
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     SizedBox(height: 4),
                     Text(
                       'Control inteligente de tus gastos recurrentes',
-                      style: TextStyle(
-                        color: textMedium,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: textMedium, fontSize: 13),
                     ),
                   ],
                 ),
@@ -386,10 +375,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
             decoration: BoxDecoration(
               color: backgroundCard,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: borderLight,
-                width: 1,
-              ),
+              border: Border.all(color: borderLight, width: 1),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -418,14 +404,18 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
                     Expanded(
                       child: _buildProjectionItem(
                         'Diario',
-                        FormatUtils.formatMoney(_summary['estimatedDaily'] ?? 0),
+                        FormatUtils.formatMoney(
+                          _summary['estimatedDaily'] ?? 0,
+                        ),
                         Icons.today_rounded,
                       ),
                     ),
                     Expanded(
                       child: _buildProjectionItem(
                         'Semanal',
-                        FormatUtils.formatMoney(_summary['estimatedWeekly'] ?? 0),
+                        FormatUtils.formatMoney(
+                          _summary['estimatedWeekly'] ?? 0,
+                        ),
                         Icons.date_range_rounded,
                       ),
                     ),
@@ -435,7 +425,8 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
             ),
           ),
           // NUEVO: Sección de impacto en presupuestos
-          if (_budgetImpact.isNotEmpty && (_budgetImpact['affectedBudgets'] ?? 0) > 0) ...[
+          if (_budgetImpact.isNotEmpty &&
+              (_budgetImpact['affectedBudgets'] ?? 0) > 0) ...[
             const SizedBox(height: 16),
             _buildBudgetImpactSection(),
           ],
@@ -444,41 +435,53 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
     );
   }
 
-  Widget _buildSummaryCard(String title, String value, String subtitle, Color color, IconData icon) {
+  Widget _buildSummaryCard(
+    String title,
+    String value,
+    String subtitle,
+    Color color,
+    IconData icon,
+  ) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: color.withOpacity(0.2), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(icon, color: color, size: 20),
-              Text(
-                title,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+              Icon(icon, color: color, size: 18),
+              Flexible(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
+          const SizedBox(height: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
           const SizedBox(height: 2),
@@ -489,6 +492,8 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
               fontSize: 11,
               fontWeight: FontWeight.w500,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -500,11 +505,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
       padding: const EdgeInsets.only(right: 8.0), // Añadir padding
       child: Row(
         children: [
-          Icon(
-            icon,
-            color: textMedium,
-            size: 14,
-          ),
+          Icon(icon, color: textMedium, size: 14),
           const SizedBox(width: 4), // Reducido de 6 a 4
           Expanded(
             child: Column(
@@ -514,7 +515,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
                   period,
                   style: const TextStyle(
                     color: textMedium,
-                    fontSize: 10, // Reducido de 11 a 10
+                    fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -522,7 +523,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
                   amount,
                   style: const TextStyle(
                     color: textDark,
-                    fontSize: 12, // Reducido de 13 a 12
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
                   ),
                   overflow: TextOverflow.ellipsis, // Añadido
@@ -546,10 +547,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
       decoration: BoxDecoration(
         color: backgroundCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: borderLight,
-          width: 1,
-        ),
+        border: Border.all(color: borderLight, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -632,16 +630,17 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
   }
 
   // NUEVO: Widget para items de impacto
-  Widget _buildImpactItem(String label, String value, IconData icon, Color color) {
+  Widget _buildImpactItem(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(right: 8.0),
       child: Row(
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 14,
-          ),
+          Icon(icon, color: color, size: 14),
           const SizedBox(width: 4),
           Expanded(
             child: Column(
@@ -651,7 +650,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
                   label,
                   style: const TextStyle(
                     color: textMedium,
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -659,7 +658,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
                   value,
                   style: TextStyle(
                     color: color,
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -681,7 +680,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
           const Text(
             'Acciones Rápidas',
             style: TextStyle(
-              fontSize: 22,
+              fontSize: 18,
               fontWeight: FontWeight.w700,
               color: textDark,
               letterSpacing: -0.5,
@@ -695,9 +694,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
                   'Transporte Diario',
                   'Bus, taxi, gasolina',
                   Icons.directions_bus_rounded,
-                  const LinearGradient(
-                    colors: [infoBlue, darkBlue],
-                  ),
+                  const LinearGradient(colors: [infoBlue, darkBlue]),
                   _createTransportExpense,
                 ),
               ),
@@ -707,9 +704,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
                   'Suscripciones',
                   'Netflix, Spotify, etc',
                   Icons.subscriptions_rounded,
-                  const LinearGradient(
-                    colors: [warningYellow, darkYellow],
-                  ),
+                  const LinearGradient(colors: [warningYellow, darkYellow]),
                   _createSubscriptionExpense,
                 ),
               ),
@@ -721,21 +716,21 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
   }
 
   Widget _buildQuickActionCard(
-      String title,
-      String subtitle,
-      IconData icon,
-      Gradient gradient,
-      VoidCallback onTap,
-      ) {
+    String title,
+    String subtitle,
+    IconData icon,
+    Gradient gradient,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
         onTap();
       },
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           gradient: gradient,
           boxShadow: [
             BoxShadow(
@@ -747,24 +742,24 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              color: Colors.white,
-              size: 28,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
+            Icon(icon, color: Colors.white, size: 22),
+            const SizedBox(height: 10),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+                maxLines: 1,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               subtitle,
               style: TextStyle(
@@ -801,7 +796,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
                 child: Text(
                   'Mis Gastos Recurrentes',
                   style: TextStyle(
-                    fontSize: 22,
+                    fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: textDark,
                     letterSpacing: -0.5,
@@ -810,13 +805,14 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: primaryPurple.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: primaryPurple.withOpacity(0.2),
-                  ),
+                  border: Border.all(color: primaryPurple.withOpacity(0.2)),
                 ),
                 child: Text(
                   '${expenses.length} ${expenses.length == 1 ? 'gasto' : 'gastos'}',
@@ -849,162 +845,183 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(
-          color: borderLight,
-          width: 1,
-        ),
+        border: Border.all(color: borderLight, width: 1),
       ),
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: expense.isActive
-                        ? primaryPurple.withOpacity(0.1)
-                        : textMedium.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Center(
-                    child: Text(
-                      expense.categoryIcon,
-                      style: const TextStyle(fontSize: 24),
+                // Primera fila: Icono, nombre, estado y monto
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: expense.isActive
+                            ? primaryPurple.withOpacity(0.1)
+                            : textMedium.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: Text(
+                          expense.categoryIcon,
+                          style: const TextStyle(fontSize: 20),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Text(
-                              expense.name,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                                color: expense.isActive ? textDark : textMedium,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: expense.isActive
-                                  ? successGreen.withOpacity(0.1)
-                                  : warningYellow.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  expense.isActive ? Icons.play_circle : Icons.pause_circle,
-                                  size: 12,
-                                  color: expense.isActive ? successGreen : warningYellow,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  expense.isActive ? 'Activo' : 'Pausado',
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  expense.name,
                                   style: TextStyle(
-                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 15,
+                                    color: expense.isActive
+                                        ? textDark
+                                        : textMedium,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: expense.isActive
+                                      ? successGreen.withOpacity(0.1)
+                                      : warningYellow.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      expense.isActive
+                                          ? Icons.play_circle
+                                          : Icons.pause_circle,
+                                      size: 10,
+                                      color: expense.isActive
+                                          ? successGreen
+                                          : warningYellow,
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      expense.isActive ? 'Activo' : 'Pausado',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                        color: expense.isActive
+                                            ? successGreen
+                                            : warningYellow,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            expense.description,
+                            style: const TextStyle(
+                              color: textMedium,
+                              fontSize: 13,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 6),
+                          // Monto y frecuencia en una fila
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: infoBlue.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  expense.frequencyName,
+                                  style: const TextStyle(
+                                    fontSize: 11,
                                     fontWeight: FontWeight.w600,
-                                    color: expense.isActive ? successGreen : warningYellow,
+                                    color: infoBlue,
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  expense.categoryName,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: textMedium,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  FormatUtils.formatMoney(expense.amount),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 15,
+                                    color: expense.isActive
+                                        ? dangerRed
+                                        : textMedium,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        expense.description,
-                        style: const TextStyle(
-                          color: textMedium,
-                          fontSize: 14,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: infoBlue.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              expense.frequencyName,
+                          if (expense.lastProcessed != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              'Último: ${FormatUtils.formatDateForList(expense.lastProcessed!)}',
                               style: const TextStyle(
                                 fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: infoBlue,
+                                color: textMedium,
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            expense.categoryName,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: textMedium,
-                            ),
-                          ),
+                          ],
                         ],
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      FormatUtils.formatMoney(expense.amount),
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 18,
-                        color: expense.isActive ? dangerRed : textMedium,
-                      ),
                     ),
-                    if (expense.lastProcessed != null)
-                      Text(
-                        'Último: ${FormatUtils.formatDateForList(expense.lastProcessed!)}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: textMedium,
-                        ),
-                      ),
                   ],
                 ),
               ],
             ),
           ),
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
             decoration: BoxDecoration(
               color: backgroundCard,
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(20),
                 bottomRight: Radius.circular(20),
               ),
-              border: Border(
-                top: BorderSide(
-                  color: borderLight,
-                  width: 1,
-                ),
-              ),
+              border: Border(top: BorderSide(color: borderLight, width: 1)),
             ),
             child: Row(
               children: [
@@ -1013,25 +1030,25 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
                     expense.isActive ? Icons.pause : Icons.play_arrow,
                     expense.isActive ? 'Pausar' : 'Activar',
                     expense.isActive ? warningYellow : successGreen,
-                        () => _toggleExpense(expense),
+                    () => _toggleExpense(expense),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 Expanded(
                   child: _buildActionButton(
                     Icons.edit_outlined,
                     'Editar',
                     infoBlue,
-                        () => _editExpense(expense),
+                    () => _editExpense(expense),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 Expanded(
                   child: _buildActionButton(
                     Icons.delete_outline,
                     'Eliminar',
                     dangerRed,
-                        () => _deleteExpense(expense),
+                    () => _deleteExpense(expense),
                   ),
                 ),
               ],
@@ -1042,33 +1059,41 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
     );
   }
 
-  Widget _buildActionButton(IconData icon, String label, Color color, VoidCallback onPressed) {
+  Widget _buildActionButton(
+    IconData icon,
+    String label,
+    Color color,
+    VoidCallback onPressed,
+  ) {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
         onPressed();
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: color.withOpacity(0.2),
-            width: 1,
-          ),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withOpacity(0.2), width: 1),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: color),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: color,
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 4),
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
               ),
             ),
           ],
@@ -1084,9 +1109,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         color: Colors.white,
-        border: Border.all(
-          color: borderLight,
-        ),
+        border: Border.all(color: borderLight),
         boxShadow: [
           BoxShadow(
             color: primaryPurple.withOpacity(0.05),
@@ -1116,7 +1139,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
           const Text(
             'Automatiza tus gastos',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.w700,
               color: textDark,
             ),
@@ -1126,11 +1149,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
           const Text(
             'Configura gastos que se repiten automáticamente y mantén el control de tus finanzas sin esfuerzo',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: textMedium,
-              fontSize: 15,
-              height: 1.5,
-            ),
+            style: TextStyle(color: textMedium, fontSize: 15, height: 1.5),
           ),
           const SizedBox(height: 24),
           Container(
@@ -1138,20 +1157,14 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
             decoration: BoxDecoration(
               color: infoBlue.withOpacity(0.1),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: infoBlue.withOpacity(0.2),
-              ),
+              border: Border.all(color: infoBlue.withOpacity(0.2)),
             ),
             child: const Column(
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.lightbulb_outline,
-                      color: infoBlue,
-                      size: 20,
-                    ),
+                    Icon(Icons.lightbulb_outline, color: infoBlue, size: 20),
                     SizedBox(width: 8),
                     Text(
                       'Tips para empezar',
@@ -1169,19 +1182,12 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
                   children: [
                     Row(
                       children: [
-                        Icon(
-                          Icons.repeat,
-                          color: successGreen,
-                          size: 16,
-                        ),
+                        Icon(Icons.repeat, color: successGreen, size: 16),
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Suscripciones mensuales (Netflix, Spotify)',
-                            style: TextStyle(
-                              color: textDark,
-                              fontSize: 13,
-                            ),
+                            style: TextStyle(color: textDark, fontSize: 13),
                           ),
                         ),
                       ],
@@ -1198,10 +1204,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
                         Expanded(
                           child: Text(
                             'Transporte diario (bus, gasolina)',
-                            style: TextStyle(
-                              color: textDark,
-                              fontSize: 13,
-                            ),
+                            style: TextStyle(color: textDark, fontSize: 13),
                           ),
                         ),
                       ],
@@ -1209,19 +1212,12 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
                     SizedBox(height: 8),
                     Row(
                       children: [
-                        Icon(
-                          Icons.home,
-                          color: successGreen,
-                          size: 16,
-                        ),
+                        Icon(Icons.home, color: successGreen, size: 16),
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Servicios del hogar (agua, luz, internet)',
-                            style: TextStyle(
-                              color: textDark,
-                              fontSize: 13,
-                            ),
+                            style: TextStyle(color: textDark, fontSize: 13),
                           ),
                         ),
                       ],
@@ -1255,11 +1251,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.add_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+                  Icon(Icons.add_rounded, color: Colors.white, size: 20),
                   SizedBox(width: 8),
                   Text(
                     'Crear gasto automático',
@@ -1375,7 +1367,12 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
   }
 
   // Método para mostrar mensajes de resultado del procesamiento
-  void _showProcessMessage(String title, String message, Color color, IconData icon) {
+  void _showProcessMessage(
+    String title,
+    String message,
+    Color color,
+    IconData icon,
+  ) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -1393,16 +1390,9 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(15),
                   color: color.withOpacity(0.1),
-                  border: Border.all(
-                    color: color.withOpacity(0.3),
-                    width: 2,
-                  ),
+                  border: Border.all(color: color.withOpacity(0.3), width: 2),
                 ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 30,
-                ),
+                child: Icon(icon, color: color, size: 30),
               ),
               const SizedBox(height: 20),
               Text(
@@ -1428,7 +1418,10 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
               GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 24,
+                  ),
                   decoration: BoxDecoration(
                     color: color,
                     borderRadius: BorderRadius.circular(12),
@@ -1496,7 +1489,9 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
         'Gasto $statusText',
         'El gasto "${expense.name}" ha sido $statusText correctamente.',
         statusColor,
-        expense.isActive ? Icons.pause_circle_rounded : Icons.play_circle_rounded,
+        expense.isActive
+            ? Icons.pause_circle_rounded
+            : Icons.play_circle_rounded,
       );
 
       _loadData();
@@ -1515,9 +1510,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AddRecurringExpenseScreen(
-          expenseToEdit: expense,
-        ),
+        builder: (context) => AddRecurringExpenseScreen(expenseToEdit: expense),
       ),
     ).then((result) {
       if (result == true) {
@@ -1607,7 +1600,9 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> with 
                         Navigator.pop(context);
 
                         try {
-                          await _recurringExpenseService.deleteRecurringExpense(expense.id!);
+                          await _recurringExpenseService.deleteRecurringExpense(
+                            expense.id!,
+                          );
 
                           _showProcessMessage(
                             'Gasto eliminado',

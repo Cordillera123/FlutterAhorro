@@ -6,10 +6,7 @@ import '../utils/format_utils.dart';
 class ChartsScreen extends StatefulWidget {
   final List<CategoryStats> categoryStats;
 
-  const ChartsScreen({
-    super.key,
-    required this.categoryStats,
-  });
+  const ChartsScreen({super.key, required this.categoryStats});
 
   @override
   State<ChartsScreen> createState() => _ChartsScreenState();
@@ -52,37 +49,30 @@ class _ChartsScreenState extends State<ChartsScreen>
       vsync: this,
     );
 
-    _fadeInAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-    ));
+    _fadeInAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
+    );
 
-    _slideAnimation = Tween<double>(
-      begin: 30.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
-    ));
+    _slideAnimation = Tween<double>(begin: 30.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
+      ),
+    );
 
-    _scaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.0, 0.7, curve: Curves.elasticOut),
-    ));
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.7, curve: Curves.elasticOut),
+      ),
+    );
 
-    _legendFadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _legendController,
-      curve: Curves.easeOut,
-    ));
+    _legendFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _legendController, curve: Curves.easeOut),
+    );
 
     // Iniciar animaciones
     _animationController.forward();
@@ -169,11 +159,7 @@ class _ChartsScreenState extends State<ChartsScreen>
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                primaryBlue,
-                darkBlue,
-                deepBlue,
-              ],
+              colors: [primaryBlue, darkBlue, deepBlue],
             ),
           ),
           child: SafeArea(
@@ -213,7 +199,7 @@ class _ChartsScreenState extends State<ChartsScreen>
                               'Análisis Gráfico',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 26,
+                                fontSize: 22,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: -0.5,
                               ),
@@ -263,10 +249,7 @@ class _ChartsScreenState extends State<ChartsScreen>
               ],
             ),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: primaryBlue.withOpacity(0.2),
-              width: 1,
-            ),
+            border: Border.all(color: primaryBlue.withOpacity(0.2), width: 1),
           ),
           child: Row(
             children: [
@@ -299,7 +282,7 @@ class _ChartsScreenState extends State<ChartsScreen>
                     Text(
                       FormatUtils.formatMoney(total),
                       style: const TextStyle(
-                        fontSize: 24,
+                        fontSize: 20,
                         fontWeight: FontWeight.w800,
                         color: textDark,
                         letterSpacing: -0.5,
@@ -309,7 +292,10 @@ class _ChartsScreenState extends State<ChartsScreen>
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: primaryBlue,
                   borderRadius: BorderRadius.circular(20),
@@ -367,7 +353,7 @@ class _ChartsScreenState extends State<ChartsScreen>
                 const Text(
                   'Distribución por Categorías',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: textDark,
                   ),
@@ -382,7 +368,6 @@ class _ChartsScreenState extends State<ChartsScreen>
                   ),
                 ),
                 const SizedBox(height: 10), // ✅ OPTIMIZADO: De 12 a 10
-
                 // Gráfico de torta
                 Center(
                   child: SizedBox(
@@ -403,6 +388,7 @@ class _ChartsScreenState extends State<ChartsScreen>
       ),
     );
   }
+
   Widget _buildLegendSection() {
     if (widget.categoryStats.isEmpty) return const SizedBox.shrink();
 
@@ -414,13 +400,13 @@ class _ChartsScreenState extends State<ChartsScreen>
           const Text(
             'Categorías',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.w700,
               color: textDark,
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Lista de categorías con colores
           ...widget.categoryStats.asMap().entries.map((entry) {
             final index = entry.key;
@@ -458,14 +444,14 @@ class _ChartsScreenState extends State<ChartsScreen>
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8), // ✅ OPTIMIZADO - De 10 a 8
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12), // ✅ OPTIMIZADO - De 16,14 a 14,12
+      padding: const EdgeInsets.symmetric(
+        horizontal: 14,
+        vertical: 12,
+      ), // ✅ OPTIMIZADO - De 16,14 a 14,12
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-          width: 2,
-        ),
+        border: Border.all(color: color.withOpacity(0.3), width: 2),
         boxShadow: [
           BoxShadow(
             color: color.withOpacity(0.08),
@@ -487,12 +473,14 @@ class _ChartsScreenState extends State<ChartsScreen>
             child: Center(
               child: Text(
                 category.categoryIcon,
-                style: const TextStyle(fontSize: 18), // ✅ OPTIMIZADO - De 20 a 18
+                style: const TextStyle(
+                  fontSize: 18,
+                ), // ✅ OPTIMIZADO - De 20 a 18
               ),
             ),
           ),
           const SizedBox(width: 12),
-          
+
           // Nombre de categoría
           Expanded(
             child: Column(
@@ -522,7 +510,7 @@ class _ChartsScreenState extends State<ChartsScreen>
             ),
           ),
           const SizedBox(width: 8),
-          
+
           // Porcentaje y monto
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -615,7 +603,7 @@ class _ChartsScreenState extends State<ChartsScreen>
                 const Text(
                   'Insight Financiero',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: textDark,
                   ),
@@ -684,10 +672,7 @@ class _ChartsScreenState extends State<ChartsScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: primaryBlue.withOpacity(0.1),
-          width: 2,
-        ),
+        border: Border.all(color: primaryBlue.withOpacity(0.1), width: 2),
       ),
       child: Column(
         children: [
@@ -707,7 +692,7 @@ class _ChartsScreenState extends State<ChartsScreen>
           const Text(
             'No hay datos para mostrar',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.w700,
               color: textDark,
             ),

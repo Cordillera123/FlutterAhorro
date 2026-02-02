@@ -28,7 +28,10 @@ class Budget {
   final String name;
   final double amount;
   final BudgetPeriod period;
-  final ExpenseCategory category;
+  final ExpenseCategory category; // Categoría del sistema
+  final String? customCategoryId; // ID de categoría personalizada (opcional)
+  final String? customCategoryName; // Nombre de categoría personalizada (para display)
+  final String? customCategoryEmoji; // Emoji de categoría personalizada (para display)
   final DateTime startDate;
   final DateTime endDate;
   final bool isActive;
@@ -36,7 +39,7 @@ class Budget {
   final double alertThreshold; // Porcentaje para alertas (0.0 a 1.0)
   final DateTime createdAt;
   final DateTime? updatedAt;
-  final DateTime? lastResetDate; // NUEVO: Fecha del último reinicio
+  final DateTime? lastResetDate; // Fecha del último reinicio
 
   Budget({
     this.id,
@@ -44,6 +47,9 @@ class Budget {
     required this.amount,
     required this.period,
     required this.category,
+    this.customCategoryId,
+    this.customCategoryName,
+    this.customCategoryEmoji,
     required this.startDate,
     required this.endDate,
     this.isActive = true,
@@ -51,8 +57,11 @@ class Budget {
     this.alertThreshold = 0.8, // 80% por defecto
     required this.createdAt,
     this.updatedAt,
-    this.lastResetDate, // NUEVO: Inicialmente null
+    this.lastResetDate,
   });
+
+  /// Verifica si usa categoría personalizada
+  bool get hasCustomCategory => customCategoryId != null && customCategoryId!.startsWith('custom_');
 
   // Getters calculados
   String get periodName {
@@ -66,8 +75,13 @@ class Budget {
     }
   }
 
-  // ACTUALIZADO - Método categoryName con todas las categorías
+  // Método categoryName - soporta categorías personalizadas
   String get categoryName {
+    // Si tiene categoría personalizada, usar el nombre guardado
+    if (hasCustomCategory) {
+      return customCategoryName ?? 'Otros';
+    }
+    
     switch (category) {
       case ExpenseCategory.transport:
         return 'Transporte';
@@ -96,8 +110,13 @@ class Budget {
     }
   }
 
-  // ACTUALIZADO - Método categoryIcon con todas las categorías
+  // Método categoryIcon - soporta categorías personalizadas
   String get categoryIcon {
+    // Si tiene categoría personalizada, usar el emoji guardado
+    if (hasCustomCategory) {
+      return customCategoryEmoji ?? '📦';
+    }
+    
     switch (category) {
       case ExpenseCategory.transport:
         return '🚗';
@@ -275,6 +294,9 @@ class Budget {
       'amount': amount,
       'period': period.index,
       'category': category.index,
+      'customCategoryId': customCategoryId,
+      'customCategoryName': customCategoryName,
+      'customCategoryEmoji': customCategoryEmoji,
       'startDate': startDate.toIso8601String(),
       'endDate': endDate.toIso8601String(),
       'isActive': isActive,
@@ -282,7 +304,7 @@ class Budget {
       'alertThreshold': alertThreshold,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
-      'lastResetDate': lastResetDate?.toIso8601String(), // NUEVO
+      'lastResetDate': lastResetDate?.toIso8601String(),
     };
   }
 
@@ -293,6 +315,9 @@ class Budget {
       amount: json['amount'].toDouble(),
       period: BudgetPeriod.values[json['period']],
       category: ExpenseCategory.values[json['category']],
+      customCategoryId: json['customCategoryId'] as String?,
+      customCategoryName: json['customCategoryName'] as String?,
+      customCategoryEmoji: json['customCategoryEmoji'] as String?,
       startDate: DateTime.parse(json['startDate']),
       endDate: DateTime.parse(json['endDate']),
       isActive: json['isActive'] ?? true,
@@ -302,7 +327,7 @@ class Budget {
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'])
           : null,
-      lastResetDate: json['lastResetDate'] != null // NUEVO
+      lastResetDate: json['lastResetDate'] != null
           ? DateTime.parse(json['lastResetDate'])
           : null,
     );
@@ -314,6 +339,9 @@ class Budget {
     double? amount,
     BudgetPeriod? period,
     ExpenseCategory? category,
+    String? customCategoryId,
+    String? customCategoryName,
+    String? customCategoryEmoji,
     DateTime? startDate,
     DateTime? endDate,
     bool? isActive,
@@ -321,7 +349,7 @@ class Budget {
     double? alertThreshold,
     DateTime? createdAt,
     DateTime? updatedAt,
-    DateTime? lastResetDate, // NUEVO
+    DateTime? lastResetDate,
   }) {
     return Budget(
       id: id ?? this.id,
@@ -329,6 +357,9 @@ class Budget {
       amount: amount ?? this.amount,
       period: period ?? this.period,
       category: category ?? this.category,
+      customCategoryId: customCategoryId ?? this.customCategoryId,
+      customCategoryName: customCategoryName ?? this.customCategoryName,
+      customCategoryEmoji: customCategoryEmoji ?? this.customCategoryEmoji,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       isActive: isActive ?? this.isActive,
@@ -336,7 +367,7 @@ class Budget {
       alertThreshold: alertThreshold ?? this.alertThreshold,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
-      lastResetDate: lastResetDate ?? this.lastResetDate, // NUEVO
+      lastResetDate: lastResetDate ?? this.lastResetDate,
     );
   }
 }
