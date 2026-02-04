@@ -235,19 +235,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildModernAppBar() {
     return SliverAppBar(
-      expandedHeight: 180,
+      expandedHeight: 190,
       floating: false,
       pinned: true,
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: const Color(0xFF4CAF50),
       elevation: 0,
-      systemOverlayStyle: SystemUiOverlayStyle.dark,
+      automaticallyImplyLeading: false,
+      systemOverlayStyle: SystemUiOverlayStyle.light,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF81C784), Color(0xFF4CAF50), Color(0xFF388E3C)],
+              colors: [Color(0xFF43A047), Color(0xFF388E3C), Color(0xFF2E7D32)],
             ),
             borderRadius: BorderRadius.only(
               bottomLeft: Radius.circular(32),
@@ -256,46 +257,47 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Column(
                 children: [
+                  // Header con menú y saludo centrado
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      // Botón de menú (izquierda)
+                      _buildMenuButton(),
+                      // Saludo centrado
                       Expanded(
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               FormatUtils.getGreeting(),
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 22,
+                                fontSize: 24,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: -0.5,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 2),
                             Text(
                               'Controla tus finanzas con serenidad',
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
-                                fontSize: 13,
+                                color: Colors.white.withOpacity(0.85),
+                                fontSize: 12,
                                 fontWeight: FontWeight.w400,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      _buildProfileAvatar(),
+                      // Espacio invisible para balancear (mismo tamaño que el botón)
+                      const SizedBox(width: 44),
                     ],
                   ),
                   const Spacer(),
+                  // Balance con diseño mejorado
                   _buildBalancePreview(),
                 ],
               ),
@@ -306,21 +308,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildProfileAvatar() {
+  Widget _buildMenuButton() {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
         _scaffoldKey.currentState?.openDrawer();
       },
       child: Container(
-        width: 48,
-        height: 48,
+        width: 44,
+        height: 44,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: Colors.white.withOpacity(0.2),
-          border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
+          borderRadius: BorderRadius.circular(14),
+          color: Colors.white.withOpacity(0.15),
+          border: Border.all(color: Colors.white.withOpacity(0.25), width: 1.5),
         ),
-        child: const Icon(Icons.menu, color: Colors.white, size: 24),
+        child: const Icon(Icons.menu_rounded, color: Colors.white, size: 22),
       ),
     );
   }
@@ -339,7 +341,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF81C784), Color(0xFF4CAF50), Color(0xFF388E3C)],
+                  colors: [
+                    Color(0xFF81C784),
+                    Color(0xFF4CAF50),
+                    Color(0xFF388E3C),
+                  ],
                 ),
               ),
               child: Column(
@@ -386,7 +392,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsScreen(),
+                  ),
                 );
               },
             ),
@@ -398,7 +406,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const RecurringExpensesScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const RecurringExpensesScreen(),
+                  ),
                 );
               },
             ),
@@ -423,7 +433,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsScreen(),
+                  ),
                 );
               },
             ),
@@ -433,10 +445,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               padding: const EdgeInsets.all(24),
               child: Text(
                 'Versión 1.0.0',
-                style: TextStyle(
-                  color: Colors.grey.shade500,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
               ),
             ),
           ],
@@ -471,10 +480,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(
-          fontSize: 12,
-          color: Colors.grey.shade600,
-        ),
+        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
       ),
       trailing: Icon(
         Icons.chevron_right,
@@ -487,94 +493,129 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildBalancePreview() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Balance Total',
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.9),
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Balance Total',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.9),
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            return FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                FormatUtils.formatMoney(_transactionService.totalBalance),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -1,
-                ),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              FormatUtils.formatMoney(_transactionService.totalBalance),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 32,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -1,
               ),
-            );
-          },
-        ),
-      ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildBalanceCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFE5E7EB).withOpacity(0.5),
-            blurRadius: 20,
+            color: const Color(0xFF4CAF50).withOpacity(0.08),
+            blurRadius: 24,
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        border: Border.all(color: const Color(0xFFE8F5E9), width: 1),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               gradient: const LinearGradient(
-                colors: [Color(0xFFFACC15), Color(0xFF34D399)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF66BB6A), Color(0xFF43A047)],
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF4CAF50).withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: const Icon(
-              Icons.account_balance_wallet_rounded,
+              Icons.insights_rounded,
               color: Colors.white,
               size: 24,
             ),
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   _getGrowthMessage(),
-                  style: TextStyle(
-                    color: Colors.grey[600],
+                  style: const TextStyle(
+                    color: Color(0xFF1E293B),
                     fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Row(
                   children: [
-                    Icon(_getGrowthIcon(), color: _getGrowthColor(), size: 16),
-                    const SizedBox(width: 4),
-                    Text(
-                      _getGrowthText(),
-                      style: TextStyle(
-                        color: _getGrowthColor(),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _getGrowthColor().withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _getGrowthIcon(),
+                            color: _getGrowthColor(),
+                            size: 14,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _getGrowthText(),
+                            style: TextStyle(
+                              color: _getGrowthColor(),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -744,49 +785,37 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             letterSpacing: -0.5,
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
         GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.4,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 1.5,
           children: [
             _buildActionCard(
-              title: 'Agregar Salario',
-              subtitle: 'Registra ingresos',
-              icon: Icons.attach_money_rounded,
-              gradient: const LinearGradient(
-                colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
-              ),
+              title: 'Ingresos',
+              icon: Icons.trending_up_rounded,
+              color: const Color(0xFF3B82F6),
               onTap: _navigateToAddSalary,
             ),
             _buildActionCard(
-              title: 'Nuevo Gasto',
-              subtitle: 'Registra gastos',
-              icon: Icons.shopping_bag_rounded,
-              gradient: const LinearGradient(
-                colors: [Color(0xFFDC2626), Color(0xFFB91C1C)],
-              ),
+              title: 'Gastos',
+              icon: Icons.receipt_long_rounded,
+              color: const Color(0xFFEF4444),
               onTap: _navigateToAddExpense,
             ),
             _buildActionCard(
-              title: 'Gastos Auto',
-              subtitle: 'Configura automáticos',
-              icon: Icons.autorenew_rounded,
-              gradient: const LinearGradient(
-                colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-              ),
+              title: 'Recurrentes',
+              icon: Icons.sync_rounded,
+              color: const Color(0xFFF59E0B),
               onTap: _navigateToRecurringExpenses,
             ),
             _buildActionCard(
               title: 'Estadísticas',
-              subtitle: 'Ver reportes',
-              icon: Icons.analytics_rounded,
-              gradient: const LinearGradient(
-                colors: [Color(0xFF7C3AED), Color(0xFF5B21B6)],
-              ),
+              icon: Icons.bar_chart_rounded,
+              color: const Color(0xFF8B5CF6),
               onTap: _navigateToStats,
             ),
           ],
@@ -797,9 +826,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildActionCard({
     required String title,
-    required String subtitle,
     required IconData icon,
-    required Gradient gradient,
+    required Color color,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
@@ -809,52 +837,48 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       },
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: gradient,
+          borderRadius: BorderRadius.circular(14),
+          color: Colors.white,
+          border: Border.all(color: color.withOpacity(0.15), width: 1),
           boxShadow: [
             BoxShadow(
-              color: gradient.colors.first.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
+              color: color.withOpacity(0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(12),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(icon, color: Colors.white, size: 28),
-              Flexible(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        height: 1.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        height: 1.2,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                    child: Icon(icon, color: color, size: 18),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: color.withOpacity(0.4),
+                    size: 18,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Color(0xFF1E293B),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -1009,17 +1033,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildTransactionItem(Transaction transaction) {
     final isIncome = transaction.type == TransactionType.income;
-    
+
     // Obtener nombre/emoji actualizado de la categoría
     final categoryInfo = _categoryService.getCategoryInfo(
       transaction.customCategoryId,
       transaction.expenseCategory,
     );
-    final categoryName = transaction.hasCustomCategory 
-        ? categoryInfo['name']! 
+    final categoryName = transaction.hasCustomCategory
+        ? categoryInfo['name']!
         : transaction.categoryName;
-    final categoryEmoji = transaction.hasCustomCategory 
-        ? categoryInfo['emoji']! 
+    final categoryEmoji = transaction.hasCustomCategory
+        ? categoryInfo['emoji']!
         : transaction.categoryIcon;
 
     return Container(
@@ -1049,10 +1073,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   : const Color(0xFFFF7043).withOpacity(0.1),
             ),
             child: Center(
-              child: Text(
-                categoryEmoji,
-                style: const TextStyle(fontSize: 20),
-              ),
+              child: Text(categoryEmoji, style: const TextStyle(fontSize: 20)),
             ),
           ),
           const SizedBox(width: 16),
@@ -1132,17 +1153,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     // No se necesita código adicional - el listener actualiza automáticamente
   }
 
-  Future<void> _navigateToAddTransaction() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            const AddTransactionScreen(initialType: TransactionType.income),
-      ),
-    );
-    // No se necesita código adicional - el listener actualiza automáticamente
-  }
-
   Future<void> _navigateToRecurringExpenses() async {
     await Navigator.push(
       context,
@@ -1156,10 +1166,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  void _navigateToStats() async {
+  void _navigateToStats() {
     HapticFeedback.lightImpact();
 
-    final result = await Navigator.push(
+    Navigator.push(
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>

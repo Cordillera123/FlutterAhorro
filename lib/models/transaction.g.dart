@@ -20,6 +20,9 @@ Transaction _$TransactionFromJson(Map<String, dynamic> json) => Transaction(
     _$IncomeCategoryEnumMap,
     json['incomeCategory'],
   ),
+  customCategoryId: json['customCategoryId'] as String?,
+  customCategoryName: json['customCategoryName'] as String?,
+  customCategoryEmoji: json['customCategoryEmoji'] as String?,
 );
 
 Map<String, dynamic> _$TransactionToJson(Transaction instance) =>
@@ -31,6 +34,9 @@ Map<String, dynamic> _$TransactionToJson(Transaction instance) =>
       'date': instance.date.toIso8601String(),
       'expenseCategory': _$ExpenseCategoryEnumMap[instance.expenseCategory],
       'incomeCategory': _$IncomeCategoryEnumMap[instance.incomeCategory],
+      'customCategoryId': instance.customCategoryId,
+      'customCategoryName': instance.customCategoryName,
+      'customCategoryEmoji': instance.customCategoryEmoji,
     };
 
 const _$TransactionTypeEnumMap = {
@@ -55,7 +61,14 @@ const _$ExpenseCategoryEnumMap = {
 
 const _$IncomeCategoryEnumMap = {
   IncomeCategory.salary: 'salary',
-  IncomeCategory.extra: 'extra',
+  IncomeCategory.freelance: 'freelance',
+  IncomeCategory.business: 'business',
+  IncomeCategory.investment: 'investment',
+  IncomeCategory.rental: 'rental',
+  IncomeCategory.bonus: 'bonus',
+  IncomeCategory.commission: 'commission',
+  IncomeCategory.refund: 'refund',
   IncomeCategory.gift: 'gift',
+  IncomeCategory.extra: 'extra',
   IncomeCategory.other: 'other',
 };

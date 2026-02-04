@@ -788,8 +788,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
   Widget _buildIncomeCategoryGrid() {
     final categories = [
       {'category': IncomeCategory.salary, 'name': 'Salario', 'icon': '💼'},
-      {'category': IncomeCategory.extra, 'name': 'Extra', 'icon': '⭐'},
+      {'category': IncomeCategory.freelance, 'name': 'Freelance', 'icon': '💻'},
+      {'category': IncomeCategory.business, 'name': 'Negocio', 'icon': '🏪'},
+      {'category': IncomeCategory.investment, 'name': 'Inversiones', 'icon': '📈'},
+      {'category': IncomeCategory.rental, 'name': 'Alquiler', 'icon': '🏠'},
+      {'category': IncomeCategory.bonus, 'name': 'Bonificación', 'icon': '🎯'},
+      {'category': IncomeCategory.commission, 'name': 'Comisión', 'icon': '🤝'},
+      {'category': IncomeCategory.refund, 'name': 'Reembolso', 'icon': '↩️'},
       {'category': IncomeCategory.gift, 'name': 'Regalo', 'icon': '🎁'},
+      {'category': IncomeCategory.extra, 'name': 'Extra', 'icon': '⭐'},
       {'category': IncomeCategory.other, 'name': 'Otros', 'icon': '💰'},
     ];
 
@@ -797,10 +804,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 2.5, // MEJORADO: Más espacio para mejor legibilidad
+        crossAxisCount: 3,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 1.1,
       ),
       itemCount: categories.length,
       itemBuilder: (context, index) {
@@ -816,7 +823,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
           },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: isSelected
                   ? primaryGreen.withOpacity(0.1)
@@ -829,44 +836,33 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: primaryGreen.withOpacity(0.3),
+                        color: primaryGreen.withOpacity(0.2),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
                     ]
-                  : [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.05),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                  : null,
             ),
-            child: Row(
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   category['icon'] as String,
                   style: TextStyle(
-                    fontSize: isSelected
-                        ? 24
-                        : 22, // MEJORADO: Emoji más grande cuando está seleccionado
+                    fontSize: isSelected ? 26 : 24,
                   ),
                 ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    category['name'] as String,
-                    style: TextStyle(
-                      fontWeight: isSelected
-                          ? FontWeight.w700
-                          : FontWeight.w600,
-                      fontSize: 14, // MEJORADO: Texto más grande
-                      color: isSelected ? primaryGreen : textDark,
-                    ),
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
+                const SizedBox(height: 6),
+                Text(
+                  category['name'] as String,
+                  style: TextStyle(
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    fontSize: 11,
+                    color: isSelected ? primaryGreen : textDark,
                   ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -1789,10 +1785,24 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
       switch (_selectedIncomeCategory) {
         case IncomeCategory.salary:
           return '💼';
-        case IncomeCategory.extra:
-          return '⭐';
+        case IncomeCategory.freelance:
+          return '💻';
+        case IncomeCategory.business:
+          return '🏪';
+        case IncomeCategory.investment:
+          return '📈';
+        case IncomeCategory.rental:
+          return '🏠';
+        case IncomeCategory.bonus:
+          return '🎯';
+        case IncomeCategory.commission:
+          return '🤝';
+        case IncomeCategory.refund:
+          return '↩️';
         case IncomeCategory.gift:
           return '🎁';
+        case IncomeCategory.extra:
+          return '⭐';
         case IncomeCategory.other:
           return '💰';
         default:
@@ -1839,10 +1849,24 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
       switch (_selectedIncomeCategory) {
         case IncomeCategory.salary:
           return 'Salario';
-        case IncomeCategory.extra:
-          return 'Ingreso Extra';
+        case IncomeCategory.freelance:
+          return 'Freelance';
+        case IncomeCategory.business:
+          return 'Negocio';
+        case IncomeCategory.investment:
+          return 'Inversiones';
+        case IncomeCategory.rental:
+          return 'Alquiler';
+        case IncomeCategory.bonus:
+          return 'Bonificación';
+        case IncomeCategory.commission:
+          return 'Comisión';
+        case IncomeCategory.refund:
+          return 'Reembolso';
         case IncomeCategory.gift:
           return 'Regalo';
+        case IncomeCategory.extra:
+          return 'Ingreso Extra';
         case IncomeCategory.other:
           return 'Otros Ingresos';
         default:

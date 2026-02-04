@@ -27,10 +27,17 @@ enum ExpenseCategory {
 
 // Enum para las categorías de ingresos
 enum IncomeCategory {
-  salary,    // Salario
-  extra,     // Extra
-  gift,      // Regalo
-  other      // Otros
+  salary,       // Salario
+  freelance,    // Freelance/Independiente
+  business,     // Negocio
+  investment,   // Inversiones
+  rental,       // Alquiler/Renta
+  bonus,        // Bonificación
+  commission,   // Comisión
+  refund,       // Reembolso
+  gift,         // Regalo
+  extra,        // Extra
+  other         // Otros
 }
 
 @JsonSerializable()
@@ -133,10 +140,24 @@ class Transaction {
       switch (incomeCategory) {
         case IncomeCategory.salary:
           return 'Salario';
-        case IncomeCategory.extra:
-          return 'Extra';
+        case IncomeCategory.freelance:
+          return 'Freelance';
+        case IncomeCategory.business:
+          return 'Negocio';
+        case IncomeCategory.investment:
+          return 'Inversiones';
+        case IncomeCategory.rental:
+          return 'Alquiler';
+        case IncomeCategory.bonus:
+          return 'Bonificación';
+        case IncomeCategory.commission:
+          return 'Comisión';
+        case IncomeCategory.refund:
+          return 'Reembolso';
         case IncomeCategory.gift:
           return 'Regalo';
+        case IncomeCategory.extra:
+          return 'Extra';
         case IncomeCategory.other:
           return 'Otros ingresos';
         default:
@@ -185,10 +206,24 @@ class Transaction {
       switch (incomeCategory) {
         case IncomeCategory.salary:
           return '💼';
-        case IncomeCategory.extra:
-          return '⭐';
+        case IncomeCategory.freelance:
+          return '💻';
+        case IncomeCategory.business:
+          return '🏪';
+        case IncomeCategory.investment:
+          return '📈';
+        case IncomeCategory.rental:
+          return '🏠';
+        case IncomeCategory.bonus:
+          return '🎯';
+        case IncomeCategory.commission:
+          return '🤝';
+        case IncomeCategory.refund:
+          return '↩️';
         case IncomeCategory.gift:
           return '🎁';
+        case IncomeCategory.extra:
+          return '⭐';
         case IncomeCategory.other:
           return '💰';
         default:
