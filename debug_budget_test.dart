@@ -24,6 +24,7 @@ void main() async {
     endDate: DateTime(2025, 9, 30),
     createdAt: DateTime.now(),
     isActive: true,
+    accountId: 'account_default',
   );
   
   final budget2 = Budget(
@@ -35,6 +36,7 @@ void main() async {
     endDate: DateTime(2025, 9, 30),
     createdAt: DateTime.now(),
     isActive: true,
+    accountId: 'account_default',
   );
   
   final budget3 = Budget(
@@ -46,6 +48,7 @@ void main() async {
     endDate: DateTime(2025, 9, 30),
     createdAt: DateTime.now(),
     isActive: true,
+    accountId: 'account_default',
   );
   
   try {

@@ -23,6 +23,7 @@ Transaction _$TransactionFromJson(Map<String, dynamic> json) => Transaction(
   customCategoryId: json['customCategoryId'] as String?,
   customCategoryName: json['customCategoryName'] as String?,
   customCategoryEmoji: json['customCategoryEmoji'] as String?,
+  accountId: json['accountId'] as String? ?? 'account_default',
 );
 
 Map<String, dynamic> _$TransactionToJson(Transaction instance) =>
@@ -37,6 +38,7 @@ Map<String, dynamic> _$TransactionToJson(Transaction instance) =>
       'customCategoryId': instance.customCategoryId,
       'customCategoryName': instance.customCategoryName,
       'customCategoryEmoji': instance.customCategoryEmoji,
+      'accountId': instance.accountId,
     };
 
 const _$TransactionTypeEnumMap = {

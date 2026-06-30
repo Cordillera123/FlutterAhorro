@@ -40,6 +40,7 @@ class Budget {
   final DateTime createdAt;
   final DateTime? updatedAt;
   final DateTime? lastResetDate; // Fecha del último reinicio
+  final String accountId; // ID de la cuenta a la que pertenece
 
   Budget({
     this.id,
@@ -58,6 +59,7 @@ class Budget {
     required this.createdAt,
     this.updatedAt,
     this.lastResetDate,
+    required this.accountId,
   });
 
   /// Verifica si usa categoría personalizada
@@ -81,7 +83,7 @@ class Budget {
     if (hasCustomCategory) {
       return customCategoryName ?? 'Otros';
     }
-    
+
     switch (category) {
       case ExpenseCategory.transport:
         return 'Transporte';
@@ -116,7 +118,7 @@ class Budget {
     if (hasCustomCategory) {
       return customCategoryEmoji ?? '📦';
     }
-    
+
     switch (category) {
       case ExpenseCategory.transport:
         return '🚗';
@@ -153,15 +155,15 @@ class Budget {
 
   bool get isCurrentlyActive {
     if (!isActive) return false; // Si está pausado, no está activo
-    
+
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final startDay = DateTime(startDate.year, startDate.month, startDate.day);
     final endDay = DateTime(endDate.year, endDate.month, endDate.day);
-    
+
     // Verificar si la fecha actual está dentro del rango del presupuesto
     return today.isAfter(startDay.subtract(const Duration(days: 1))) &&
-           today.isBefore(endDay.add(const Duration(days: 1)));
+        today.isBefore(endDay.add(const Duration(days: 1)));
   }
 
   // NUEVO: Método para verificar si el presupuesto está pausado
@@ -177,28 +179,28 @@ class Budget {
   // NUEVO: Verificar si necesita reiniciarse
   bool get needsReset {
     final now = DateTime.now();
-    
+
     // Si nunca se ha reiniciado, usar la fecha de creación
     final lastReset = lastResetDate ?? createdAt;
-    
+
     switch (period) {
       case BudgetPeriod.weekly:
-        // Reiniciar cada lunes (weekday 1)
-        // Si estamos en lunes y el último reinicio no fue hoy
+      // Reiniciar cada lunes (weekday 1)
+      // Si estamos en lunes y el último reinicio no fue hoy
         if (now.weekday == DateTime.monday) {
           return !_isSameDay(lastReset, now);
         }
         return false;
-        
+
       case BudgetPeriod.monthly:
-        // Reiniciar el primer día de cada mes
+      // Reiniciar el primer día de cada mes
         if (now.day == 1) {
           return !_isSameDay(lastReset, now);
         }
         return false;
-        
+
       case BudgetPeriod.yearly:
-        // Reiniciar el 1 de enero de cada año
+      // Reiniciar el 1 de enero de cada año
         if (now.month == 1 && now.day == 1) {
           return !_isSameDay(lastReset, now);
         }
@@ -209,8 +211,8 @@ class Budget {
   // Método auxiliar para comparar fechas (solo día, mes, año)
   bool _isSameDay(DateTime date1, DateTime date2) {
     return date1.year == date2.year &&
-           date1.month == date2.month &&
-           date1.day == date2.day;
+        date1.month == date2.month &&
+        date1.day == date2.day;
   }
 
   // NUEVO: Calcular las nuevas fechas de inicio y fin después del reinicio
@@ -221,20 +223,20 @@ class Budget {
 
     switch (period) {
       case BudgetPeriod.weekly:
-        // Nueva semana comienza el lunes actual
+      // Nueva semana comienza el lunes actual
         newStart = _getMondayOfWeek(now);
         newEnd = newStart.add(const Duration(days: 6)); // Domingo
         break;
 
       case BudgetPeriod.monthly:
-        // Nuevo mes comienza el primer día del mes actual
+      // Nuevo mes comienza el primer día del mes actual
         newStart = DateTime(now.year, now.month, 1);
         // Último día del mes
         newEnd = DateTime(now.year, now.month + 1, 0);
         break;
 
       case BudgetPeriod.yearly:
-        // Nuevo año comienza el 1 de enero
+      // Nuevo año comienza el 1 de enero
         newStart = DateTime(now.year, 1, 1);
         newEnd = DateTime(now.year, 12, 31);
         break;
@@ -305,6 +307,7 @@ class Budget {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
       'lastResetDate': lastResetDate?.toIso8601String(),
+      'accountId': accountId,
     };
   }
 
@@ -330,6 +333,7 @@ class Budget {
       lastResetDate: json['lastResetDate'] != null
           ? DateTime.parse(json['lastResetDate'])
           : null,
+      accountId: json['accountId'] as String? ?? 'account_default',
     );
   }
 
@@ -350,6 +354,7 @@ class Budget {
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? lastResetDate,
+    String? accountId,
   }) {
     return Budget(
       id: id ?? this.id,
@@ -368,6 +373,7 @@ class Budget {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
       lastResetDate: lastResetDate ?? this.lastResetDate,
+      accountId: accountId ?? this.accountId,
     );
   }
 }

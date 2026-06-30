@@ -49,6 +49,7 @@ class FinancialGoal {
   final DateTime createdAt;
   final DateTime? updatedAt;
   final DateTime? completedAt;
+  final String accountId; // ID de la cuenta a la que pertenece
 
   FinancialGoal({
     this.id,
@@ -69,6 +70,7 @@ class FinancialGoal {
     required this.createdAt,
     this.updatedAt,
     this.completedAt,
+    required this.accountId,
   });
 
   // Getters calculados
@@ -124,7 +126,7 @@ class FinancialGoal {
   // Obtener la próxima fecha de contribución automática
   DateTime? get nextAutoSaveDate {
     if (!autoSave) return null;
-    
+
     final now = DateTime.now();
     switch (autoSaveFrequency) {
       case AutoSaveFrequency.daily:
@@ -320,6 +322,7 @@ class FinancialGoal {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
       'completedAt': completedAt?.toIso8601String(),
+      'accountId': accountId,
     };
   }
 
@@ -347,6 +350,7 @@ class FinancialGoal {
       completedAt: json['completedAt'] != null
           ? DateTime.parse(json['completedAt'])
           : null,
+      accountId: json['accountId'] as String? ?? 'account_default',
     );
   }
 
@@ -369,6 +373,7 @@ class FinancialGoal {
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? completedAt,
+    String? accountId,
   }) {
     return FinancialGoal(
       id: id ?? this.id,
@@ -389,6 +394,7 @@ class FinancialGoal {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
       completedAt: completedAt ?? this.completedAt,
+      accountId: accountId ?? this.accountId,
     );
   }
 }
@@ -401,6 +407,7 @@ class GoalContribution {
   final DateTime date;
   final String? note;
   final bool isAutomatic;
+  final String accountId; // ID de la cuenta a la que pertenece
 
   GoalContribution({
     this.id,
@@ -409,6 +416,7 @@ class GoalContribution {
     required this.date,
     this.note,
     this.isAutomatic = false,
+    required this.accountId,
   });
 
   Map<String, dynamic> toJson() {
@@ -419,6 +427,7 @@ class GoalContribution {
       'date': date.toIso8601String(),
       'note': note,
       'isAutomatic': isAutomatic,
+      'accountId': accountId,
     };
   }
 
@@ -430,6 +439,7 @@ class GoalContribution {
       date: DateTime.parse(json['date']),
       note: json['note'],
       isAutomatic: json['isAutomatic'] ?? false,
+      accountId: json['accountId'] as String? ?? 'account_default',
     );
   }
 }

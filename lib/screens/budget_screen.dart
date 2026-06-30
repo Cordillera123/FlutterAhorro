@@ -4,6 +4,7 @@ import '../models/budget.dart';
 import '../models/transaction.dart';
 import '../services/budget_service.dart';
 import '../services/transaction_service.dart';
+import '../services/account_service.dart';
 import '../utils/format_utils.dart';
 import '../widgets/app_logo.dart';
 import 'create_budget_screen.dart';
@@ -19,6 +20,7 @@ class _BudgetsScreenState extends State<BudgetsScreen>
     with TickerProviderStateMixin {
   final BudgetService _budgetService = BudgetService();
   final TransactionService _transactionService = TransactionService();
+  final AccountService _accountService = AccountService();
   bool _isLoading = true;
   BudgetSummary? _summary;
   late AnimationController _animationController;
@@ -42,6 +44,13 @@ class _BudgetsScreenState extends State<BudgetsScreen>
     super.initState();
     _initAnimations();
     _loadData();
+    _accountService.addListener(_onAccountChanged);
+  }
+
+  void _onAccountChanged() {
+    if (mounted) {
+      _loadData();
+    }
   }
 
   void _initAnimations() {
@@ -98,6 +107,7 @@ class _BudgetsScreenState extends State<BudgetsScreen>
 
   @override
   void dispose() {
+    _accountService.removeListener(_onAccountChanged);
     _animationController.dispose();
     super.dispose();
   }

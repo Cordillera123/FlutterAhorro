@@ -2,6 +2,7 @@ import 'package:ahorro_app/screens/goal_success_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/financial_goal.dart';
+import '../services/account_service.dart';
 import '../services/goal_service.dart';
 import '../utils/format_utils.dart';
 
@@ -23,6 +24,7 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
   final _targetAmountController = TextEditingController();
   final _contributionController = TextEditingController();
   final _goalService = GoalService();
+  final _accountService = AccountService();
 
   // Estado simple y claro
   GoalType _selectedType = GoalType.purchase;
@@ -1076,6 +1078,9 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
         autoSave: false,
         autoSaveFrequency: AutoSaveFrequency.monthly,
         createdAt: _isEditMode ? widget.goalToEdit!.createdAt : DateTime.now(),
+        accountId: _accountService.resolveAccountId(
+          widget.goalToEdit?.accountId,
+        ),
       );
 
       if (_isEditMode) {

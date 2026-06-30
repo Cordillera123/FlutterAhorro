@@ -4,6 +4,7 @@ import '../models/recurring_expense.dart';
 import '../models/transaction.dart';
 import 'transaction_service.dart';
 import 'budget_service.dart'; // NUEVO: Importar BudgetService
+import 'account_service.dart';
 
 class RecurringExpenseService {
   static const String _recurringExpensesKey = 'recurring_expenses';
@@ -13,15 +14,22 @@ class RecurringExpenseService {
   factory RecurringExpenseService() => _instance;
   RecurringExpenseService._internal();
 
+  final AccountService _accountService = AccountService();
+
   // Lista en memoria de gastos recurrentes
   List<RecurringExpense> _recurringExpenses = [];
 
-  // Getter para obtener todos los gastos recurrentes
-  List<RecurringExpense> get recurringExpenses => List.unmodifiable(_recurringExpenses);
+  // Getter para TODOS los gastos recurrentes (sin filtro de cuenta)
+  List<RecurringExpense> get allRecurringExpenses => List.unmodifiable(_recurringExpenses);
 
-  // Getter para obtener solo los gastos activos
+  // Getter para obtener gastos recurrentes de la cuenta activa
+  List<RecurringExpense> get recurringExpenses => List.unmodifiable(
+    _recurringExpenses.where((e) => e.accountId == _accountService.activeAccountId).toList(),
+  );
+
+  // Getter para obtener solo los gastos activos de la cuenta activa
   List<RecurringExpense> get activeRecurringExpenses =>
-      _recurringExpenses.where((expense) => expense.isActive).toList();
+      recurringExpenses.where((expense) => expense.isActive).toList();
 
   // Cargar gastos recurrentes desde el almacenamiento local
   Future<void> loadRecurringExpenses() async {
@@ -34,6 +42,21 @@ class RecurringExpenseService {
         _recurringExpenses = expensesList
             .map((json) => RecurringExpense.fromJson(json))
             .toList();
+
+        // Migración: reasignar gastos recurrentes con accountId vacío o huérfano
+        bool necesitaGuardar = false;
+        for (int i = 0; i < _recurringExpenses.length; i++) {
+          final resolved =
+          _accountService.resolveAccountId(_recurringExpenses[i].accountId);
+          if (resolved != _recurringExpenses[i].accountId) {
+            _recurringExpenses[i] =
+                _recurringExpenses[i].copyWith(accountId: resolved);
+            necesitaGuardar = true;
+          }
+        }
+        if (necesitaGuardar) {
+          await _saveRecurringExpenses();
+        }
 
         // Ordenar por fecha de creación (más reciente primero)
         _recurringExpenses.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -59,7 +82,11 @@ class RecurringExpenseService {
 
   // Agregar un nuevo gasto recurrente
   Future<void> addRecurringExpense(RecurringExpense expense) async {
-    _recurringExpenses.add(expense);
+    // Asignar cuenta activa si no tiene
+    final expenseWithAccount = expense.copyWith(
+      accountId: _accountService.resolveAccountId(expense.accountId),
+    );
+    _recurringExpenses.add(expenseWithAccount);
     // Mantener ordenado por fecha de creación
     _recurringExpenses.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     await _saveRecurringExpenses();
@@ -69,7 +96,14 @@ class RecurringExpenseService {
   Future<void> updateRecurringExpense(RecurringExpense updatedExpense) async {
     final index = _recurringExpenses.indexWhere((expense) => expense.id == updatedExpense.id);
     if (index != -1) {
-      _recurringExpenses[index] = updatedExpense;
+      final existing = _recurringExpenses[index];
+      final rawAccountId = updatedExpense.accountId.isNotEmpty
+          ? updatedExpense.accountId
+          : existing.accountId;
+      final accountId = _accountService.resolveAccountId(rawAccountId);
+
+      _recurringExpenses[index] =
+          updatedExpense.copyWith(accountId: accountId);
       await _saveRecurringExpenses();
     }
   }
@@ -117,7 +151,7 @@ class RecurringExpenseService {
           if (activeBudgets.isNotEmpty) {
             print('💰 Gasto recurrente procesado: ${expense.name} (\$${expense.amount})');
             print('📊 Encontrados ${activeBudgets.length} presupuesto(s) activo(s) para categoría ${expense.categoryName}');
-            
+
             // Los presupuestos se actualizarán automáticamente cuando se consulten
             // porque el BudgetService calcula los gastos basándose en las transacciones
             for (final budget in activeBudgets) {
@@ -214,17 +248,17 @@ class RecurringExpenseService {
   Future<Map<String, dynamic>> getBudgetImpactSummary() async {
     final budgetService = BudgetService();
     await budgetService.loadBudgets();
-    
+
     final activeExpenses = activeRecurringExpenses;
     final activeBudgets = budgetService.currentPeriodBudgets;
-    
+
     Map<ExpenseCategory, double> categoryImpact = {};
     Map<ExpenseCategory, List<String>> affectedBudgets = {};
-    
+
     // Calcular impacto por categoría (convertir todo a impacto mensual)
     for (final expense in activeExpenses) {
       double monthlyImpact = 0;
-      
+
       switch (expense.frequency) {
         case RecurrenceFrequency.daily:
           monthlyImpact = expense.amount * 30;
@@ -241,11 +275,11 @@ class RecurringExpenseService {
           }
           break;
       }
-      
-      categoryImpact[expense.category] = 
+
+      categoryImpact[expense.category] =
           (categoryImpact[expense.category] ?? 0) + monthlyImpact;
     }
-    
+
     // Encontrar presupuestos afectados
     for (final budget in activeBudgets) {
       if (categoryImpact.containsKey(budget.category)) {
@@ -253,7 +287,7 @@ class RecurringExpenseService {
         affectedBudgets[budget.category]!.add(budget.name);
       }
     }
-    
+
     return {
       'categoriesWithImpact': categoryImpact.length,
       'affectedBudgets': affectedBudgets.values.expand((list) => list).length,

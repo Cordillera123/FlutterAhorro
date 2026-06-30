@@ -3,23 +3,34 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/financial_goal.dart';
 import '../models/transaction.dart';
 import 'transaction_service.dart';
+import 'account_service.dart';
 
 class GoalService {
   static const String _goalsKey = 'financial_goals';
   static const String _contributionsKey = 'goal_contributions';
 
+  // Singleton
+  static final GoalService _instance = GoalService._internal();
+  factory GoalService() => _instance;
+  GoalService._internal();
+
   List<FinancialGoal> _goals = [];
   List<GoalContribution> _contributions = [];
   final TransactionService _transactionService = TransactionService();
+  final AccountService _accountService = AccountService();
 
-  List<FinancialGoal> get goals => _goals;
-  List<FinancialGoal> get activeGoals => _goals.where((g) => g.status == GoalStatus.active).toList();
-  List<FinancialGoal> get pausedGoals => _goals.where((g) => g.status == GoalStatus.paused).toList();
-  List<FinancialGoal> get completedGoals => _goals.where((g) => g.status == GoalStatus.completed).toList();
-  List<GoalContribution> get contributions => _contributions;
-  
-  // Validar si se pueden crear más metas
-  bool get canCreateMoreGoals => _goals.length < 15;
+  // Getter para TODAS las metas (sin filtro de cuenta)
+  List<FinancialGoal> get allGoals => _goals;
+
+  // Getter para metas de la cuenta activa
+  List<FinancialGoal> get goals => _goals.where((g) => g.accountId == _accountService.activeAccountId).toList();
+  List<FinancialGoal> get activeGoals => goals.where((g) => g.status == GoalStatus.active).toList();
+  List<FinancialGoal> get pausedGoals => goals.where((g) => g.status == GoalStatus.paused).toList();
+  List<FinancialGoal> get completedGoals => goals.where((g) => g.status == GoalStatus.completed).toList();
+  List<GoalContribution> get contributions => _contributions.where((c) => c.accountId == _accountService.activeAccountId).toList();
+
+  // Validar si se pueden crear más metas en la cuenta activa
+  bool get canCreateMoreGoals => goals.length < 15;
 
   // Cargar metas desde almacenamiento local
   Future<void> loadGoals() async {
@@ -31,6 +42,19 @@ class GoalService {
       if (goalsJson != null) {
         final List<dynamic> goalsList = json.decode(goalsJson);
         _goals = goalsList.map((json) => FinancialGoal.fromJson(json)).toList();
+
+        // Migración: reasignar metas con accountId vacío o huérfano
+        bool goalsNeedSave = false;
+        for (int i = 0; i < _goals.length; i++) {
+          final resolved = _accountService.resolveAccountId(_goals[i].accountId);
+          if (resolved != _goals[i].accountId) {
+            _goals[i] = _goals[i].copyWith(accountId: resolved);
+            goalsNeedSave = true;
+          }
+        }
+        if (goalsNeedSave) {
+          await _saveGoals();
+        }
 
         // Ordenar por prioridad y fecha de creación
         _goals.sort((a, b) {
@@ -53,6 +77,28 @@ class GoalService {
       if (contributionsJson != null) {
         final List<dynamic> contributionsList = json.decode(contributionsJson);
         _contributions = contributionsList.map((json) => GoalContribution.fromJson(json)).toList();
+
+        // Migración: reasignar contribuciones con accountId vacío o huérfano
+        bool contributionsNeedSave = false;
+        for (int i = 0; i < _contributions.length; i++) {
+          final resolved =
+          _accountService.resolveAccountId(_contributions[i].accountId);
+          if (resolved != _contributions[i].accountId) {
+            _contributions[i] = GoalContribution(
+              id: _contributions[i].id,
+              goalId: _contributions[i].goalId,
+              amount: _contributions[i].amount,
+              date: _contributions[i].date,
+              note: _contributions[i].note,
+              isAutomatic: _contributions[i].isAutomatic,
+              accountId: resolved,
+            );
+            contributionsNeedSave = true;
+          }
+        }
+        if (contributionsNeedSave) {
+          await _saveContributions();
+        }
 
         // Ordenar por fecha (más recientes primero)
         _contributions.sort((a, b) => b.date.compareTo(a.date));
@@ -125,11 +171,12 @@ class GoalService {
 
     // Calcular contribución sugerida automáticamente
     final suggestedContribution = goal.calculateSuggestedContribution();
-    
+
     final newGoal = goal.copyWith(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       suggestedContribution: suggestedContribution,
       monthlyContribution: goal.monthlyContribution > 0 ? goal.monthlyContribution : suggestedContribution,
+      accountId: _accountService.resolveAccountId(goal.accountId),
     );
 
     _goals.add(newGoal);
@@ -143,7 +190,15 @@ class GoalService {
       throw Exception('Meta no encontrada');
     }
 
-    _goals[index] = goal.copyWith(updatedAt: DateTime.now());
+    final existing = _goals[index];
+    final rawAccountId =
+    goal.accountId.isNotEmpty ? goal.accountId : existing.accountId;
+    final accountId = _accountService.resolveAccountId(rawAccountId);
+
+    _goals[index] = goal.copyWith(
+      accountId: accountId,
+      updatedAt: DateTime.now(),
+    );
     await _saveGoals();
   }
 
@@ -219,6 +274,7 @@ class GoalService {
       date: DateTime.now(),
       note: note,
       isAutomatic: isAutomatic,
+      accountId: _accountService.activeAccountId,
     );
 
     _contributions.add(contribution);
@@ -233,6 +289,7 @@ class GoalService {
       date: DateTime.now(),
       expenseCategory: ExpenseCategory.savings,
       incomeCategory: null,
+      accountId: _accountService.activeAccountId,
     );
     await _transactionService.addTransaction(transaction);
 
@@ -278,6 +335,7 @@ class GoalService {
       date: DateTime.now(),
       note: note ?? 'Retiro',
       isAutomatic: false,
+      accountId: _accountService.activeAccountId,
     );
 
     _contributions.add(withdrawal);
@@ -292,6 +350,7 @@ class GoalService {
       date: DateTime.now(),
       expenseCategory: null,
       incomeCategory: IncomeCategory.other,
+      accountId: _accountService.activeAccountId,
     );
     await _transactionService.addTransaction(transaction);
 
@@ -357,23 +416,23 @@ class GoalService {
       if (goal.autoSave && goal.monthlyContribution > 0) {
         bool shouldProcess = false;
         String note = '';
-        
+
         switch (goal.autoSaveFrequency) {
           case AutoSaveFrequency.daily:
-            // Verificar si ya se procesó hoy
+          // Verificar si ya se procesó hoy
             final lastContribution = _contributions
                 .where((c) => c.goalId == goal.id && c.isAutomatic)
-                .where((c) => 
-                    c.date.year == today.year && 
-                    c.date.month == today.month && 
-                    c.date.day == today.day)
+                .where((c) =>
+            c.date.year == today.year &&
+                c.date.month == today.month &&
+                c.date.day == today.day)
                 .isNotEmpty;
             shouldProcess = !lastContribution;
             note = 'Contribución automática diaria';
             break;
-            
+
           case AutoSaveFrequency.weekly:
-            // Verificar si ya se procesó esta semana (lunes)
+          // Verificar si ya se procesó esta semana (lunes)
             final mondayOfWeek = today.subtract(Duration(days: today.weekday - 1));
             final lastContribution = _contributions
                 .where((c) => c.goalId == goal.id && c.isAutomatic)
@@ -382,9 +441,9 @@ class GoalService {
             shouldProcess = !lastContribution && today.weekday == 1; // Lunes
             note = 'Contribución automática semanal';
             break;
-            
+
           case AutoSaveFrequency.monthly:
-            // Verificar si ya se procesó este mes
+          // Verificar si ya se procesó este mes
             final thisMonth = DateTime(today.year, today.month);
             final lastContribution = _contributions
                 .where((c) => c.goalId == goal.id && c.isAutomatic)

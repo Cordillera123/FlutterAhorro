@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../models/transaction.dart';
 import '../services/transaction_service.dart';
 import '../services/category_service.dart';
+import '../services/account_service.dart';
 import '../utils/format_utils.dart';
 import 'add_transaction_screen.dart';
 
@@ -17,6 +18,7 @@ class _HistoryScreenState extends State<HistoryScreen>
     with TickerProviderStateMixin {
   final TransactionService _transactionService = TransactionService();
   final CategoryService _categoryService = CategoryService();
+  final AccountService _accountService = AccountService();
   List<Transaction> _filteredTransactions = [];
   String _selectedFilter = 'Todas';
   bool _isLoading = true;
@@ -49,6 +51,8 @@ class _HistoryScreenState extends State<HistoryScreen>
     _loadTransactions();
     // Escuchar cambios en CategoryService (para actualizar nombres/emojis)
     _categoryService.addListener(_onCategoryChanged);
+    // Escuchar cambios de cuenta activa
+    _accountService.addListener(_onAccountChanged);
   }
 
   void _onCategoryChanged() {
@@ -56,6 +60,12 @@ class _HistoryScreenState extends State<HistoryScreen>
       setState(() {
         // Forzar rebuild para mostrar nombres/emojis actualizados
       });
+    }
+  }
+
+  void _onAccountChanged() {
+    if (mounted) {
+      _loadTransactions();
     }
   }
 
@@ -116,6 +126,7 @@ class _HistoryScreenState extends State<HistoryScreen>
   @override
   void dispose() {
     _categoryService.removeListener(_onCategoryChanged);
+    _accountService.removeListener(_onAccountChanged);
     _animationController.dispose();
     super.dispose();
   }

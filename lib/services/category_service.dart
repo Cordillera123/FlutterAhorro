@@ -5,6 +5,7 @@ import '../models/custom_category.dart';
 import '../models/transaction.dart';
 import 'transaction_service.dart';
 import 'budget_service.dart';
+import 'account_service.dart';
 
 /// Servicio para gestionar categorías personalizadas de gastos.
 /// Usa patrón Singleton y persiste en SharedPreferences.
@@ -16,11 +17,18 @@ class CategoryService extends ChangeNotifier {
   factory CategoryService() => _instance;
   CategoryService._internal();
 
-  // Lista en memoria de categorías personalizadas
+  final AccountService _accountService = AccountService();
+
+  // Lista en memoria de TODAS las categorías personalizadas
   List<CustomCategory> _customCategories = [];
 
-  // Getter para categorías personalizadas
-  List<CustomCategory> get customCategories => List.unmodifiable(_customCategories);
+  // Getter para categorías personalizadas de la cuenta activa
+  List<CustomCategory> get customCategories => List.unmodifiable(
+    _customCategories.where((c) => c.accountId == _accountService.activeAccountId).toList(),
+  );
+
+  // Getter para TODAS las categorías personalizadas (sin filtro)
+  List<CustomCategory> get allCustomCategories => List.unmodifiable(_customCategories);
 
   /// Retorna todas las categorías: sistema + personalizadas
   /// Formato: List<Map> con {id, name, emoji, isSystem}
@@ -38,8 +46,8 @@ class CategoryService extends ChangeNotifier {
       });
     }
 
-    // 2. Agregar categorías personalizadas
-    for (final custom in _customCategories) {
+    // 2. Agregar categorías personalizadas de la cuenta activa
+    for (final custom in customCategories) {
       allCategories.add({
         'id': custom.id,
         'name': custom.name,
@@ -125,7 +133,7 @@ class CategoryService extends ChangeNotifier {
     // Buscar en categorías personalizadas
     if (categoryId != null && categoryId.startsWith('custom_')) {
       final custom = _customCategories.firstWhere(
-        (c) => c.id == categoryId,
+            (c) => c.id == categoryId,
         orElse: () => CustomCategory(
           id: 'deleted',
           name: 'Otros',
@@ -157,7 +165,7 @@ class CategoryService extends ChangeNotifier {
         _customCategories = categoriesList
             .map((json) => CustomCategory.fromJson(json))
             .toList();
-        
+
         // Ordenar por fecha de creación (más recientes primero)
         _customCategories.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       }
@@ -188,9 +196,9 @@ class CategoryService extends ChangeNotifier {
     required String name,
     required String emoji,
   }) async {
-    // Validar que no exista una categoría con el mismo nombre
-    final nameExists = _customCategories.any(
-      (c) => c.name.toLowerCase() == name.toLowerCase(),
+    // Validar que no exista una categoría con el mismo nombre en la cuenta activa
+    final nameExists = customCategories.any(
+          (c) => c.name.toLowerCase() == name.toLowerCase(),
     );
     if (nameExists) {
       throw Exception('Ya existe una categoría con el nombre "$name"');
@@ -209,6 +217,7 @@ class CategoryService extends ChangeNotifier {
       name: name.trim(),
       emoji: emoji,
       createdAt: DateTime.now(),
+      accountId: _accountService.activeAccountId,
     );
 
     _customCategories.insert(0, newCategory);
@@ -229,9 +238,9 @@ class CategoryService extends ChangeNotifier {
       throw Exception('Categoría no encontrada');
     }
 
-    // Validar que no exista otra categoría con el mismo nombre
-    final nameExists = _customCategories.any(
-      (c) => c.id != id && c.name.toLowerCase() == name.toLowerCase(),
+    // Validar que no exista otra categoría con el mismo nombre en la cuenta activa
+    final nameExists = customCategories.any(
+          (c) => c.id != id && c.name.toLowerCase() == name.toLowerCase(),
     );
     if (nameExists) {
       throw Exception('Ya existe una categoría con el nombre "$name"');
@@ -251,7 +260,7 @@ class CategoryService extends ChangeNotifier {
   Future<bool> categoryHasBudgets(String categoryId) async {
     final budgetService = BudgetService();
     await budgetService.loadBudgets();
-    
+
     return budgetService.budgets.any((b) => b.customCategoryId == categoryId);
   }
 
@@ -259,7 +268,7 @@ class CategoryService extends ChangeNotifier {
   Future<List<dynamic>> getBudgetsForCategory(String categoryId) async {
     final budgetService = BudgetService();
     await budgetService.loadBudgets();
-    
+
     return budgetService.budgets.where((b) => b.customCategoryId == categoryId).toList();
   }
 
@@ -267,7 +276,7 @@ class CategoryService extends ChangeNotifier {
   Future<bool> categoryHasTransactions(String categoryId) async {
     final transactionService = TransactionService();
     await transactionService.loadTransactions();
-    
+
     return transactionService.transactions.any((t) => t.customCategoryId == categoryId);
   }
 

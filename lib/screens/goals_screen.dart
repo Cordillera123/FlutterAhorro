@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/financial_goal.dart';
 import '../services/goal_service.dart';
+import '../services/account_service.dart';
 import '../utils/format_utils.dart';
 import '../widgets/app_logo.dart';
 import 'create_goal_screen.dart';
@@ -16,6 +17,7 @@ class GoalsScreen extends StatefulWidget {
 class _GoalsScreenState extends State<GoalsScreen>
     with TickerProviderStateMixin {
   final GoalService _goalService = GoalService();
+  final AccountService _accountService = AccountService();
   bool _isLoading = true;
   GoalSummary? _summary;
   ContributionStats? _contributionStats;
@@ -41,6 +43,13 @@ class _GoalsScreenState extends State<GoalsScreen>
     super.initState();
     _initAnimations();
     _loadData();
+    _accountService.addListener(_onAccountChanged);
+  }
+
+  void _onAccountChanged() {
+    if (mounted) {
+      _loadData();
+    }
   }
 
   void _initAnimations() {
@@ -84,6 +93,7 @@ class _GoalsScreenState extends State<GoalsScreen>
 
   @override
   void dispose() {
+    _accountService.removeListener(_onAccountChanged);
     _animationController.dispose();
     super.dispose();
   }

@@ -5,6 +5,7 @@ import '../models/transaction.dart';
 import '../models/custom_category.dart';
 import '../services/transaction_service.dart';
 import '../services/category_service.dart';
+import '../services/account_service.dart';
 import '../utils/format_utils.dart';
 
 class AddTransactionScreen extends StatefulWidget {
@@ -28,6 +29,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
   final _descriptionController = TextEditingController();
   final TransactionService _transactionService = TransactionService();
   final CategoryService _categoryService = CategoryService();
+  final AccountService _accountService = AccountService();
 
   late TransactionType _selectedType;
   ExpenseCategory? _selectedExpenseCategory;
@@ -1950,6 +1952,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
         customCategoryId: _selectedCustomCategoryId,
         customCategoryName: _selectedCustomCategoryName,
         customCategoryEmoji: _selectedCustomCategoryEmoji,
+        accountId: _accountService.resolveAccountId(
+          widget.transactionToEdit?.accountId,
+        ),
       );
 
       // Si estamos editando, actualizar; si no, agregar nueva transacción

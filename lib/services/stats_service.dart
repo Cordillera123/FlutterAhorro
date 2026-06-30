@@ -5,13 +5,18 @@ import '../utils/format_utils.dart';
 class StatsService {
   final TransactionService _transactionService = TransactionService();
 
+  /// Obtiene todas las transacciones de la cuenta activa (ya filtradas por el service)
+  List<Transaction> get _accountTransactions => _transactionService.transactions;
+
+  /// Obtiene TODAS las transacciones de todas las cuentas
+  List<Transaction> get _allTransactions => _transactionService.allTransactions;
+
   // Obtener estadísticas del período actual vs anterior
   FinancialStats getCurrentVsPreviousStats() {
     final now = DateTime.now();
-    final currentMonth = DateTime(now.year, now.month);
     final previousMonth = DateTime(now.year, now.month - 1);
     
-    final transactions = _transactionService.transactions;
+    final transactions = _accountTransactions;
     
     // Transacciones del mes actual
     final currentMonthTransactions = transactions.where((t) => 

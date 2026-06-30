@@ -6,6 +6,7 @@ class CustomCategory {
   final String emoji;
   final DateTime createdAt;
   final DateTime? updatedAt;
+  final String? accountId; // ID de la cuenta a la que pertenece
 
   CustomCategory({
     required this.id,
@@ -13,6 +14,7 @@ class CustomCategory {
     required this.emoji,
     required this.createdAt,
     this.updatedAt,
+    this.accountId,
   });
 
   /// Crea una copia con campos modificados
@@ -22,6 +24,7 @@ class CustomCategory {
     String? emoji,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? accountId,
   }) {
     return CustomCategory(
       id: id ?? this.id,
@@ -29,6 +32,7 @@ class CustomCategory {
       emoji: emoji ?? this.emoji,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      accountId: accountId ?? this.accountId,
     );
   }
 
@@ -40,6 +44,7 @@ class CustomCategory {
       'emoji': emoji,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
+      'accountId': accountId,
     };
   }
 
@@ -50,9 +55,10 @@ class CustomCategory {
       name: json['name'] as String,
       emoji: json['emoji'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: json['updatedAt'] != null 
-          ? DateTime.parse(json['updatedAt'] as String) 
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'] as String)
           : null,
+      accountId: json['accountId'] as String?,
     );
   }
 

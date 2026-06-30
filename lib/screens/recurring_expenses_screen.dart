@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../models/recurring_expense.dart';
 import '../models/transaction.dart';
 import '../services/recurring_expense_service.dart';
+import '../services/account_service.dart';
 import '../utils/format_utils.dart';
 import 'add_recurring_expense_screen.dart';
 
@@ -18,6 +19,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen>
     with TickerProviderStateMixin {
   final RecurringExpenseService _recurringExpenseService =
       RecurringExpenseService();
+  final AccountService _accountService = AccountService();
   bool _isLoading = true;
   Map<String, dynamic> _summary = {};
   Map<String, dynamic> _budgetImpact =
@@ -49,6 +51,13 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen>
     super.initState();
     _initAnimations();
     _loadData();
+    _accountService.addListener(_onAccountChanged);
+  }
+
+  void _onAccountChanged() {
+    if (mounted) {
+      _loadData();
+    }
   }
 
   void _initAnimations() {
@@ -94,6 +103,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen>
 
   @override
   void dispose() {
+    _accountService.removeListener(_onAccountChanged);
     _animationController.dispose();
     super.dispose();
   }

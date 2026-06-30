@@ -38,6 +38,7 @@ class RecurringExpense {
   final bool isActive;                  // Si está activo
   final DateTime createdAt;             // Fecha de creación
   final DateTime? lastProcessed;        // Última vez que se procesó
+  final String accountId;              // ID de la cuenta a la que pertenece
 
   RecurringExpense({
     required this.id,
@@ -54,6 +55,7 @@ class RecurringExpense {
     this.isActive = true,
     required this.createdAt,
     this.lastProcessed,
+    required this.accountId,
   });
 
   factory RecurringExpense.fromJson(Map<String, dynamic> json) =>
@@ -77,6 +79,7 @@ class RecurringExpense {
     bool? isActive,
     DateTime? createdAt,
     DateTime? lastProcessed,
+    String? accountId,
   }) {
     return RecurringExpense(
       id: id ?? this.id,
@@ -93,6 +96,7 @@ class RecurringExpense {
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       lastProcessed: lastProcessed ?? this.lastProcessed,
+      accountId: accountId ?? this.accountId,
     );
   }
 
@@ -220,12 +224,12 @@ class RecurringExpense {
   // Crear transacción a partir del gasto recurrente
   Transaction createTransaction() {
     double transactionAmount = amount;
-    
+
     // Para gastos semanales, calculamos el monto diario
     if (frequency == RecurrenceFrequency.weekly && weekDays != null && weekDays!.isNotEmpty) {
       transactionAmount = amount / weekDays!.length;
     }
-    
+
     return Transaction(
       id: 'recurring_${DateTime.now().millisecondsSinceEpoch}',
       amount: transactionAmount,
@@ -234,6 +238,7 @@ class RecurringExpense {
       date: DateTime.now(),
       expenseCategory: category,
       incomeCategory: null,
+      accountId: accountId,
     );
   }
 

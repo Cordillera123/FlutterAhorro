@@ -34,6 +34,7 @@ void main() async {
     endDate: sundayOfWeek,
     createdAt: now,
     isActive: true,
+    accountId: 'account_default',
   );
   
   // Presupuesto mensual (debe reiniciarse el día 1 de cada mes)
@@ -49,6 +50,7 @@ void main() async {
     endDate: lastDayOfMonth,
     createdAt: now,
     isActive: true,
+    accountId: 'account_default',
   );
   
   // Presupuesto anual (debe reiniciarse el 1 de enero)
@@ -64,6 +66,7 @@ void main() async {
     endDate: lastDayOfYear,
     createdAt: now,
     isActive: true,
+    accountId: 'account_default',
   );
   
   try {

@@ -26,6 +26,7 @@ void main() async {
       startDate: DateTime(2025, 1, 1),
       endDate: DateTime(2025, 1, 31),
       createdAt: DateTime.now(),
+      accountId: 'account_default',
     );
     
     await budgetService.addBudget(budget1);
@@ -40,6 +41,7 @@ void main() async {
       startDate: DateTime(2025, 1, 1),
       endDate: DateTime(2025, 1, 31),
       createdAt: DateTime.now(),
+      accountId: 'account_default',
     );
     
     await budgetService.addBudget(budget2);
@@ -54,6 +56,7 @@ void main() async {
       startDate: DateTime(2025, 2, 1),
       endDate: DateTime(2025, 2, 28),
       createdAt: DateTime.now(),
+      accountId: 'account_default',
     );
     
     await budgetService.addBudget(budget3);
@@ -68,6 +71,7 @@ void main() async {
       startDate: DateTime(2025, 1, 6), // Lunes
       endDate: DateTime(2025, 1, 12), // Domingo
       createdAt: DateTime.now(),
+      accountId: 'account_default',
     );
     
     await budgetService.addBudget(budget4);
@@ -82,6 +86,7 @@ void main() async {
       startDate: DateTime(2025, 1, 1),
       endDate: DateTime(2025, 12, 31),
       createdAt: DateTime.now(),
+      accountId: 'account_default',
     );
     
     await budgetService.addBudget(budget5);

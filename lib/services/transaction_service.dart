@@ -2,22 +2,43 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/transaction.dart';
+import 'account_service.dart';
 
 class TransactionService extends ChangeNotifier {
   static const String _transactionsKey = 'transactions';
 
-  // Instancia única del servicio (Singleton)
+  // Singleton
   static final TransactionService _instance = TransactionService._internal();
   factory TransactionService() => _instance;
   TransactionService._internal();
 
-  // Lista en memoria de todas las transacciones
+  final AccountService _accountService = AccountService();
+
   List<Transaction> _transactions = [];
 
-  // Getter para obtener todas las transacciones
-  List<Transaction> get transactions => List.unmodifiable(_transactions);
+  // Getter para todas las transacciones (sin filtrar por cuenta)
+  List<Transaction> get allTransactions => List.unmodifiable(_transactions);
 
-  // Cargar transacciones desde el almacenamiento local
+  // Getter para transacciones de la cuenta activa
+  List<Transaction> get transactions {
+    final filtered = _transactions
+        .where((t) => t.accountId == _accountService.activeAccountId)
+        .toList();
+    print('🔵 GETTER - Total transacciones en memoria: ${_transactions.length}');
+    print('🔵 GETTER - activeAccountId: ${_accountService.activeAccountId}');
+    for (var t in _transactions) {
+      print('🔵   - ${t.description} (accountId: ${t.accountId})');
+    }
+    print('🔵 GETTER - Transacciones filtradas: ${filtered.length}');
+    return List.unmodifiable(filtered);
+  }
+
+  // Obtener transacciones de una cuenta específica
+  List<Transaction> transactionsForAccount(String accountId) {
+    return _transactions.where((t) => t.accountId == accountId).toList();
+  }
+
+  // Cargar transacciones desde SharedPreferences con migración automática
   Future<void> loadTransactions() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -29,20 +50,38 @@ class TransactionService extends ChangeNotifier {
             .map((json) => Transaction.fromJson(json))
             .toList();
 
+        // Migración: reasignar transacciones con accountId vacío o huérfano
+        bool necesitaGuardar = false;
+        for (int i = 0; i < _transactions.length; i++) {
+          final resolved =
+          _accountService.resolveAccountId(_transactions[i].accountId);
+          if (resolved != _transactions[i].accountId) {
+            _transactions[i] = _transactions[i].copyWith(accountId: resolved);
+            necesitaGuardar = true;
+            print(
+                '🛠️ Migrada transacción huérfana: ${_transactions[i].description}');
+          }
+        }
+
         // Ordenar por fecha (más reciente primero)
         _transactions.sort((a, b) => b.date.compareTo(a.date));
+
+        // Guardar cambios si se migró alguna transacción
+        if (necesitaGuardar) {
+          await _saveTransactions();
+          print('✅ Transacciones huérfanas migradas y guardadas');
+        }
       }
 
-      // Notificar a los listeners que los datos han cambiado
       notifyListeners();
     } catch (e) {
-      print('Error cargando transacciones: $e');
+      print('❌ Error cargando transacciones: $e');
       _transactions = [];
       notifyListeners();
     }
   }
 
-  // Guardar transacciones en el almacenamiento local
+  // Guardar transacciones en SharedPreferences
   Future<void> _saveTransactions() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -55,30 +94,55 @@ class TransactionService extends ChangeNotifier {
     }
   }
 
-  // Agregar una nueva transacción
+  // Agregar una nueva transacción (asigna cuenta activa si no tiene)
   Future<void> addTransaction(Transaction transaction) async {
-    _transactions.add(transaction);
-    // Mantener ordenado por fecha
+    final transactionWithAccount = transaction.copyWith(
+      accountId: _accountService.resolveAccountId(transaction.accountId),
+    );
+
+    print('🟢 ADD - accountId asignado: ${transactionWithAccount.accountId}');
+    print('🟢 ADD - activeAccountId actual: ${_accountService.activeAccountId}');
+
+    _transactions.add(transactionWithAccount);
     _transactions.sort((a, b) => b.date.compareTo(a.date));
     await _saveTransactions();
-
-    // Notificar a los listeners que los datos han cambiado
     notifyListeners();
   }
-
   // Eliminar una transacción
   Future<void> deleteTransaction(String id) async {
     _transactions.removeWhere((transaction) => transaction.id == id);
     await _saveTransactions();
-
-    // Notificar a los listeners que los datos han cambiado
     notifyListeners();
   }
 
-  // Obtener el balance total (ingresos - gastos)
+  // Actualizar una transacción existente (con protección de accountId)
+  Future<void> updateTransaction(Transaction updatedTransaction) async {
+    final index = _transactions.indexWhere((t) => t.id == updatedTransaction.id);
+    if (index != -1) {
+      final existing = _transactions[index];
+
+      print('🟡 UPDATE - ID: ${updatedTransaction.id}');
+      print('🟡 UPDATE - accountId recibido: ${updatedTransaction.accountId}');
+      print('🟡 UPDATE - accountId existente: ${existing.accountId}');
+      print('🟡 UPDATE - activeAccountId actual: ${_accountService.activeAccountId}');
+
+      final rawAccountId = updatedTransaction.accountId.isNotEmpty
+          ? updatedTransaction.accountId
+          : existing.accountId;
+      final accountId = _accountService.resolveAccountId(rawAccountId);
+
+      print('🟡 UPDATE - accountId final a guardar: $accountId');
+
+      _transactions[index] = updatedTransaction.copyWith(accountId: accountId);
+      _transactions.sort((a, b) => b.date.compareTo(a.date));
+      await _saveTransactions();
+      notifyListeners();
+    }
+  }
+  // Balance total de la cuenta activa
   double get totalBalance {
     double balance = 0;
-    for (var transaction in _transactions) {
+    for (var transaction in transactions) {
       if (transaction.type == TransactionType.income) {
         balance += transaction.amount;
       } else {
@@ -88,33 +152,34 @@ class TransactionService extends ChangeNotifier {
     return balance;
   }
 
-  // Obtener total de ingresos
+  // Total de ingresos de la cuenta activa
   double get totalIncome {
-    return _transactions
+    return transactions
         .where((t) => t.type == TransactionType.income)
         .fold(0, (sum, t) => sum + t.amount);
   }
 
-  // Obtener total de gastos
+  // Total de gastos de la cuenta activa
   double get totalExpenses {
-    return _transactions
+    return transactions
         .where((t) => t.type == TransactionType.expense)
         .fold(0, (sum, t) => sum + t.amount);
   }
 
-  // Obtener transacciones de este mes
+  // Transacciones del mes actual (cuenta activa)
   List<Transaction> get thisMonthTransactions {
     final now = DateTime.now();
     final firstDayOfMonth = DateTime(now.year, now.month, 1);
     final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
 
-    return _transactions.where((transaction) {
-      return transaction.date.isAfter(firstDayOfMonth.subtract(Duration(days: 1))) &&
-          transaction.date.isBefore(lastDayOfMonth.add(Duration(days: 1)));
+    return transactions.where((transaction) {
+      return transaction.date
+          .isAfter(firstDayOfMonth.subtract(const Duration(days: 1))) &&
+          transaction.date.isBefore(lastDayOfMonth.add(const Duration(days: 1)));
     }).toList();
   }
 
-  // Obtener gastos por categoría del mes actual
+  // Gastos por categoría del mes actual
   Map<ExpenseCategory, double> get monthlyExpensesByCategory {
     final monthlyExpenses = thisMonthTransactions
         .where((t) => t.type == TransactionType.expense)
@@ -130,32 +195,19 @@ class TransactionService extends ChangeNotifier {
     return categoryTotals;
   }
 
-  // Limpiar todas las transacciones (útil para desarrollo)
+  // Limpiar todas las transacciones (solo para desarrollo)
   Future<void> clearAllTransactions() async {
     _transactions.clear();
     await _saveTransactions();
     notifyListeners();
   }
 
-  // Forzar actualización manual
+  // Forzar notificación manual
   void forceUpdate() {
     notifyListeners();
   }
 
-  // Actualizar una transacción existente
-  Future<void> updateTransaction(Transaction updatedTransaction) async {
-    final index = _transactions.indexWhere((t) => t.id == updatedTransaction.id);
-    if (index != -1) {
-      _transactions[index] = updatedTransaction;
-      // Mantener ordenado por fecha
-      _transactions.sort((a, b) => b.date.compareTo(a.date));
-      await _saveTransactions();
-      notifyListeners();
-    }
-  }
-
-  /// Reasigna todas las transacciones de una categoría personalizada a "Otros"
-  /// Se usa cuando se elimina una categoría personalizada
+  // Reasignar categoría personalizada a "Otros" al eliminar una categoría
   Future<int> reassignCategoryToOther(String customCategoryId) async {
     int count = 0;
     for (int i = 0; i < _transactions.length; i++) {
@@ -164,12 +216,12 @@ class TransactionService extends ChangeNotifier {
         count++;
       }
     }
-    
+
     if (count > 0) {
       await _saveTransactions();
       notifyListeners();
     }
-    
+
     return count;
   }
 }

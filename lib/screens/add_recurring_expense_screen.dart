@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../models/recurring_expense.dart';
 import '../models/transaction.dart';
 import '../services/recurring_expense_service.dart';
+import '../services/account_service.dart';
 import '../utils/format_utils.dart';
 
 class AddRecurringExpenseScreen extends StatefulWidget {
@@ -36,6 +37,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
   final _customDaysController = TextEditingController();
   final RecurringExpenseService _recurringExpenseService =
       RecurringExpenseService();
+  final AccountService _accountService = AccountService();
 
   ExpenseCategory _selectedCategory = ExpenseCategory.transport;
   RecurrenceFrequency _selectedFrequency = RecurrenceFrequency.daily;
@@ -270,16 +272,22 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
               if (value == null || value.isEmpty) {
                 return 'Por favor ingresa un monto';
               }
-              final amount = double.tryParse(value);
-              if (amount == null || amount <= 0) {
-                return 'El monto debe ser mayor a \$0.00';
+
+              try {
+                final amount = FormatUtils.parseAmount(value);
+                if (amount <= 0) {
+                  return 'El monto debe ser mayor a \$0.00';
+                }
+                if (amount > 999999.99) {
+                  return 'El monto máximo es \$999,999.99';
+                }
+                if (amount < 0.01) {
+                  return 'El monto mínimo es \$0.01';
+                }
+              } catch (_) {
+                return 'Formato de monto inválido';
               }
-              if (amount > 999999.99) {
-                return 'El monto máximo es \$999,999.99';
-              }
-              if (amount < 0.01) {
-                return 'El monto mínimo es \$0.01';
-              }
+
               return null;
             },
           ),
@@ -1174,6 +1182,9 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
             ? widget.expenseToEdit!.createdAt
             : DateTime.now(),
         lastProcessed: _isEditing ? widget.expenseToEdit!.lastProcessed : null,
+        accountId: _accountService.resolveAccountId(
+          widget.expenseToEdit?.accountId,
+        ),
       );
 
       if (_isEditing) {

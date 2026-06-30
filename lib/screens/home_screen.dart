@@ -5,12 +5,15 @@ import '../services/transaction_service.dart';
 import '../services/recurring_expense_service.dart';
 import '../services/stats_service.dart';
 import '../services/category_service.dart';
+import '../services/account_service.dart';
 import '../utils/format_utils.dart';
 import '../widgets/app_logo.dart';
+import '../widgets/account_selector.dart';
 import 'add_transaction_screen.dart';
 import 'recurring_expenses_screen.dart';
 import 'stats_screen.dart';
 import 'settings_screen.dart';
+import 'manage_accounts_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,9 +25,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final TransactionService _transactionService = TransactionService();
   final RecurringExpenseService _recurringExpenseService =
-      RecurringExpenseService();
+  RecurringExpenseService();
   final StatsService _statsService = StatsService();
   final CategoryService _categoryService = CategoryService();
+  final AccountService _accountService = AccountService();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _isLoading = true;
   bool _isRefreshing = false;
@@ -43,6 +47,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _transactionService.addListener(_onTransactionServiceChanged);
     // Escuchar cambios en CategoryService (para actualizar nombres/emojis)
     _categoryService.addListener(_onCategoryServiceChanged);
+    // Escuchar cambios de cuenta activa
+    _accountService.addListener(_onAccountChanged);
   }
 
   // NUEVO: Método que se ejecuta cuando el TransactionService notifica cambios
@@ -60,6 +66,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (mounted) {
       setState(() {
         // Forzar rebuild para mostrar nombres/emojis actualizados
+      });
+    }
+  }
+
+  // Método que se ejecuta cuando cambia la cuenta activa
+  void _onAccountChanged() {
+    if (mounted) {
+      _updateStats();
+      setState(() {
+        // Recargar datos para la nueva cuenta activa
       });
     }
   }
@@ -127,6 +143,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     // NUEVO: Remover el listener cuando se destruye el widget
     _transactionService.removeListener(_onTransactionServiceChanged);
     _categoryService.removeListener(_onCategoryServiceChanged);
+    _accountService.removeListener(_onAccountChanged);
     _animationController.dispose();
     super.dispose();
   }
@@ -235,7 +252,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildModernAppBar() {
     return SliverAppBar(
-      expandedHeight: 190,
+      expandedHeight: 210,
       floating: false,
       pinned: true,
       backgroundColor: const Color(0xFF4CAF50),
@@ -260,49 +277,84 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Column(
                 children: [
-                  // Header con menú y saludo centrado
+                  // Header: menú (izquierda) + saludo (centro)
                   Row(
                     children: [
-                      // Botón de menú (izquierda)
                       _buildMenuButton(),
-                      // Saludo centrado
                       Expanded(
-                        child: Column(
-                          children: [
-                            Text(
-                              FormatUtils.getGreeting(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: -0.5,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Controla tus finanzas con serenidad',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.85),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w400,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+                        child: Text(
+                          FormatUtils.getGreeting(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.5,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
-                      // Espacio invisible para balancear (mismo tamaño que el botón)
+                      // Balancear con mismo ancho que botón menú
                       const SizedBox(width: 44),
                     ],
                   ),
+                  const SizedBox(height: 10),
+                  // Selector de cuenta como chip centrado
+                  _buildAccountChip(),
                   const Spacer(),
-                  // Balance con diseño mejorado
+                  // Balance
                   _buildBalancePreview(),
                 ],
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAccountChip() {
+    final account = _accountService.activeAccount;
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        showAccountSelectorSheet(context);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.18),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.25),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(account.emoji, style: const TextStyle(fontSize: 15)),
+            const SizedBox(width: 6),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 140),
+              child: Text(
+                account.name,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.2,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(
+              Icons.swap_horiz_rounded,
+              color: Colors.white,
+              size: 16,
+            ),
+          ],
         ),
       ),
     );
@@ -383,6 +435,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ),
             const SizedBox(height: 8),
+            // Opción de cuentas
+            _buildDrawerItem(
+              icon: Icons.account_balance_outlined,
+              title: 'Mis Cuentas',
+              subtitle: 'Gestiona tus cuentas financieras',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ManageAccountsScreen(),
+                  ),
+                );
+              },
+            ),
+            const Divider(height: 16),
             // Opciones del menú
             _buildDrawerItem(
               icon: Icons.category_outlined,
@@ -505,7 +573,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'Balance Total',
+            'Balance',
             style: TextStyle(
               color: Colors.white.withOpacity(0.9),
               fontSize: 13,
@@ -946,7 +1014,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           _buildEmptyState()
         else
           ...recentTransactions.map(
-            (transaction) => _buildTransactionItem(transaction),
+                (transaction) => _buildTransactionItem(transaction),
           ),
       ],
     );
@@ -1136,7 +1204,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       context,
       MaterialPageRoute(
         builder: (context) =>
-            const AddTransactionScreen(initialType: TransactionType.income),
+        const AddTransactionScreen(initialType: TransactionType.income),
       ),
     );
     // No se necesita código adicional - el listener actualiza automáticamente
@@ -1147,7 +1215,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       context,
       MaterialPageRoute(
         builder: (context) =>
-            const AddTransactionScreen(initialType: TransactionType.expense),
+        const AddTransactionScreen(initialType: TransactionType.expense),
       ),
     );
     // No se necesita código adicional - el listener actualiza automáticamente
@@ -1173,7 +1241,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
-            const StatsScreen(),
+        const StatsScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;

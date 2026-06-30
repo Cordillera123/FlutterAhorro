@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'screens/main_navigation_screen.dart';
+import 'screens/manage_accounts_screen.dart';
 import 'screens/splash_screen.dart';
+import 'services/account_service.dart';
 
 void main() async {
   try {
@@ -21,6 +23,11 @@ void main() async {
         statusBarIconBrightness: Brightness.dark,
       ),
     );
+
+    // Inicializar sistema de cuentas y migrar datos existentes
+    final accountService = AccountService();
+    await accountService.loadAccounts();
+    await accountService.migrateExistingData();
     
     runApp(const AhorroApp());
   } catch (e) {
@@ -162,6 +169,9 @@ class AhorroApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const SplashScreen(),
+      routes: {
+        '/manage-accounts': (context) => const ManageAccountsScreen(),
+      },
     );
   }
 }

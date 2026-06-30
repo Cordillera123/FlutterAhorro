@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'manage_categories_screen.dart';
+import 'manage_accounts_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -66,6 +67,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                     _buildSectionTitle('Personalización'),
                     const SizedBox(height: 12),
                     _buildSettingsCard([
+                      _buildSettingsTile(
+                        icon: Icons.account_balance_outlined,
+                        iconColor: const Color(0xFF059669),
+                        title: 'Mis Cuentas',
+                        subtitle: 'Gestiona tus cuentas financieras',
+                        onTap: () => _navigateToAccounts(),
+                      ),
+                      const Divider(height: 1),
                       _buildSettingsTile(
                         icon: Icons.category_outlined,
                         iconColor: primaryBlue,
@@ -254,6 +263,15 @@ class _SettingsScreenState extends State<SettingsScreen>
             color: Colors.grey.shade200,
           ),
       ],
+    );
+  }
+
+  void _navigateToAccounts() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ManageAccountsScreen(),
+      ),
     );
   }
 

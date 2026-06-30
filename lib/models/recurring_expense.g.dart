@@ -28,6 +28,7 @@ RecurringExpense _$RecurringExpenseFromJson(Map<String, dynamic> json) =>
       lastProcessed: json['lastProcessed'] == null
           ? null
           : DateTime.parse(json['lastProcessed'] as String),
+      accountId: json['accountId'] as String,
     );
 
 Map<String, dynamic> _$RecurringExpenseToJson(RecurringExpense instance) =>
@@ -46,6 +47,7 @@ Map<String, dynamic> _$RecurringExpenseToJson(RecurringExpense instance) =>
       'isActive': instance.isActive,
       'createdAt': instance.createdAt.toIso8601String(),
       'lastProcessed': instance.lastProcessed?.toIso8601String(),
+      'accountId': instance.accountId,
     };
 
 const _$ExpenseCategoryEnumMap = {

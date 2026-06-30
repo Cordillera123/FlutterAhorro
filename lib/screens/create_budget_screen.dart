@@ -4,7 +4,9 @@ import 'package:flutter/services.dart';
 import '../models/budget.dart';
 import '../models/transaction.dart';
 import '../services/budget_service.dart';
+import '../services/transaction_service.dart';
 import '../services/category_service.dart';
+import '../services/account_service.dart';
 import '../utils/format_utils.dart';
 
 class CreateBudgetScreen extends StatefulWidget {
@@ -28,7 +30,9 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
   final _nameController = TextEditingController();
   final _amountController = TextEditingController();
   final BudgetService _budgetService = BudgetService();
+  final TransactionService _transactionService = TransactionService();
   final CategoryService _categoryService = CategoryService();
+  final AccountService _accountService = AccountService();
 
   // State variables
   BudgetPeriod _selectedPeriod = BudgetPeriod.monthly;
@@ -1252,10 +1256,15 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
         return;
       }
 
-      final dates = BudgetService.generateBudgetDates(
-        _selectedPeriod,
-        DateTime.now(),
-      );
+      final dates = _isEditMode
+          ? {
+              'start': widget.budgetToEdit!.startDate,
+              'end': widget.budgetToEdit!.endDate,
+            }
+          : BudgetService.generateBudgetDates(
+              _selectedPeriod,
+              DateTime.now(),
+            );
 
       final budget = Budget(
         id: _isEditMode ? widget.budgetToEdit!.id : null,
@@ -1273,6 +1282,9 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
         createdAt: _isEditMode
             ? widget.budgetToEdit!.createdAt
             : DateTime.now(),
+        accountId: _accountService.resolveAccountId(
+          widget.budgetToEdit?.accountId,
+        ),
       );
 
       if (_isEditMode) {

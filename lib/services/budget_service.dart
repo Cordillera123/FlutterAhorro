@@ -3,21 +3,32 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/budget.dart';
 import '../models/transaction.dart';
 import 'transaction_service.dart';
+import 'account_service.dart';
 
 class BudgetService {
   static const String _budgetsKey = 'budgets';
   static const int _maxActiveBudgets = 15; // NUEVO: Límite máximo de presupuestos
 
+  // Singleton (misma instancia en memoria que TransactionService)
+  static final BudgetService _instance = BudgetService._internal();
+  factory BudgetService() => _instance;
+  BudgetService._internal();
+
   List<Budget> _budgets = [];
   final TransactionService _transactionService = TransactionService();
+  final AccountService _accountService = AccountService();
 
-  List<Budget> get budgets => _budgets;
+  // Getter para TODOS los presupuestos (sin filtro de cuenta)
+  List<Budget> get allBudgets => _budgets;
+
+  // Getter para presupuestos de la cuenta activa
+  List<Budget> get budgets => _budgets.where((b) => b.accountId == _accountService.activeAccountId).toList();
   
-  // CORREGIDO: Mostrar todos los presupuestos activos (no pausados), independientemente de las fechas
-  List<Budget> get activeBudgets => _budgets.where((b) => b.isActive).toList();
+  // CORREGIDO: Mostrar todos los presupuestos activos de la cuenta activa
+  List<Budget> get activeBudgets => budgets.where((b) => b.isActive).toList();
   
-  // NUEVO: Getter para presupuestos que están en su período actual
-  List<Budget> get currentPeriodBudgets => _budgets.where((b) => b.isActive && b.isCurrentlyActive).toList();
+  // NUEVO: Getter para presupuestos que están en su período actual de la cuenta activa
+  List<Budget> get currentPeriodBudgets => budgets.where((b) => b.isActive && b.isCurrentlyActive).toList();
 
   // Cargar presupuestos desde almacenamiento local
   Future<void> loadBudgets() async {
@@ -29,12 +40,30 @@ class BudgetService {
         final List<dynamic> budgetsList = json.decode(budgetsJson);
         _budgets = budgetsList.map((json) => Budget.fromJson(json)).toList();
 
+        // Migración: reasignar presupuestos con accountId vacío o huérfano
+        bool necesitaGuardar = false;
+        for (int i = 0; i < _budgets.length; i++) {
+          final resolved = _accountService.resolveAccountId(_budgets[i].accountId);
+          if (resolved != _budgets[i].accountId) {
+            print('🛠️ Presupuesto huérfano migrado: ${_budgets[i].name} '
+                '(${_budgets[i].accountId} → $resolved)');
+            _budgets[i] = _budgets[i].copyWith(accountId: resolved);
+            necesitaGuardar = true;
+          }
+        }
+        if (necesitaGuardar) {
+          await _saveBudgets();
+        }
+
         // AGREGAR DEBUGGING DESPUÉS DE CARGAR:
         print('=== CARGANDO PRESUPUESTOS ===');
+        print('Cuenta activa: ${_accountService.activeAccountId}');
         print('JSON encontrado, cargados ${_budgets.length} presupuestos:');
         for (int i = 0; i < _budgets.length; i++) {
-          print('  $i: ${_budgets[i].name} - ID: ${_budgets[i].id}');
+          print('  $i: ${_budgets[i].name} - ID: ${_budgets[i].id} '
+              '- accountId: ${_budgets[i].accountId}');
         }
+        print('Filtrados para cuenta activa: ${budgets.length}');
         print('============================');
 
         // Ordenar por fecha de creación (más recientes primero)
@@ -171,6 +200,7 @@ class BudgetService {
     // 3. Crear nuevo presupuesto
     final newBudget = budget.copyWith(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
+      accountId: _accountService.resolveAccountId(budget.accountId),
     );
 
     _budgets.add(newBudget);
@@ -278,7 +308,15 @@ class BudgetService {
       throw Exception('Ya existe otro presupuesto ${budget.periodName.toLowerCase()} de ${budget.categoryName} para este período');
     }
 
-    _budgets[index] = budget.copyWith(updatedAt: DateTime.now());
+    final existing = _budgets[index];
+    final rawAccountId =
+        budget.accountId.isNotEmpty ? budget.accountId : existing.accountId;
+    final accountId = _accountService.resolveAccountId(rawAccountId);
+
+    _budgets[index] = budget.copyWith(
+      accountId: accountId,
+      updatedAt: DateTime.now(),
+    );
     await _saveBudgets();
   }
 
@@ -501,11 +539,15 @@ class BudgetService {
   // Método temporal para debugging
   void debugPrintBudgets() {
     print('=== DEBUG BUDGETS ===');
+    print('Cuenta activa: ${_accountService.activeAccountId}');
     print('Total budgets: ${_budgets.length}');
     for (int i = 0; i < _budgets.length; i++) {
       final budget = _budgets[i];
-      print('Budget $i: ${budget.name} - ${budget.categoryName} - ${budget.periodName} - Active: ${budget.isActive}');
+      print('Budget $i: ${budget.name} - ${budget.categoryName} - '
+          '${budget.periodName} - Active: ${budget.isActive} '
+          '- accountId: ${budget.accountId}');
     }
+    print('Visible en cuenta activa: ${budgets.length}');
     print('Active budgets: ${activeBudgets.length}');
     print('==================');
   }

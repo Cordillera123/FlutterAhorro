@@ -52,6 +52,7 @@ class Transaction {
   final String? customCategoryId;  // ID de categoría personalizada (opcional)
   final String? customCategoryName; // Nombre de categoría personalizada (para historial)
   final String? customCategoryEmoji; // Emoji de categoría personalizada (para historial)
+  final String accountId; // ID de la cuenta a la que pertenece
 
   Transaction({
     required this.id,
@@ -64,6 +65,7 @@ class Transaction {
     this.customCategoryId,
     this.customCategoryName,
     this.customCategoryEmoji,
+    required this.accountId,
   });
 
   /// Verifica si usa categoría personalizada
@@ -75,26 +77,27 @@ class Transaction {
       id: json['id'] as String,
       amount: (json['amount'] as num).toDouble(),
       type: TransactionType.values.firstWhere(
-        (e) => e.name == json['type'] || e.index == json['type'],
+            (e) => e.name == json['type'] || e.index == json['type'],
         orElse: () => TransactionType.expense,
       ),
       description: json['description'] as String,
       date: DateTime.parse(json['date'] as String),
       expenseCategory: json['expenseCategory'] != null
           ? ExpenseCategory.values.firstWhere(
-              (e) => e.name == json['expenseCategory'] || e.index == json['expenseCategory'],
-              orElse: () => ExpenseCategory.other,
-            )
+            (e) => e.name == json['expenseCategory'] || e.index == json['expenseCategory'],
+        orElse: () => ExpenseCategory.other,
+      )
           : null,
       incomeCategory: json['incomeCategory'] != null
           ? IncomeCategory.values.firstWhere(
-              (e) => e.name == json['incomeCategory'] || e.index == json['incomeCategory'],
-              orElse: () => IncomeCategory.other,
-            )
+            (e) => e.name == json['incomeCategory'] || e.index == json['incomeCategory'],
+        orElse: () => IncomeCategory.other,
+      )
           : null,
       customCategoryId: json['customCategoryId'] as String?,
       customCategoryName: json['customCategoryName'] as String?,
       customCategoryEmoji: json['customCategoryEmoji'] as String?,
+      accountId: json['accountId'] as String? ?? 'account_default',
     );
   }
 
@@ -110,6 +113,7 @@ class Transaction {
       'customCategoryId': customCategoryId,
       'customCategoryName': customCategoryName,
       'customCategoryEmoji': customCategoryEmoji,
+      'accountId': accountId,
     };
   }
 
@@ -126,6 +130,36 @@ class Transaction {
       customCategoryId: null,
       customCategoryName: null,
       customCategoryEmoji: null,
+      accountId: accountId,
+    );
+  }
+
+  /// Crea una copia con campos modificados
+  Transaction copyWith({
+    String? id,
+    double? amount,
+    TransactionType? type,
+    String? description,
+    DateTime? date,
+    ExpenseCategory? expenseCategory,
+    IncomeCategory? incomeCategory,
+    String? customCategoryId,
+    String? customCategoryName,
+    String? customCategoryEmoji,
+    String? accountId,
+  }) {
+    return Transaction(
+      id: id ?? this.id,
+      amount: amount ?? this.amount,
+      type: type ?? this.type,
+      description: description ?? this.description,
+      date: date ?? this.date,
+      expenseCategory: expenseCategory ?? this.expenseCategory,
+      incomeCategory: incomeCategory ?? this.incomeCategory,
+      customCategoryId: customCategoryId ?? this.customCategoryId,
+      customCategoryName: customCategoryName ?? this.customCategoryName,
+      customCategoryEmoji: customCategoryEmoji ?? this.customCategoryEmoji,
+      accountId: accountId ?? this.accountId,
     );
   }
 
@@ -135,7 +169,7 @@ class Transaction {
     if (hasCustomCategory) {
       return customCategoryName ?? 'Otros';
     }
-    
+
     if (type == TransactionType.income) {
       switch (incomeCategory) {
         case IncomeCategory.salary:
@@ -201,7 +235,7 @@ class Transaction {
     if (hasCustomCategory) {
       return customCategoryEmoji ?? '📦';
     }
-    
+
     if (type == TransactionType.income) {
       switch (incomeCategory) {
         case IncomeCategory.salary:
