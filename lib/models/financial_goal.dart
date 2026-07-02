@@ -30,6 +30,41 @@ enum AutoSaveFrequency {
   monthly,
 }
 
+enum GoalContributionCadence {
+  weekly,
+  monthly,
+}
+
+class GoalContributionSuggestion {
+  final double amount;
+  final GoalContributionCadence cadence;
+  final int periodsRemaining;
+
+  const GoalContributionSuggestion({
+    required this.amount,
+    required this.cadence,
+    required this.periodsRemaining,
+  });
+
+  String get cadenceLabel {
+    switch (cadence) {
+      case GoalContributionCadence.weekly:
+        return 'semana';
+      case GoalContributionCadence.monthly:
+        return 'mes';
+    }
+  }
+
+  String get cadenceLabelPlural {
+    switch (cadence) {
+      case GoalContributionCadence.weekly:
+        return 'semanas';
+      case GoalContributionCadence.monthly:
+        return 'meses';
+    }
+  }
+}
+
 class FinancialGoal {
   final String? id;
   final String name;
@@ -42,8 +77,7 @@ class FinancialGoal {
   final GoalPriority priority;
   final GoalStatus status;
   final String emoji;
-  final double monthlyContribution;
-  final double suggestedContribution;
+  final double autoSaveAmount;
   final bool autoSave;
   final AutoSaveFrequency autoSaveFrequency;
   final DateTime createdAt;
@@ -63,8 +97,7 @@ class FinancialGoal {
     this.priority = GoalPriority.medium,
     this.status = GoalStatus.active,
     this.emoji = '🎯',
-    this.monthlyContribution = 0.0,
-    this.suggestedContribution = 0.0,
+    this.autoSaveAmount = 0.0,
     this.autoSave = false,
     this.autoSaveFrequency = AutoSaveFrequency.monthly,
     required this.createdAt,
@@ -73,54 +106,100 @@ class FinancialGoal {
     required this.accountId,
   });
 
+  static DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
+
+  static int _lastDayOfMonth(int year, int month) {
+    return DateUtils.getDaysInMonth(year, month);
+  }
+
+  static int _approxWeeksBetween(DateTime start, DateTime end) {
+    final days = end.difference(start).inDays;
+    return (days / 7).round().clamp(1, 999999);
+  }
+
+  static int _approxMonthsBetween(DateTime start, DateTime end) {
+    final days = end.difference(start).inDays;
+    return (days / 30.4375).round().clamp(1, 999999);
+  }
+
+  static GoalContributionSuggestion calculateSuggestedContribution({
+    required double targetAmount,
+    required double currentAmount,
+    required DateTime targetDate,
+    DateTime? referenceDate,
+  }) {
+    final normalizedNow = _dateOnly(referenceDate ?? DateTime.now());
+    final normalizedTargetDate = _dateOnly(targetDate);
+    final remainingAmount = (targetAmount - currentAmount).clamp(0.0, double.infinity);
+
+    if (remainingAmount <= 0) {
+      return const GoalContributionSuggestion(
+        amount: 0.0,
+        cadence: GoalContributionCadence.monthly,
+        periodsRemaining: 0,
+      );
+    }
+
+    final monthsRemaining = _approxMonthsBetween(normalizedNow, normalizedTargetDate);
+    if (monthsRemaining <= 12) {
+      final weeksRemaining = _approxWeeksBetween(normalizedNow, normalizedTargetDate);
+      return GoalContributionSuggestion(
+        amount: remainingAmount / weeksRemaining,
+        cadence: GoalContributionCadence.weekly,
+        periodsRemaining: weeksRemaining,
+      );
+    }
+
+    return GoalContributionSuggestion(
+      amount: remainingAmount / monthsRemaining,
+      cadence: GoalContributionCadence.monthly,
+      periodsRemaining: monthsRemaining,
+    );
+  }
+
   // Getters calculados
   double get remainingAmount => (targetAmount - currentAmount).clamp(0.0, double.infinity);
-  double get progressPercentage => (currentAmount / targetAmount).clamp(0.0, 1.0);
+
+  double get progressPercentage {
+    if (targetAmount <= 0) return 0.0;
+    return (currentAmount / targetAmount).clamp(0.0, 1.0);
+  }
 
   int get daysRemaining {
-    final now = DateTime.now();
-    if (now.isAfter(targetDate)) return 0;
-    return targetDate.difference(now).inDays + 1;
+    final now = _dateOnly(DateTime.now());
+    final target = _dateOnly(targetDate);
+    if (now.isAfter(target)) return 0;
+    return target.difference(now).inDays;
   }
 
   int get monthsRemaining {
-    final now = DateTime.now();
-    if (now.isAfter(targetDate)) return 0;
-    int months = (targetDate.year - now.year) * 12 + targetDate.month - now.month;
-    return months > 0 ? months : 0;
+    return _approxMonthsBetween(_dateOnly(DateTime.now()), _dateOnly(targetDate));
   }
 
-  double get requiredMonthlyContribution {
-    if (monthsRemaining <= 0) return remainingAmount;
-    return remainingAmount / monthsRemaining;
+  GoalContributionSuggestion get contributionSuggestion {
+    return calculateSuggestedContribution(
+      targetAmount: targetAmount,
+      currentAmount: currentAmount,
+      targetDate: targetDate,
+    );
   }
 
-  double get requiredWeeklyContribution {
-    final weeksRemaining = daysRemaining / 7;
-    if (weeksRemaining <= 0) return remainingAmount;
-    return remainingAmount / weeksRemaining;
-  }
+  double get suggestedContributionAmount => contributionSuggestion.amount;
 
-  double get requiredDailyContribution {
-    if (daysRemaining <= 0) return remainingAmount;
-    return remainingAmount / daysRemaining;
-  }
+  GoalContributionCadence get suggestedContributionCadence =>
+      contributionSuggestion.cadence;
 
-  // Calcular contribución sugerida basada en la frecuencia seleccionada
-  double calculateSuggestedContribution() {
-    switch (autoSaveFrequency) {
-      case AutoSaveFrequency.daily:
-        return requiredDailyContribution;
-      case AutoSaveFrequency.weekly:
-        return requiredWeeklyContribution;
-      case AutoSaveFrequency.monthly:
-        return requiredMonthlyContribution;
-    }
+  int get suggestedContributionPeriodsRemaining =>
+      contributionSuggestion.periodsRemaining;
+
+  String get suggestedContributionLabel {
+    final suggestion = contributionSuggestion;
+    return '${FormatUtils.formatMoney(suggestion.amount)} por ${suggestion.cadenceLabel}';
   }
 
   // Validar que la contribución no exceda el monto objetivo
   bool isContributionValid(double contribution) {
-    return contribution > 0 && contribution <= remainingAmount;
+    return contribution > 0;
   }
 
   // Obtener la próxima fecha de contribución automática
@@ -132,7 +211,7 @@ class FinancialGoal {
       case AutoSaveFrequency.daily:
         return DateTime(now.year, now.month, now.day + 1);
       case AutoSaveFrequency.weekly:
-        return now.add(Duration(days: 7 - now.weekday + 1));
+        return now.add(Duration(days: 8 - now.weekday));
       case AutoSaveFrequency.monthly:
         return DateTime(now.year, now.month + 1, now.day);
     }
@@ -143,6 +222,8 @@ class FinancialGoal {
     if (daysRemaining <= 0) return currentAmount >= targetAmount;
 
     final totalDays = targetDate.difference(startDate).inDays;
+    if (totalDays <= 0) return progressPercentage >= 1.0;
+
     final daysPassed = DateTime.now().difference(startDate).inDays;
     final expectedProgress = daysPassed / totalDays;
 
@@ -277,15 +358,14 @@ class FinancialGoal {
     if (isCompleted) return 'Ya tienes el dinero suficiente para tu meta.';
     if (isOverdue) return 'Meta vencida. Considera extender la fecha o ajustar el monto.';
 
-    if (daysRemaining <= 30) {
-      return 'Queda poco tiempo. Necesitas ahorrar ${FormatUtils.formatMoney(requiredDailyContribution)} diarios.';
+    final suggestion = contributionSuggestion;
+    if (suggestion.amount <= 0) {
+      return 'Cada aporte cuenta para seguir avanzando hacia tu meta.';
     }
 
-    if (monthsRemaining <= 3) {
-      return 'Ahorra ${FormatUtils.formatMoney(requiredWeeklyContribution)} semanales para llegar a tiempo.';
-    }
-
-    return 'Ahorra ${FormatUtils.formatMoney(requiredMonthlyContribution)} mensuales para alcanzar tu meta.';
+    return suggestion.cadence == GoalContributionCadence.weekly
+        ? 'Ahorra ${FormatUtils.formatMoney(suggestion.amount)} semanales para llegar a tiempo.'
+        : 'Ahorra ${FormatUtils.formatMoney(suggestion.amount)} mensuales para alcanzar tu meta.';
   }
 
   // Información sobre el tiempo
@@ -315,8 +395,7 @@ class FinancialGoal {
       'priority': priority.index,
       'status': status.index,
       'emoji': emoji,
-      'monthlyContribution': monthlyContribution,
-      'suggestedContribution': suggestedContribution,
+      'autoSaveAmount': autoSaveAmount,
       'autoSave': autoSave,
       'autoSaveFrequency': autoSaveFrequency.index,
       'createdAt': createdAt.toIso8601String(),
@@ -339,8 +418,8 @@ class FinancialGoal {
       priority: GoalPriority.values[json['priority'] ?? 1],
       status: GoalStatus.values[json['status'] ?? 0],
       emoji: json['emoji'] ?? '🎯',
-      monthlyContribution: json['monthlyContribution']?.toDouble() ?? 0.0,
-      suggestedContribution: json['suggestedContribution']?.toDouble() ?? 0.0,
+        autoSaveAmount: (json['autoSaveAmount'] ?? json['monthlyContribution'] ?? 0)
+          .toDouble(),
       autoSave: json['autoSave'] ?? false,
       autoSaveFrequency: AutoSaveFrequency.values[json['autoSaveFrequency'] ?? 2],
       createdAt: DateTime.parse(json['createdAt']),
@@ -366,8 +445,7 @@ class FinancialGoal {
     GoalPriority? priority,
     GoalStatus? status,
     String? emoji,
-    double? monthlyContribution,
-    double? suggestedContribution,
+    double? autoSaveAmount,
     bool? autoSave,
     AutoSaveFrequency? autoSaveFrequency,
     DateTime? createdAt,
@@ -387,8 +465,7 @@ class FinancialGoal {
       priority: priority ?? this.priority,
       status: status ?? this.status,
       emoji: emoji ?? this.emoji,
-      monthlyContribution: monthlyContribution ?? this.monthlyContribution,
-      suggestedContribution: suggestedContribution ?? this.suggestedContribution,
+      autoSaveAmount: autoSaveAmount ?? this.autoSaveAmount,
       autoSave: autoSave ?? this.autoSave,
       autoSaveFrequency: autoSaveFrequency ?? this.autoSaveFrequency,
       createdAt: createdAt ?? this.createdAt,

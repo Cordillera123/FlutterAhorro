@@ -1,11 +1,12 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/financial_goal.dart';
 import '../models/transaction.dart';
 import 'transaction_service.dart';
 import 'account_service.dart';
 
-class GoalService {
+class GoalService extends ChangeNotifier {
   static const String _goalsKey = 'financial_goals';
   static const String _contributionsKey = 'goal_contributions';
 
@@ -169,18 +170,14 @@ class GoalService {
       throw Exception('Has alcanzado el límite máximo de 15 metas. Elimina o completa algunas metas para crear nuevas.');
     }
 
-    // Calcular contribución sugerida automáticamente
-    final suggestedContribution = goal.calculateSuggestedContribution();
-
     final newGoal = goal.copyWith(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      suggestedContribution: suggestedContribution,
-      monthlyContribution: goal.monthlyContribution > 0 ? goal.monthlyContribution : suggestedContribution,
       accountId: _accountService.resolveAccountId(goal.accountId),
     );
 
     _goals.add(newGoal);
     await _saveGoals();
+    notifyListeners();
   }
 
   // Actualizar meta existente
@@ -200,6 +197,7 @@ class GoalService {
       updatedAt: DateTime.now(),
     );
     await _saveGoals();
+    notifyListeners();
   }
 
   // Eliminar meta
@@ -216,6 +214,7 @@ class GoalService {
 
     await _saveGoals();
     await _saveContributions();
+    notifyListeners();
   }
 
   // Cambiar estado de una meta (pausar/activar/cancelar)
@@ -237,6 +236,7 @@ class GoalService {
     );
 
     await _saveGoals();
+    notifyListeners();
   }
 
   // Pausar meta específicamente
@@ -310,6 +310,8 @@ class GoalService {
     } else {
       await updateGoal(updatedGoal);
     }
+
+    notifyListeners();
   }
 
   // Retirar dinero de una meta (reducir contribución)
@@ -370,6 +372,8 @@ class GoalService {
     } else {
       await updateGoal(updatedGoal);
     }
+
+    notifyListeners();
   }
 
   // Obtener meta por ID
@@ -413,7 +417,7 @@ class GoalService {
     final today = DateTime.now();
 
     for (var goal in activeGoals) {
-      if (goal.autoSave && goal.monthlyContribution > 0) {
+      if (goal.autoSave && goal.autoSaveAmount > 0) {
         bool shouldProcess = false;
         String note = '';
 
@@ -458,7 +462,7 @@ class GoalService {
           try {
             await addContribution(
               goal.id!,
-              goal.monthlyContribution,
+              goal.autoSaveAmount,
               note: note,
               isAutomatic: true,
             );
@@ -468,6 +472,10 @@ class GoalService {
           }
         }
       }
+    }
+
+    if (processedCount > 0) {
+      notifyListeners();
     }
 
     return processedCount;
@@ -487,7 +495,7 @@ class GoalService {
     for (var goal in _goals) {
       totalTargetAmount += goal.targetAmount;
       totalCurrentAmount += goal.currentAmount;
-      totalMonthlyContributions += goal.monthlyContribution;
+      totalMonthlyContributions += goal.autoSaveAmount;
 
       if (goal.priority == GoalPriority.urgent && goal.status == GoalStatus.active) {
         urgentGoals++;

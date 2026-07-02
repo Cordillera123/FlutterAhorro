@@ -169,8 +169,65 @@ class _GoalSuccessScreenState extends State<GoalSuccessScreen>
                   ),
                   textAlign: TextAlign.center,
                 ),
-                if (widget.goal.autoSave &&
-                    widget.goal.monthlyContribution > 0) ...[
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: primaryBlue.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: primaryBlue.withOpacity(0.12),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        widget.goal.contributionSuggestion.cadence ==
+                                GoalContributionCadence.weekly
+                            ? 'Tu sugerencia actual es semanal'
+                            : 'Tu sugerencia actual es mensual',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: primaryBlue,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        FormatUtils.formatMoney(
+                              widget.goal.contributionSuggestion.amount,
+                            ) +
+                            ' por ${widget.goal.contributionSuggestion.cadenceLabel}',
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.black87,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'durante ${widget.goal.contributionSuggestion.periodsRemaining} ${widget.goal.contributionSuggestion.cadenceLabelPlural}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Esta guía se recalcula sola cuando aportas dinero o cambias la meta.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+                if (widget.goal.autoSave && widget.goal.autoSaveAmount > 0) ...[
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -182,7 +239,7 @@ class _GoalSuccessScreenState extends State<GoalSuccessScreen>
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      'Ahorro automático: ${FormatUtils.formatMoney(widget.goal.monthlyContribution)}/mes',
+                      'Ahorro automático: ${FormatUtils.formatMoney(widget.goal.autoSaveAmount)}/mes',
                       style: const TextStyle(
                         fontSize: 12,
                         color: successGreen,

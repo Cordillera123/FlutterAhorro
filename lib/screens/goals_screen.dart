@@ -44,9 +44,16 @@ class _GoalsScreenState extends State<GoalsScreen>
     _initAnimations();
     _loadData();
     _accountService.addListener(_onAccountChanged);
+    _goalService.addListener(_onGoalsChanged);
   }
 
   void _onAccountChanged() {
+    if (mounted) {
+      _loadData();
+    }
+  }
+
+  void _onGoalsChanged() {
     if (mounted) {
       _loadData();
     }
@@ -94,6 +101,7 @@ class _GoalsScreenState extends State<GoalsScreen>
   @override
   void dispose() {
     _accountService.removeListener(_onAccountChanged);
+    _goalService.removeListener(_onGoalsChanged);
     _animationController.dispose();
     super.dispose();
   }
