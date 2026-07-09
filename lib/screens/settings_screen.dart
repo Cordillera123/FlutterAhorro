@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'manage_categories_screen.dart';
 import 'manage_accounts_screen.dart';
+import 'export_screen.dart';
+import '../models/export_config.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -81,6 +83,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                         title: 'Categorías de gastos',
                         subtitle: 'Gestiona tus categorías personalizadas',
                         onTap: () => _navigateToCategories(),
+                        showDivider: true,
+                      ),
+                      _buildSettingsTile(
+                        icon: Icons.file_download_outlined,
+                        iconColor: const Color(0xFF0891B2),
+                        title: 'Exportar datos',
+                        subtitle: 'Genera reportes en Excel',
+                        onTap: () => _navigateToExport(),
                       ),
                     ]),
                     const SizedBox(height: 24),
@@ -271,6 +281,17 @@ class _SettingsScreenState extends State<SettingsScreen>
       context,
       MaterialPageRoute(
         builder: (context) => const ManageAccountsScreen(),
+      ),
+    );
+  }
+
+  void _navigateToExport() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ExportScreen(
+          initialConfig: ExportConfig.currentMonth(),
+        ),
       ),
     );
   }

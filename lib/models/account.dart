@@ -27,6 +27,10 @@ class Account {
   final DateTime createdAt;
   final DateTime? updatedAt;
 
+  /// Balance de apertura de la cuenta. Se suma al balance calculado
+  /// desde transacciones, permitiendo reflejar dinero previo a la app.
+  final double initialBalance;
+
   Account({
     required this.id,
     required this.name,
@@ -36,6 +40,7 @@ class Account {
     this.isDefault = false,
     required this.createdAt,
     this.updatedAt,
+    this.initialBalance = 0.0,
   });
 
   /// Genera un ID único para nuevas cuentas
@@ -147,6 +152,7 @@ class Account {
     bool? isDefault,
     DateTime? createdAt,
     DateTime? updatedAt,
+    double? initialBalance,
   }) {
     return Account(
       id: id ?? this.id,
@@ -157,6 +163,7 @@ class Account {
       isDefault: isDefault ?? this.isDefault,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      initialBalance: initialBalance ?? this.initialBalance,
     );
   }
 
@@ -171,6 +178,7 @@ class Account {
       'isDefault': isDefault,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
+      'initialBalance': initialBalance,
     };
   }
 
@@ -187,6 +195,8 @@ class Account {
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'] as String)
           : null,
+      // backward compatible: cuentas antiguas parten desde 0
+      initialBalance: (json['initialBalance'] as num?)?.toDouble() ?? 0.0,
     );
   }
 

@@ -139,9 +139,9 @@ class TransactionService extends ChangeNotifier {
       notifyListeners();
     }
   }
-  // Balance total de la cuenta activa
+  // Balance total de la cuenta activa (balance inicial + transacciones)
   double get totalBalance {
-    double balance = 0;
+    double balance = _accountService.activeAccount.initialBalance;
     for (var transaction in transactions) {
       if (transaction.type == TransactionType.income) {
         balance += transaction.amount;
@@ -198,6 +198,23 @@ class TransactionService extends ChangeNotifier {
   // Limpiar todas las transacciones (solo para desarrollo)
   Future<void> clearAllTransactions() async {
     _transactions.clear();
+    await _saveTransactions();
+    notifyListeners();
+  }
+
+  /// Elimina únicamente las transacciones que pertenecen a [accountId].
+  /// Las transacciones de otras cuentas no se tocan.
+  Future<void> clearTransactionsForAccount(String accountId) async {
+    _transactions.removeWhere((t) => t.accountId == accountId);
+    await _saveTransactions();
+    notifyListeners();
+  }
+
+  /// Elimina exactamente las transacciones cuyos IDs están en [ids].
+  /// Es la forma más segura de borrar una lista concreta visible al usuario.
+  Future<void> deleteTransactionsByIds(List<String> ids) async {
+    final idSet = ids.toSet();
+    _transactions.removeWhere((t) => idSet.contains(t.id));
     await _saveTransactions();
     notifyListeners();
   }

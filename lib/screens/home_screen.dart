@@ -14,6 +14,8 @@ import 'recurring_expenses_screen.dart';
 import 'stats_screen.dart';
 import 'settings_screen.dart';
 import 'manage_accounts_screen.dart';
+import 'export_screen.dart';
+import '../models/export_config.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -251,8 +253,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildModernAppBar() {
+    final hasNoTransactions = _transactionService.transactions.isEmpty;
     return SliverAppBar(
-      expandedHeight: 210,
+      expandedHeight: hasNoTransactions ? 258 : 210,
       floating: false,
       pinned: true,
       backgroundColor: const Color(0xFF4CAF50),
@@ -561,6 +564,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildBalancePreview() {
+    final hasNoTransactions = _transactionService.transactions.isEmpty;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -593,8 +598,236 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ),
           ),
+          // Botón de balance inicial — visible solo cuando no hay transacciones
+          if (hasNoTransactions) ...[
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: _showInitialBalanceDialog,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.edit_outlined,
+                      size: 14,
+                      color: Colors.white.withOpacity(0.9),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Establecer balance inicial',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
+    );
+  }
+
+  void _showInitialBalanceDialog() {
+    final controller = TextEditingController(
+      text: _accountService.activeAccount.initialBalance > 0
+          ? _accountService.activeAccount.initialBalance.toStringAsFixed(2)
+          : '',
+    );
+    bool isSaving = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Handle
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE5E7EB),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // Header
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF059669).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Icon(
+                            Icons.account_balance_wallet_outlined,
+                            color: Color(0xFF059669),
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Balance inicial',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF1E293B),
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'El dinero que ya tienes antes de comenzar',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    // Campo de monto
+                    TextField(
+                      controller: controller,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      autofocus: true,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1E293B),
+                        letterSpacing: -0.5,
+                      ),
+                      decoration: InputDecoration(
+                        prefixText: '\$  ',
+                        prefixStyle: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF059669),
+                        ),
+                        hintText: '0.00',
+                        hintStyle: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF64748B).withOpacity(0.4),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF059669),
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: Text(
+                        'Puedes cambiarlo después desde esta misma pantalla',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: const Color(0xFF64748B).withOpacity(0.8),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    // Botón guardar
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: isSaving
+                            ? null
+                            : () async {
+                                final raw = controller.text
+                                    .replaceAll(',', '.')
+                                    .trim();
+                                final amount = double.tryParse(raw) ?? 0.0;
+                                setModalState(() => isSaving = true);
+                                final nav = Navigator.of(context);
+                                await _accountService.updateInitialBalance(
+                                  _accountService.activeAccountId,
+                                  amount,
+                                );
+                                nav.pop();
+                                if (mounted) setState(() {});
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF059669),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: isSaving
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : const Text(
+                                'Guardar balance inicial',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -885,6 +1118,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               icon: Icons.bar_chart_rounded,
               color: const Color(0xFF8B5CF6),
               onTap: _navigateToStats,
+            ),
+            _buildActionCard(
+              title: 'Exportar',
+              icon: Icons.file_download_outlined,
+              color: const Color(0xFF0891B2),
+              onTap: _navigateToExport,
             ),
           ],
         ),
@@ -1232,6 +1471,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       await _transactionService.loadTransactions();
       await _recurringExpenseService.loadRecurringExpenses();
     }
+  }
+
+  void _navigateToExport() {
+    HapticFeedback.lightImpact();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ExportScreen(
+          initialConfig: ExportConfig.currentMonth(),
+        ),
+      ),
+    );
   }
 
   void _navigateToStats() {

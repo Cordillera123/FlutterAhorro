@@ -250,6 +250,20 @@ class AccountService extends ChangeNotifier {
     print('🗑️ Cuenta eliminada: ${account.name}');
   }
 
+  /// Actualiza el balance inicial de una cuenta.
+  /// Persiste el cambio en SharedPreferences y notifica listeners.
+  Future<void> updateInitialBalance(String accountId, double balance) async {
+    final index = _accounts.indexWhere((a) => a.id == accountId);
+    if (index == -1) throw Exception('Cuenta no encontrada');
+
+    _accounts[index] = _accounts[index].copyWith(
+      initialBalance: balance,
+      updatedAt: DateTime.now(),
+    );
+    await _saveAccounts();
+    notifyListeners();
+  }
+
   /// Obtener cuenta por ID
   Account? getAccountById(String id) {
     try {

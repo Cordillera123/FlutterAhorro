@@ -31,6 +31,11 @@ dependencies:
   # Para modelos de datos
   json_annotation: ^4.8.1
 
+  # Exportación de reportes
+  excel: ^4.0.6              # Generación de archivos .xlsx (pure Dart, compatible Dart 3.9)
+  share_plus: ^10.1.4        # Compartir archivos vía diálogo nativo del SO
+  path_provider: ^2.1.4      # Directorio temporal para guardar archivos antes de compartir
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

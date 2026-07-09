@@ -6,6 +6,9 @@ import '../services/category_service.dart';
 import '../services/account_service.dart';
 import '../utils/format_utils.dart';
 import 'add_transaction_screen.dart';
+import 'export_screen.dart';
+import 'financial_calendar_screen.dart';
+import '../models/export_config.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -274,6 +277,18 @@ class _HistoryScreenState extends State<HistoryScreen>
                       Row(
                         children: [
                           _buildHeaderAction(
+                            Icons.calendar_month_rounded,
+                            'Calendario financiero',
+                            _navigateToCalendar,
+                          ),
+                          const SizedBox(width: 8),
+                          _buildHeaderAction(
+                            Icons.file_download_outlined,
+                            'Exportar',
+                            _navigateToExport,
+                          ),
+                          const SizedBox(width: 8),
+                          _buildHeaderAction(
                             Icons.delete_sweep_rounded,
                             'Eliminar todas',
                             _filteredTransactions.isNotEmpty
@@ -306,7 +321,9 @@ class _HistoryScreenState extends State<HistoryScreen>
   ) {
     final isEnabled = onPressed != null;
 
-    return GestureDetector(
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
       onTap: () {
         if (isEnabled) {
           HapticFeedback.lightImpact();
@@ -334,7 +351,7 @@ class _HistoryScreenState extends State<HistoryScreen>
           size: 22,
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildFilterSection() {
@@ -1245,6 +1262,28 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
   }
 
+  void _navigateToExport() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ExportScreen(
+          initialConfig: ExportConfig.forAccount(
+            _accountService.activeAccountId,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToCalendar() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const FinancialCalendarScreen(),
+      ),
+    );
+  }
+
   Future<void> _navigateToAddTransaction() async {
     final result = await Navigator.push(
       context,
@@ -1478,7 +1517,7 @@ class _HistoryScreenState extends State<HistoryScreen>
           ),
           const SizedBox(height: 20),
           const Text(
-            '¿Eliminar todas las transacciones?',
+            '¿Eliminar transacciones de esta cuenta?',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -1488,7 +1527,7 @@ class _HistoryScreenState extends State<HistoryScreen>
           ),
           const SizedBox(height: 12),
           Text(
-            'Esta acción eliminará TODAS las transacciones (${_filteredTransactions.length} en total) y no se puede deshacer.',
+            'Esta acción eliminará las ${_filteredTransactions.length} transacciones de la cuenta activa. Las otras cuentas no se verán afectadas. No se puede deshacer.',
             style: const TextStyle(
               fontSize: 14,
               color: textMedium,
@@ -1586,7 +1625,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  'Para confirmar que deseas eliminar TODAS las transacciones, escribe "ELIMINAR" en el campo de abajo:',
+                  'Para confirmar que deseas eliminar las transacciones de esta cuenta, escribe "ELIMINAR" en el campo de abajo:',
                   style: TextStyle(
                     fontSize: 14,
                     color: textMedium,
@@ -1681,10 +1720,12 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
   }
 
-  // Método para eliminar todas las transacciones
+  // Método para eliminar exactamente las transacciones visibles en pantalla
   Future<void> _deleteAllTransactions() async {
+    // Capturamos los IDs antes de cualquier operación asíncrona
+    final idsToDelete = _filteredTransactions.map((t) => t.id).toList();
     try {
-      await _transactionService.clearAllTransactions();
+      await _transactionService.deleteTransactionsByIds(idsToDelete);
       _loadTransactions();
 
       if (mounted) {
