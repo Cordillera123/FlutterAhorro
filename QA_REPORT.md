@@ -29,7 +29,7 @@
 - [x] 16. Botón "Crear categoría" sin estado de carga — **corregido**
 - [x] 17. Botón "Ver todas" (transacciones recientes, Inicio) no hacía nada — **corregido**
 - [x] 18. Vista previa de monto en Agregar Transacción no usaba el formateador de la app — **corregido**
-- [ ] 19. Cabecera de Historial: 4 íconos fijos pueden dejar sin espacio al título "Historial" en phones pequeños — **no corregido** (requiere rediseñar la cabecera; ver recomendación)
+- [x] 19. Cabecera de Historial: 4 íconos fijos pueden dejar sin espacio al título "Historial" en phones pequeños — **corregido** (se eliminó el ícono "Agregar transacción", redundante con el FAB que ya existe en esta misma pantalla; quedan 3 íconos, liberando ~52px)
 - [x] 20. Monto de transacción en Historial sin protección de overflow — **corregido**
 - [x] 21. Cabecera de `monthly_history_screen.dart` podía desbordar en dispositivos con notch grande — **corregido** (más margen de aire)
 - [x] 22. Estado de error de Logros indistinguible del estado "sin logros" — **corregido**
@@ -38,17 +38,17 @@
 - [x] 25. `main_screen.dart` duplicado huérfano — **eliminado** (según tu decisión)
 
 ### 🟢 Cosmético
-- [ ] 26. Verde de Inicio/Splash (#4CAF50) distinto al verde del resto de la app (#059669) — **no corregido**, ver recomendación
+- [x] 26. Verde de Inicio/Splash (#4CAF50) distinto al verde del resto de la app (#059669) — **corregido** (migrado a la familia Emerald ya usada en el resto de la app: `primaryGreen`/`darkGreen` + dos tonos nuevos `lightGreen`/`deepGreen` para los degradados de 3 puntos)
 - [x] 27. Color de "gasto" distinto entre Inicio (#FF7043) e Historial (#DC2626) — **corregido**
 - [x] 28. Colores sueltos fuera de la paleta (settings, manage_categories, create_budget) — **corregido**
 - [x] 29. Insignia "Nivel 0/6" confusa en logros bloqueados — **corregido**
 - [x] 30. `borderLight` distinto en `monthly_history_screen.dart` — **corregido**
-- [ ] 31. Secciones del dashboard sin mensaje cuando están vacías — **no corregido**, ver recomendación
+- [x] 31. Secciones del dashboard sin mensaje cuando están vacías — **investigado, no requiere cambio**: `financial_insights_screen.dart` ya tiene un `_emptyState()` a nivel superior quese activa cuando `!data.hasSufficientData` (cuenta nueva/sin datos). Las 4 secciones individuales solo se auto-ocultan cuando SÍ hay datos suficientes pero esa categoría puntual no tiene nada que reportar (ej. sin alertas críticas) — mostrar un "no hay alertas" en cada una sería ruido, no una mejora
 - [x] 32. Monto en `calendar_day_sheet.dart` sin `Flexible` — **corregido**
 - [x] 33. Columna de monto/porcentaje por categoría en Estadísticas sin protección de overflow — **corregido**
 - [x] 34. `Budget.getStatus` sin guarda para monto = 0 — **corregido**
-- [ ] 35. Colores de marca redeclarados en 15+ archivos en vez de un tema compartido — **no corregido** (cambio arquitectónico, requiere tu aprobación explícita — no toqué la arquitectura general)
-- [ ] 36. Logs de depuración (`print` con emojis) en getters llamados en cada rebuild — **no corregido**, ver recomendación
+- [x] 35. Colores de marca redeclarados en 15+ archivos en vez de un tema compartido — **corregido**: nuevo `lib/theme/app_colors.dart` como única fuente de verdad; las 22 pantallas/widgets que redeclaraban colores locales ahora apuntan a `AppColors.x` (mismos nombres locales, cero cambios en el resto de cada archivo)
+- [x] 36. Logs de depuración (`print` con emojis) en getters llamados en cada rebuild — **corregido**: se eliminaron los `print()` (incluyendo un loop por transacción) del getter `TransactionService.transactions`, el más "caliente" de la app
 
 ---
 
@@ -167,14 +167,16 @@
 
 ---
 
-## Preguntas antes de tocar lógica de negocio
+## Decisiones de producto (ya resueltas)
 
-Antes de aplicar los fixes que cambian comportamiento (no solo visual/UX), necesito tu decisión en estos puntos:
+Antes de aplicar los fixes que cambiaban comportamiento (no solo visual/UX), pedí tu decisión en estos puntos — las 4 quedaron resueltas con la opción recomendada:
 
-1. **Eliminar cuenta (Crítico #4):** ¿borro las transacciones de la cuenta eliminada (como promete el diálogo actual), o las reasigno a otra cuenta (como se hace hoy con categorías eliminadas)?
-2. **Reinicio de presupuestos (Moderado #9):** ¿cambio la condición a "si ya pasó la fecha de fin" (se corrige apenas se abra la app, cualquier día) en vez de exigir que se abra exactamente el lunes/día 1?
-3. **Límite de metas (Moderado #11):** ¿el límite de 15 debe contar solo metas activas/pausadas (lo que ya se le muestra al usuario), o todas incluyendo completadas/canceladas (el comportamiento actual del check)?
-4. **Tope de monto (Moderado #13):** ¿a cuánto subo el máximo permitido en presupuestos/gastos recurrentes? (hoy es $999.999,99, poco realista en COP)
-5. **`main_screen.dart` (Moderado #25):** ¿confirmo que puedo eliminar este archivo? (no está importado por ningún otro archivo, así que no debería romper nada, pero es una eliminación de archivo completo)
+1. **Eliminar cuenta (Crítico #4):** se borran las transacciones/presupuestos/metas de la cuenta eliminada (coincide con la advertencia que ya ve el usuario).
+2. **Reinicio de presupuestos (Moderado #9):** ahora se reinicia apenas se detecta que ya pasó la fecha de fin del período, sin importar qué día se abra la app.
+3. **Límite de metas (Moderado #11):** el límite de 15 ahora cuenta solo metas activas/pausadas, igual que el contador visible.
+4. **Tope de monto (Moderado #13):** subido a $999.999.999,99 en presupuestos, gastos recurrentes y transacciones.
+5. **`main_screen.dart` (Moderado #25):** eliminado — confirmado que no lo importaba ningún otro archivo.
 
-Todo lo demás (crítico #1, #2, #3, #5, #6, y todo lo moderado/cosmético restante) son fixes de UI/UX o correcciones de bugs de formato sin ambigüedad de producto — los aplico directamente a continuación y te resumo los cambios.
+## Estado final
+
+Los 36 hallazgos quedaron cerrados: **35 con un fix de código** y **1 investigado a fondo sin necesitar cambio** (#31 — el dashboard ya tenía un estado vacío de nivel superior que cubre el caso real). Todo el código se verificó con `flutter analyze` (0 errores); los cambios de mayor impacto visual (FAB, botón de retroceso, nav inferior, degradados verdes, cabecera de Historial) se verificaron además con capturas en vivo en el navegador.

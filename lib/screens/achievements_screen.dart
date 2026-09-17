@@ -9,6 +9,7 @@ import '../services/goal_service.dart';
 import '../services/transaction_service.dart';
 import '../widgets/dashboard/achievement_card.dart';
 import '../widgets/dashboard/dashboard_theme.dart';
+import '../theme/app_colors.dart';
 
 /// Sala de trofeos. Muestra lo conseguido y, sobre todo, lo que está a punto
 /// de conseguirse: ver el progreso es lo que empuja a seguir.
@@ -20,8 +21,8 @@ class AchievementsScreen extends StatefulWidget {
 }
 
 class _AchievementsScreenState extends State<AchievementsScreen> {
-  static const Color _gold = Color(0xFFF59E0B);
-  static const Color _goldDark = Color(0xFFD97706);
+  static const Color _gold = AppColors.warningYellow;
+  static const Color _goldDark = AppColors.darkYellow;
 
   final SmartDashboardService _dashboardService = SmartDashboardService();
   final TransactionService _transactionService = TransactionService();

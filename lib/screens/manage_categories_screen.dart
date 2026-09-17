@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../models/custom_category.dart';
 import '../models/transaction.dart';
 import '../services/category_service.dart';
+import '../theme/app_colors.dart';
 
 class ManageCategoriesScreen extends StatefulWidget {
   const ManageCategoriesScreen({super.key});
@@ -19,12 +20,12 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
   bool _isLoading = true;
 
   // Colores consistentes
-  static const Color primaryBlue = Color(0xFF3B82F6);
-  static const Color successGreen = Color(0xFF059669);
-  static const Color dangerRed = Color(0xFFDC2626);
-  static const Color secondaryGray = Color(0xFF64748B);
-  static const Color backgroundGray = Color(0xFFF8FAFC);
-  static const Color warningYellow = Color(0xFFF59E0B);
+  static const Color primaryBlue = AppColors.primaryBlue;
+  static const Color successGreen = AppColors.primaryGreen;
+  static const Color dangerRed = AppColors.dangerRed;
+  static const Color secondaryGray = AppColors.textMedium;
+  static const Color backgroundGray = AppColors.backgroundCard;
+  static const Color warningYellow = AppColors.warningYellow;
 
   @override
   void initState() {

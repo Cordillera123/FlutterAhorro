@@ -7,6 +7,7 @@ import '../services/transaction_service.dart';
 import '../services/category_service.dart';
 import '../services/account_service.dart';
 import '../utils/format_utils.dart';
+import '../theme/app_colors.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final TransactionType initialType;
@@ -46,23 +47,23 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
   late Animation<double> _slideAnimation;
 
   // Definición de colores consistentes
-  static const Color primaryGreen = Color(0xFF059669);
-  static const Color darkGreen = Color(0xFF047857);
-  static const Color deepGreen = Color(0xFF065F46);
-  static const Color primaryRed = Color(0xFFDC2626);
-  static const Color darkRed = Color(0xFFB91C1C);
-  static const Color deepRed = Color(0xFF991B1B);
-  static const Color primaryBlue = Color(0xFF3B82F6);
-  static const Color darkBlue = Color(0xFF1D4ED8);
-  static const Color warningYellow = Color(0xFFF59E0B);
-  static const Color infoBlue = Color(0xFF0EA5E9);
+  static const Color primaryGreen = AppColors.primaryGreen;
+  static const Color darkGreen = AppColors.darkGreen;
+  static const Color deepGreen = AppColors.deepGreen;
+  static const Color primaryRed = AppColors.dangerRed;
+  static const Color darkRed = AppColors.darkRed;
+  static const Color deepRed = AppColors.deepRed;
+  static const Color primaryBlue = AppColors.primaryBlue;
+  static const Color darkBlue = AppColors.darkBlue;
+  static const Color warningYellow = AppColors.warningYellow;
+  static const Color infoBlue = AppColors.primaryBlue;
 
   // Colores de texto y fondo
-  static const Color textDark = Color(0xFF1E293B);
-  static const Color textMedium = Color(0xFF64748B);
-  static const Color backgroundLight = Color(0xFFF1F5F9);
-  static const Color backgroundCard = Color(0xFFF8FAFC);
-  static const Color borderLight = Color(0xFFE5E7EB);
+  static const Color textDark = AppColors.textDark;
+  static const Color textMedium = AppColors.textMedium;
+  static const Color backgroundLight = AppColors.backgroundLight;
+  static const Color backgroundCard = AppColors.backgroundCard;
+  static const Color borderLight = AppColors.borderLight;
 
   @override
   void initState() {

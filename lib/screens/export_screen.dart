@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../models/export_config.dart';
 import '../services/account_service.dart';
 import '../services/export_service.dart';
+import '../theme/app_colors.dart';
 
 // Metadatos de cada formato disponible para la UI.
 const _formatOptions = [
@@ -50,14 +51,14 @@ class _ExportScreenState extends State<ExportScreen>
   late Animation<double> _fadeAnimation;
 
   // ─── Paleta de colores (igual que en el resto de la app) ──────────────
-  static const Color primaryBlue = Color(0xFF3B82F6);
-  static const Color darkBlue = Color(0xFF1D4ED8);
-  static const Color warningYellow = Color(0xFFF59E0B);
-  static const Color dangerRed = Color(0xFFDC2626);
-  static const Color textDark = Color(0xFF1E293B);
-  static const Color textMedium = Color(0xFF64748B);
-  static const Color backgroundLight = Color(0xFFF1F5F9);
-  static const Color borderLight = Color(0xFFE5E7EB);
+  static const Color primaryBlue = AppColors.primaryBlue;
+  static const Color darkBlue = AppColors.darkBlue;
+  static const Color warningYellow = AppColors.warningYellow;
+  static const Color dangerRed = AppColors.dangerRed;
+  static const Color textDark = AppColors.textDark;
+  static const Color textMedium = AppColors.textMedium;
+  static const Color backgroundLight = AppColors.backgroundLight;
+  static const Color borderLight = AppColors.borderLight;
 
   static const int _rowLimit = 50000;
   static const int _warnThreshold = 45000;

@@ -4,6 +4,7 @@ import '../models/financial_goal.dart';
 import '../services/account_service.dart';
 import '../services/goal_service.dart';
 import '../utils/format_utils.dart';
+import '../theme/app_colors.dart';
 
 class CreateGoalScreen extends StatefulWidget {
   final FinancialGoal? goalToEdit;
@@ -30,17 +31,17 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
   bool _isLoading = false;
   bool _isEditMode = false;
 
-  static const Color primaryBlue = Color(0xFF3B82F6);
-  static const Color darkBlue = Color(0xFF1D4ED8);
-  static const Color successGreen = Color(0xFF059669);
-  static const Color warningYellow = Color(0xFFF59E0B);
-  static const Color dangerRed = Color(0xFFDC2626);
-  static const Color purpleAccent = Color(0xFF7C3AED);
-  static const Color textDark = Color(0xFF1E293B);
-  static const Color textMedium = Color(0xFF64748B);
-  static const Color backgroundLight = Color(0xFFF1F5F9);
-  static const Color backgroundCard = Color(0xFFF8FAFC);
-  static const Color borderLight = Color(0xFFE5E7EB);
+  static const Color primaryBlue = AppColors.primaryBlue;
+  static const Color darkBlue = AppColors.darkBlue;
+  static const Color successGreen = AppColors.primaryGreen;
+  static const Color warningYellow = AppColors.warningYellow;
+  static const Color dangerRed = AppColors.dangerRed;
+  static const Color purpleAccent = AppColors.primaryPurple;
+  static const Color textDark = AppColors.textDark;
+  static const Color textMedium = AppColors.textMedium;
+  static const Color backgroundLight = AppColors.backgroundLight;
+  static const Color backgroundCard = AppColors.backgroundCard;
+  static const Color borderLight = AppColors.borderLight;
 
   final Map<GoalType, List<String>> _emojisByType = {
     GoalType.purchase: ['🛒', '💻', '📱', '🚗', '🏠', '👕', '⌚', '🎮'],

@@ -24,12 +24,6 @@ class TransactionService extends ChangeNotifier {
     final filtered = _transactions
         .where((t) => t.accountId == _accountService.activeAccountId)
         .toList();
-    print('🔵 GETTER - Total transacciones en memoria: ${_transactions.length}');
-    print('🔵 GETTER - activeAccountId: ${_accountService.activeAccountId}');
-    for (var t in _transactions) {
-      print('🔵   - ${t.description} (accountId: ${t.accountId})');
-    }
-    print('🔵 GETTER - Transacciones filtradas: ${filtered.length}');
     return List.unmodifiable(filtered);
   }
 

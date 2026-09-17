@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/budget.dart';
 import '../utils/format_utils.dart';
+import '../theme/app_colors.dart';
 
 class BudgetSuccessScreen extends StatefulWidget {
   final Budget budget;
@@ -25,8 +26,8 @@ class _BudgetSuccessScreenState extends State<BudgetSuccessScreen>
 
   bool _showSuccess = false;
 
-  static const Color primaryBlue = Color(0xFF3B82F6);
-  static const Color successGreen = Color(0xFF059669);
+  static const Color primaryBlue = AppColors.primaryBlue;
+  static const Color successGreen = AppColors.primaryGreen;
 
   @override
   void initState() {

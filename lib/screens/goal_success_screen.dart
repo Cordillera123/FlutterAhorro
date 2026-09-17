@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/financial_goal.dart';
 import '../utils/format_utils.dart';
+import '../theme/app_colors.dart';
 
 class GoalSuccessScreen extends StatefulWidget {
   final FinancialGoal goal;
@@ -21,9 +22,9 @@ class _GoalSuccessScreenState extends State<GoalSuccessScreen>
 
   bool _showSuccess = false;
 
-  static const Color primaryBlue = Color(0xFF3B82F6);
-  static const Color successGreen = Color(0xFF059669);
-  static const Color purpleAccent = Color(0xFF7C3AED);
+  static const Color primaryBlue = AppColors.primaryBlue;
+  static const Color successGreen = AppColors.primaryGreen;
+  static const Color purpleAccent = AppColors.primaryPurple;
 
   @override
   void initState() {

@@ -273,7 +273,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     children: [
                       const CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          Color(0xFF4CAF50),
+                          Color(0xFF059669),
                         ),
                         strokeWidth: 3,
                       ),
@@ -302,7 +302,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       expandedHeight: hasNoTransactions ? 258 : 210,
       floating: false,
       pinned: true,
-      backgroundColor: const Color(0xFF4CAF50),
+      backgroundColor: const Color(0xFF059669),
       elevation: 0,
       automaticallyImplyLeading: false,
       systemOverlayStyle: SystemUiOverlayStyle.light,
@@ -312,7 +312,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF43A047), Color(0xFF388E3C), Color(0xFF2E7D32)],
+              colors: [Color(0xFF059669), Color(0xFF047857), Color(0xFF065F46)],
             ),
             borderRadius: BorderRadius.only(
               bottomLeft: Radius.circular(32),
@@ -467,9 +467,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Color(0xFF81C784),
-                    Color(0xFF4CAF50),
-                    Color(0xFF388E3C),
+                    Color(0xFF34D399),
+                    Color(0xFF059669),
+                    Color(0xFF047857),
                   ],
                 ),
               ),
@@ -624,10 +624,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: const Color(0xFF4CAF50).withOpacity(0.1),
+          color: const Color(0xFF059669).withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, color: const Color(0xFF4CAF50), size: 22),
+        child: Icon(icon, color: const Color(0xFF059669), size: 22),
       ),
       title: Text(
         title,
@@ -1567,10 +1567,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         color: Colors.white,
-        border: Border.all(color: const Color(0xFF4CAF50).withOpacity(0.1)),
+        border: Border.all(color: const Color(0xFF059669).withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4CAF50).withOpacity(0.05),
+            color: const Color(0xFF059669).withOpacity(0.05),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -1677,7 +1677,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
               color: isIncome
-                  ? const Color(0xFF4CAF50).withOpacity(0.1)
+                  ? const Color(0xFF059669).withOpacity(0.1)
                   : const Color(0xFFDC2626).withOpacity(0.1),
             ),
             child: Center(
@@ -1720,7 +1720,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
                     color: isIncome
-                        ? const Color(0xFF4CAF50)
+                        ? const Color(0xFF059669)
                         : const Color(0xFFDC2626),
                   ),
                 ),

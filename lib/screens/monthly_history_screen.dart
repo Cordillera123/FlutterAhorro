@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/stats_service.dart';
 import '../utils/format_utils.dart';
+import '../theme/app_colors.dart';
 
 class MonthlyHistoryScreen extends StatefulWidget {
   const MonthlyHistoryScreen({Key? key}) : super(key: key);
@@ -14,13 +15,13 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
     with SingleTickerProviderStateMixin {
   
   // Colores del sistema
-  static const Color primaryBlue = Color(0xFF3B82F6);
-  static const Color darkBlue = Color(0xFF1D4ED8);
-  static const Color successGreen = Color(0xFF059669);
-  static const Color dangerRed = Color(0xFFDC2626);
-  static const Color textDark = Color(0xFF1E293B);
-  static const Color textMedium = Color(0xFF64748B);
-  static const Color borderLight = Color(0xFFE5E7EB);
+  static const Color primaryBlue = AppColors.primaryBlue;
+  static const Color darkBlue = AppColors.darkBlue;
+  static const Color successGreen = AppColors.primaryGreen;
+  static const Color dangerRed = AppColors.dangerRed;
+  static const Color textDark = AppColors.textDark;
+  static const Color textMedium = AppColors.textMedium;
+  static const Color borderLight = AppColors.borderLight;
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;

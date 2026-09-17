@@ -6,6 +6,7 @@ import '../services/recurring_expense_service.dart';
 import '../services/account_service.dart';
 import '../utils/format_utils.dart';
 import 'add_recurring_expense_screen.dart';
+import '../theme/app_colors.dart';
 
 class RecurringExpensesScreen extends StatefulWidget {
   const RecurringExpensesScreen({super.key});
@@ -29,22 +30,22 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen>
   late Animation<double> _slideAnimation;
 
   // Definición de colores consistentes
-  static const Color primaryPurple = Color(0xFF7C3AED);
-  static const Color darkPurple = Color(0xFF5B21B6);
-  static const Color deepPurple = Color(0xFF4C1D95);
-  static const Color successGreen = Color(0xFF059669);
-  static const Color warningYellow = Color(0xFFF59E0B);
-  static const Color dangerRed = Color(0xFFDC2626);
-  static const Color infoBlue = Color(0xFF3B82F6);
-  static const Color darkBlue = Color(0xFF1D4ED8);
-  static const Color darkYellow = Color(0xFFD97706);
+  static const Color primaryPurple = AppColors.primaryPurple;
+  static const Color darkPurple = AppColors.darkPurple;
+  static const Color deepPurple = AppColors.deepPurple;
+  static const Color successGreen = AppColors.primaryGreen;
+  static const Color warningYellow = AppColors.warningYellow;
+  static const Color dangerRed = AppColors.dangerRed;
+  static const Color infoBlue = AppColors.primaryBlue;
+  static const Color darkBlue = AppColors.darkBlue;
+  static const Color darkYellow = AppColors.darkYellow;
 
   // Colores de texto y fondo
-  static const Color textDark = Color(0xFF1E293B);
-  static const Color textMedium = Color(0xFF64748B);
-  static const Color backgroundLight = Color(0xFFF1F5F9);
-  static const Color backgroundCard = Color(0xFFF8FAFC);
-  static const Color borderLight = Color(0xFFE5E7EB);
+  static const Color textDark = AppColors.textDark;
+  static const Color textMedium = AppColors.textMedium;
+  static const Color backgroundLight = AppColors.backgroundLight;
+  static const Color backgroundCard = AppColors.backgroundCard;
+  static const Color borderLight = AppColors.borderLight;
 
   @override
   void initState() {

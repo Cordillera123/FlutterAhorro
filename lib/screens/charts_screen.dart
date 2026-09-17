@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/stats_service.dart';
 import '../widgets/pie_chart_widget.dart';
 import '../utils/format_utils.dart';
+import '../theme/app_colors.dart';
 
 class ChartsScreen extends StatefulWidget {
   final List<CategoryStats> categoryStats;
@@ -22,13 +23,13 @@ class _ChartsScreenState extends State<ChartsScreen>
   late Animation<double> _scaleAnimation;
 
   // Colores consistentes con el diseño
-  static const Color primaryBlue = Color(0xFF3B82F6);
-  static const Color darkBlue = Color(0xFF1D4ED8);
-  static const Color deepBlue = Color(0xFF1E40AF);
-  static const Color textDark = Color(0xFF1E293B);
-  static const Color textMedium = Color(0xFF64748B);
-  static const Color backgroundLight = Color(0xFFF1F5F9);
-  static const Color backgroundCard = Color(0xFFF8FAFC);
+  static const Color primaryBlue = AppColors.primaryBlue;
+  static const Color darkBlue = AppColors.darkBlue;
+  static const Color deepBlue = AppColors.deepBlue;
+  static const Color textDark = AppColors.textDark;
+  static const Color textMedium = AppColors.textMedium;
+  static const Color backgroundLight = AppColors.backgroundLight;
+  static const Color backgroundCard = AppColors.backgroundCard;
 
   @override
   void initState() {

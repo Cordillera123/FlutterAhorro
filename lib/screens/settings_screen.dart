@@ -4,6 +4,7 @@ import 'manage_categories_screen.dart';
 import 'manage_accounts_screen.dart';
 import 'export_screen.dart';
 import '../models/export_config.dart';
+import '../theme/app_colors.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -18,9 +19,9 @@ class _SettingsScreenState extends State<SettingsScreen>
   late Animation<double> _fadeInAnimation;
 
   // Colores consistentes
-  static const Color primaryBlue = Color(0xFF3B82F6);
-  static const Color secondaryGray = Color(0xFF64748B);
-  static const Color backgroundGray = Color(0xFFF8FAFC);
+  static const Color primaryBlue = AppColors.primaryBlue;
+  static const Color secondaryGray = AppColors.textMedium;
+  static const Color backgroundGray = AppColors.backgroundCard;
 
   @override
   void initState() {
