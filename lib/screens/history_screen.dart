@@ -899,10 +899,12 @@ class _HistoryScreenState extends State<HistoryScreen>
                   ),
                 ),
                 const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 120),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
                       '${isIncome ? '+' : '-'}${FormatUtils.formatMoney(transaction.amount)}',
                       style: TextStyle(
                         fontWeight: FontWeight.w800,
@@ -910,7 +912,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                         color: isIncome ? successGreen : dangerRed,
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ],
             ),

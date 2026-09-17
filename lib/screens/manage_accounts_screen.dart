@@ -27,7 +27,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
   static const Color dangerRed = Color(0xFFDC2626);
   static const Color textDark = Color(0xFF1E293B);
   static const Color textMedium = Color(0xFF64748B);
-  static const Color backgroundLight = Color(0xFFF8FAFC);
+  static const Color backgroundLight = Color(0xFFF1F5F9);
   static const Color borderLight = Color(0xFFE5E7EB);
 
   @override

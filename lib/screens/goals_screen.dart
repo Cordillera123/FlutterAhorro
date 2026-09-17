@@ -35,8 +35,8 @@ class _GoalsScreenState extends State<GoalsScreen>
   static const Color purpleAccent = Color(0xFF7C3AED);
   static const Color textDark = Color(0xFF1E293B);
   static const Color textMedium = Color(0xFF64748B);
-  static const Color backgroundLight = Color(0xFFF8FAFC);
-  static const Color backgroundCard = Color(0xFFF1F5F9);
+  static const Color backgroundLight = Color(0xFFF1F5F9);
+  static const Color backgroundCard = Color(0xFFF8FAFC);
 
   @override
   void initState() {
@@ -1149,8 +1149,10 @@ class _GoalsScreenState extends State<GoalsScreen>
       builder: (BuildContext context) {
         final TextEditingController amountController = TextEditingController();
         final TextEditingController noteController = TextEditingController();
+        bool isSubmitting = false;
 
-        return AlertDialog(
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
@@ -1221,151 +1223,70 @@ class _GoalsScreenState extends State<GoalsScreen>
               child: const Text('Cancelar'),
             ),
             ElevatedButton(
-              onPressed: () async {
-                final amount = double.tryParse(
-                  amountController.text.replaceAll(',', ''),
-                );
-                if (amount != null && amount > 0) {
-                  try {
-                    await _goalService.addContribution(
-                      goal.id!,
-                      amount,
-                      note: noteController.text.isNotEmpty
-                          ? noteController.text
-                          : null,
-                    );
-                    if (mounted) {
-                      Navigator.pop(context);
-                      _refreshData();
-                      _showMessage(
-                        'Aporte exitoso',
-                        'Se agregaron ${FormatUtils.formatMoney(amount)} a tu meta',
-                        successGreen,
-                        Icons.check_circle_rounded,
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      final amount = double.tryParse(
+                        amountController.text.replaceAll(',', ''),
                       );
-                    }
-                  } catch (e) {
-                    _showMessage(
-                      'Error',
-                      'No se pudo agregar el aporte',
-                      dangerRed,
-                      Icons.error_rounded,
-                    );
-                  }
-                }
-              },
+                      if (amount != null && amount > 0) {
+                        setDialogState(() => isSubmitting = true);
+                        try {
+                          await _goalService.addContribution(
+                            goal.id!,
+                            amount,
+                            note: noteController.text.isNotEmpty
+                                ? noteController.text
+                                : null,
+                          );
+                          if (mounted) {
+                            Navigator.pop(context);
+                            _refreshData();
+                            _showMessage(
+                              'Aporte exitoso',
+                              'Se agregaron ${FormatUtils.formatMoney(amount)} a tu meta',
+                              successGreen,
+                              Icons.check_circle_rounded,
+                            );
+                          }
+                        } catch (e) {
+                          setDialogState(() => isSubmitting = false);
+                          _showMessage(
+                            'Error',
+                            'No se pudo agregar el aporte',
+                            dangerRed,
+                            Icons.error_rounded,
+                          );
+                        }
+                      }
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: successGreen,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
-                'Aportar',
-                style: TextStyle(color: Colors.white),
-              ),
+              child: isSubmitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text(
+                      'Aportar',
+                      style: TextStyle(color: Colors.white),
+                    ),
             ),
           ],
+        ),
         );
       },
     );
   }
 
-  Future<void> _pauseGoal(FinancialGoal goal) async {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Column(
-            children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  color: warningYellow.withOpacity(0.1),
-                  border: Border.all(
-                    color: warningYellow.withOpacity(0.3),
-                    width: 2,
-                  ),
-                ),
-                child: const Icon(
-                  Icons.pause_rounded,
-                  color: warningYellow,
-                  size: 30,
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Pausar Meta',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: textDark,
-                ),
-              ),
-            ],
-          ),
-          content: Text(
-            '¿Estás seguro de que quieres pausar "${goal.name}"? Podrás reactivarla cuando quieras.',
-            style: const TextStyle(
-              fontSize: 14,
-              color: textMedium,
-              height: 1.4,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  await _goalService.changeGoalStatus(
-                    goal.id!,
-                    GoalStatus.paused,
-                  );
-                  if (mounted) {
-                    Navigator.pop(context);
-                    _refreshData();
-                    _showMessage(
-                      'Meta pausada',
-                      'La meta ha sido pausada exitosamente',
-                      warningYellow,
-                      Icons.pause_rounded,
-                    );
-                  }
-                } catch (e) {
-                  _showMessage(
-                    'Error',
-                    'No se pudo pausar la meta',
-                    dangerRed,
-                    Icons.error_rounded,
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: warningYellow,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'Pausar',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   void _toggleGoalStatus(FinancialGoal goal) async {
     try {

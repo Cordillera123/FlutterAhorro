@@ -68,7 +68,7 @@ class AchievementCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                          if (achievement.maxTier > 1) _tierBadge(unlocked),
+                          if (achievement.maxTier > 1 && unlocked) _tierBadge(unlocked),
                         ],
                       ),
                       const SizedBox(height: 4),

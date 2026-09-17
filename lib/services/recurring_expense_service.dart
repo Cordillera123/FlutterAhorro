@@ -144,8 +144,12 @@ class RecurringExpenseService {
           createdTransactions.add(transaction);
 
           // NUEVO: Verificar si hay presupuestos activos para esta categoría
+          // Se excluyen los presupuestos de categoría personalizada: como los
+          // gastos recurrentes no soportan categorías personalizadas, un
+          // gasto recurrente "Otros" no debe reportarse como impacto de
+          // presupuestos personalizados que en realidad no le corresponden.
           final activeBudgets = budgetService.currentPeriodBudgets
-              .where((budget) => budget.category == expense.category)
+              .where((budget) => !budget.hasCustomCategory && budget.category == expense.category)
               .toList();
 
           if (activeBudgets.isNotEmpty) {
@@ -280,9 +284,10 @@ class RecurringExpenseService {
           (categoryImpact[expense.category] ?? 0) + monthlyImpact;
     }
 
-    // Encontrar presupuestos afectados
+    // Encontrar presupuestos afectados (se excluyen los de categoría
+    // personalizada, ya que los gastos recurrentes no tienen ese concepto)
     for (final budget in activeBudgets) {
-      if (categoryImpact.containsKey(budget.category)) {
+      if (!budget.hasCustomCategory && categoryImpact.containsKey(budget.category)) {
         affectedBudgets[budget.category] ??= [];
         affectedBudgets[budget.category]!.add(budget.name);
       }

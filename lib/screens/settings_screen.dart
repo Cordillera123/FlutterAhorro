@@ -87,7 +87,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ),
                       _buildSettingsTile(
                         icon: Icons.file_download_outlined,
-                        iconColor: const Color(0xFF0891B2),
+                        iconColor: primaryBlue,
                         title: 'Exportar datos',
                         subtitle: 'Genera reportes en Excel',
                         onTap: () => _navigateToExport(),

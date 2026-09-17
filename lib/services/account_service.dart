@@ -3,6 +3,9 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/account.dart';
+import 'transaction_service.dart';
+import 'budget_service.dart';
+import 'goal_service.dart';
 
 /// Servicio para gestionar las cuentas financieras del usuario.
 /// Usa patrón Singleton y persiste en SharedPreferences.
@@ -245,6 +248,13 @@ class AccountService extends ChangeNotifier {
     }
 
     await _saveAccounts();
+
+    // Eliminar también las transacciones, presupuestos y metas de la cuenta,
+    // tal como se le advierte al usuario en el diálogo de confirmación.
+    await TransactionService().clearTransactionsForAccount(accountId);
+    await BudgetService().clearBudgetsForAccount(accountId);
+    await GoalService().clearGoalsForAccount(accountId);
+
     notifyListeners();
 
     print('🗑️ Cuenta eliminada: ${account.name}');

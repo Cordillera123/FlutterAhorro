@@ -905,6 +905,8 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
             children: [
               Text(
                 FormatUtils.formatMoney(category.amount),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,

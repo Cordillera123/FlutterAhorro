@@ -23,6 +23,7 @@ import 'settings_screen.dart';
 import 'manage_accounts_screen.dart';
 import 'export_screen.dart';
 import '../models/export_config.dart';
+import 'history_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -205,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     // Vista principal con overlay de actualización opcional
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF1F5F9),
       drawer: _buildDrawer(),
       body: Stack(
         children: [
@@ -226,7 +227,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         child: Opacity(
                           opacity: _fadeInAnimation.value,
                           child: Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                            padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -1519,7 +1520,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               GestureDetector(
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  // TODO: Navigate to full history
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HistoryScreen()),
+                  );
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -1674,7 +1678,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               borderRadius: BorderRadius.circular(14),
               color: isIncome
                   ? const Color(0xFF4CAF50).withOpacity(0.1)
-                  : const Color(0xFFFF7043).withOpacity(0.1),
+                  : const Color(0xFFDC2626).withOpacity(0.1),
             ),
             child: Center(
               child: Text(categoryEmoji, style: const TextStyle(fontSize: 20)),
@@ -1717,7 +1721,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     fontSize: 15,
                     color: isIncome
                         ? const Color(0xFF4CAF50)
-                        : const Color(0xFFFF7043),
+                        : const Color(0xFFDC2626),
                   ),
                 ),
               ),

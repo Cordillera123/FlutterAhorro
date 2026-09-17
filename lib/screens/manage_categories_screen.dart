@@ -24,6 +24,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
   static const Color dangerRed = Color(0xFFDC2626);
   static const Color secondaryGray = Color(0xFF64748B);
   static const Color backgroundGray = Color(0xFFF8FAFC);
+  static const Color warningYellow = Color(0xFFF59E0B);
 
   @override
   void initState() {
@@ -809,22 +810,22 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
+                  color: warningYellow.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.orange.shade200),
+                  border: Border.all(color: warningYellow.withOpacity(0.3)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (hasBudgets)
-                      const Row(
+                      Row(
                         children: [
-                          Icon(Icons.pie_chart_outline, size: 16, color: Colors.orange),
-                          SizedBox(width: 8),
+                          Icon(Icons.pie_chart_outline, size: 16, color: warningYellow),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'Se eliminarán los presupuestos de esta categoría',
-                              style: TextStyle(fontSize: 13, color: Colors.orange),
+                              style: TextStyle(fontSize: 13, color: warningYellow),
                             ),
                           ),
                         ],
@@ -832,14 +833,14 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                     if (hasBudgets && hasTransactions)
                       const SizedBox(height: 8),
                     if (hasTransactions)
-                      const Row(
+                      Row(
                         children: [
-                          Icon(Icons.receipt_outlined, size: 16, color: Colors.orange),
-                          SizedBox(width: 8),
+                          Icon(Icons.receipt_outlined, size: 16, color: warningYellow),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'Las transacciones pasarán a "Otros"',
-                              style: TextStyle(fontSize: 13, color: Colors.orange),
+                              style: TextStyle(fontSize: 13, color: warningYellow),
                             ),
                           ),
                         ],

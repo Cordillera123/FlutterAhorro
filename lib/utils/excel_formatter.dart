@@ -161,6 +161,7 @@ class ExcelFormatter {
 
   /// Moneda con separador de miles: `$1,234.56`.
   static String formatMoney(double amount) {
+    if (!amount.isFinite) return '\$0.00';
     final abs = amount.abs();
     final formatted = abs.toStringAsFixed(2);
     final parts = formatted.split('.');

@@ -76,7 +76,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
       final expense = widget.expenseToEdit!;
       _nameController.text = expense.name;
       _descriptionController.text = expense.description;
-      _amountController.text = FormatUtils.formatMoney(expense.amount);
+      _amountController.text = expense.amount.toStringAsFixed(2);
       _selectedCategory = expense.category;
       _selectedFrequency = expense.frequency;
       _selectedWeekDays = expense.weekDays ?? [];
@@ -120,9 +120,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
         _nameController.text = widget.prefilledName!;
       }
       if (widget.prefilledAmount != null) {
-        _amountController.text = FormatUtils.formatMoney(
-          widget.prefilledAmount!,
-        );
+        _amountController.text = widget.prefilledAmount!.toStringAsFixed(2);
       }
       if (widget.prefilledFrequency != null) {
         _selectedFrequency = widget.prefilledFrequency!;
@@ -255,7 +253,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
-              LengthLimitingTextInputFormatter(10),
+              LengthLimitingTextInputFormatter(13),
               _RecurringAmountInputFormatter(),
             ],
             decoration: const InputDecoration(
@@ -278,8 +276,8 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
                 if (amount <= 0) {
                   return 'El monto debe ser mayor a \$0.00';
                 }
-                if (amount > 999999.99) {
-                  return 'El monto máximo es \$999,999.99';
+                if (amount > 999999999.99) {
+                  return 'El monto máximo es \$999.999.999,99';
                 }
                 if (amount < 0.01) {
                   return 'El monto mínimo es \$0.01';
@@ -1083,10 +1081,13 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
   }
 
   Future<void> _selectStartDate() async {
+    final earliestSelectable = DateTime.now().subtract(const Duration(days: 30));
     final date = await showDatePicker(
       context: context,
       initialDate: _startDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 30)),
+      firstDate: _startDate.isBefore(earliestSelectable)
+          ? _startDate
+          : earliestSelectable,
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (context, child) {
         return Theme(
@@ -1243,7 +1244,7 @@ class _RecurringAmountInputFormatter extends TextInputFormatter {
 
     // Convertir a double para validar rango
     final double? amount = double.tryParse(newValue.text);
-    if (amount != null && amount > 999999.99) {
+    if (amount != null && amount > 999999999.99) {
       return oldValue;
     }
 

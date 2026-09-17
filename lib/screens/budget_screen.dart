@@ -36,8 +36,8 @@ class _BudgetsScreenState extends State<BudgetsScreen>
   static const Color dangerRed = Color(0xFFDC2626);
   static const Color textDark = Color(0xFF1E293B);
   static const Color textMedium = Color(0xFF64748B);
-  static const Color backgroundLight = Color(0xFFF8FAFC);
-  static const Color backgroundCard = Color(0xFFF1F5F9);
+  static const Color backgroundLight = Color(0xFFF1F5F9);
+  static const Color backgroundCard = Color(0xFFF8FAFC);
 
   @override
   void initState() {

@@ -30,6 +30,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
 
   SmartDashboardData? _data;
   bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -61,10 +62,14 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
       setState(() {
         _data = data;
         _isLoading = false;
+        _error = null;
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+        _error = 'No pudimos cargar tus logros. Intenta de nuevo.';
+      });
     }
   }
 
@@ -122,6 +127,28 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
       return const SizedBox(
         height: 360,
         child: Center(child: CircularProgressIndicator(color: _gold)),
+      );
+    }
+
+    if (_error != null) {
+      return SizedBox(
+        height: 360,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _error!,
+                style: const TextStyle(color: DashboardTheme.textMedium),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => _load(forceRefresh: true),
+                child: const Text('Reintentar'),
+              ),
+            ],
+          ),
+        ),
       );
     }
 

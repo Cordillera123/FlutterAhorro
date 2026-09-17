@@ -80,14 +80,22 @@ class MessageTraceSheet extends StatelessWidget {
               (dp) => Padding(
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(dp.label, style: TextStyle(color: DashboardTheme.textMedium)),
-                    Text(
-                      dp.value,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: DashboardTheme.textDark,
+                    Expanded(
+                      child: Text(dp.label, style: TextStyle(color: DashboardTheme.textMedium)),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        dp.value,
+                        textAlign: TextAlign.right,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: DashboardTheme.textDark,
+                        ),
                       ),
                     ),
                   ],

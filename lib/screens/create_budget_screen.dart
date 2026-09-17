@@ -59,7 +59,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
   static const Color successGreen = Color(0xFF059669);
   static const Color warningYellow = Color(0xFFF59E0B);
   static const Color dangerRed = Color(0xFFDC2626);
-  static const Color infoBlue = Color(0xFF0EA5E9);
+  static const Color infoBlue = Color(0xFF3B82F6);
   static const Color textDark = Color(0xFF1E293B);
   static const Color textMedium = Color(0xFF64748B);
   static const Color backgroundLight = Color(0xFFF1F5F9);
@@ -121,7 +121,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
     if (_isEditMode && widget.budgetToEdit != null) {
       final budget = widget.budgetToEdit!;
       _nameController.text = budget.name;
-      _amountController.text = FormatUtils.formatMoney(budget.amount);
+      _amountController.text = budget.amount.toStringAsFixed(2);
       _selectedPeriod = budget.period;
       _selectedCategory = budget.category;
       _alertsEnabled = budget.alertsEnabled;
@@ -444,7 +444,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
-              LengthLimitingTextInputFormatter(10),
+              LengthLimitingTextInputFormatter(13),
               _BudgetAmountInputFormatter(),
             ],
             decoration: InputDecoration(
@@ -489,8 +489,8 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
                 if (amount <= 0) {
                   return 'El monto debe ser mayor a \$0.00';
                 }
-                if (amount > 999999.99) {
-                  return 'El monto máximo es \$999,999.99';
+                if (amount > 999999999.99) {
+                  return 'El monto máximo es \$999.999.999,99';
                 }
                 if (amount < 0.01) {
                   return 'El monto mínimo es \$0.01';
@@ -1499,7 +1499,7 @@ class _BudgetAmountInputFormatter extends TextInputFormatter {
 
     // Convertir a double para validar rango
     final double? amount = double.tryParse(newValue.text);
-    if (amount != null && amount > 999999.99) {
+    if (amount != null && amount > 999999999.99) {
       return oldValue;
     }
 

@@ -201,6 +201,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
       backgroundColor: backgroundLight,
       elevation: 0,
       systemOverlayStyle: SystemUiOverlayStyle.dark,
+      leading: IconButton(
+        icon: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+        ),
+        onPressed: () => Navigator.pop(context),
+      ),
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: BoxDecoration(
@@ -216,7 +227,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+              padding: const EdgeInsets.fromLTRB(24, 48, 24, 24),
               child: Column(
                 children: [
                   Row(
@@ -549,7 +560,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                     ),
                     SizedBox(height: 4),
                     Text(
-                      'Máximo: \$999,999.99',
+                      'Máximo: \$999.999.999,99',
                       style: TextStyle(color: textMedium, fontSize: 13),
                     ),
                   ],
@@ -564,8 +575,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
               LengthLimitingTextInputFormatter(
-                10,
-              ), // Máximo 10 caracteres (999999.99)
+                13,
+              ), // Máximo 13 caracteres (999999999.99)
               _AmountInputFormatter(),
             ],
             decoration: InputDecoration(
@@ -608,8 +619,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
               if (amount == null || amount <= 0) {
                 return 'El monto debe ser mayor a \$0.00';
               }
-              if (amount > 999999.99) {
-                return 'El monto máximo es \$999,999.99';
+              if (amount > 999999999.99) {
+                return 'El monto máximo es \$999.999.999,99';
               }
               if (amount < 0.01) {
                 return 'El monto mínimo es \$0.01';
@@ -1056,6 +1067,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     final nameController = TextEditingController();
     String selectedEmoji = '📁';
     final formKey = GlobalKey<FormState>();
+    bool isCreating = false;
 
     final emojis = [
       '🏋️', '🐕', '🐱', '💅', '🎮', '🎨', '🎵', '📷',
@@ -1253,8 +1265,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                         Expanded(
                           flex: 2,
                           child: ElevatedButton(
-                            onPressed: () async {
+                            onPressed: isCreating
+                                ? null
+                                : () async {
                               if (formKey.currentState!.validate()) {
+                                setModalState(() => isCreating = true);
                                 try {
                                   final newCategory = await _categoryService.addCategory(
                                     name: nameController.text.trim(),
@@ -1292,6 +1307,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                                     ),
                                   );
                                 } catch (e) {
+                                  setModalState(() => isCreating = false);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(e.toString().replaceAll('Exception: ', '')),
@@ -1315,7 +1331,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                               ),
                               elevation: 0,
                             ),
-                            child: const Row(
+                            child: isCreating
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(Icons.add, size: 20),
@@ -1615,7 +1640,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '${isIncome ? '+' : '-'}\$${amount.toStringAsFixed(2)}',
+                      '${isIncome ? '+' : '-'}${FormatUtils.formatMoney(amount)}',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
@@ -2092,7 +2117,7 @@ class _AmountInputFormatter extends TextInputFormatter {
 
     // Convertir a double para validar rango
     final double? amount = double.tryParse(newValue.text);
-    if (amount != null && amount > 999999.99) {
+    if (amount != null && amount > 999999999.99) {
       return oldValue;
     }
 

@@ -31,7 +31,9 @@ class GoalService extends ChangeNotifier {
   List<GoalContribution> get contributions => _contributions.where((c) => c.accountId == _accountService.activeAccountId).toList();
 
   // Validar si se pueden crear más metas en la cuenta activa
-  bool get canCreateMoreGoals => goals.length < 15;
+  // Solo cuentan las metas activas/pausadas (igual que el contador que ve el
+  // usuario) — las completadas/canceladas no ocupan cupo.
+  bool get canCreateMoreGoals => activeGoals.length + pausedGoals.length < 15;
 
   // Cargar metas desde almacenamiento local
   Future<void> loadGoals() async {
@@ -165,8 +167,9 @@ class GoalService extends ChangeNotifier {
 
   // Agregar nueva meta
   Future<void> addGoal(FinancialGoal goal) async {
-    // Validar límite máximo de metas
-    if (_goals.length >= 15) {
+    // Validar límite máximo de metas activas/pausadas de la cuenta activa
+    // (mismo criterio que canCreateMoreGoals y el contador visible al usuario)
+    if (!canCreateMoreGoals) {
       throw Exception('Has alcanzado el límite máximo de 15 metas. Elimina o completa algunas metas para crear nuevas.');
     }
 
@@ -211,6 +214,23 @@ class GoalService extends ChangeNotifier {
 
     // También eliminar todas las contribuciones de esta meta
     _contributions.removeWhere((c) => c.goalId == goalId);
+
+    await _saveGoals();
+    await _saveContributions();
+    notifyListeners();
+  }
+
+  /// Elimina todas las metas (y sus contribuciones) que pertenecen a [accountId].
+  /// Se usa al eliminar una cuenta por completo.
+  Future<void> clearGoalsForAccount(String accountId) async {
+    final goalIds = _goals
+        .where((g) => g.accountId == accountId)
+        .map((g) => g.id)
+        .toSet();
+    if (goalIds.isEmpty) return;
+
+    _goals.removeWhere((g) => g.accountId == accountId);
+    _contributions.removeWhere((c) => goalIds.contains(c.goalId));
 
     await _saveGoals();
     await _saveContributions();

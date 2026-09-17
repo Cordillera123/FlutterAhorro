@@ -223,6 +223,14 @@ class _ExportScreenState extends State<ExportScreen>
 
     try {
       await _exportService.generateAndShare(_buildConfig());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Reporte generado correctamente'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } on ExportEmptyDataException catch (e) {
       if (mounted) setState(() => _errorMessage = e.message);
     } catch (e) {

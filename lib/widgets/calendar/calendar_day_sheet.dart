@@ -323,13 +323,17 @@ class CalendarDaySheet extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            Text(
-              '$sign${FormatUtils.formatMoney(movement.amount)}',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: color,
-                letterSpacing: -0.3,
+            Flexible(
+              child: Text(
+                '$sign${FormatUtils.formatMoney(movement.amount)}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                  letterSpacing: -0.3,
+                ),
               ),
             ),
           ],

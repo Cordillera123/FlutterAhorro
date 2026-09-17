@@ -332,6 +332,13 @@ class BudgetService {
     await _saveBudgets();
   }
 
+  /// Elimina todos los presupuestos que pertenecen a [accountId].
+  /// Se usa al eliminar una cuenta por completo.
+  Future<void> clearBudgetsForAccount(String accountId) async {
+    _budgets.removeWhere((b) => b.accountId == accountId);
+    await _saveBudgets();
+  }
+
   // Activar/desactivar presupuesto
   Future<void> toggleBudget(String budgetId) async {
     final index = _budgets.indexWhere((b) => b.id == budgetId);

@@ -177,35 +177,18 @@ class Budget {
   }
 
   // NUEVO: Verificar si necesita reiniciarse
+  // Se reinicia en cuanto el período actual ya terminó (endDate quedó en el
+  // pasado), sin importar qué día de la semana/mes se abra la app. Antes solo
+  // se evaluaba en el día exacto del reinicio (lunes/día 1/1 de enero), así
+  // que un presupuesto podía quedar "Fuera de período" por tiempo indefinido
+  // si la app no se abría justo ese día.
   bool get needsReset {
     final now = DateTime.now();
+    if (!now.isAfter(endDate)) return false;
 
     // Si nunca se ha reiniciado, usar la fecha de creación
     final lastReset = lastResetDate ?? createdAt;
-
-    switch (period) {
-      case BudgetPeriod.weekly:
-      // Reiniciar cada lunes (weekday 1)
-      // Si estamos en lunes y el último reinicio no fue hoy
-        if (now.weekday == DateTime.monday) {
-          return !_isSameDay(lastReset, now);
-        }
-        return false;
-
-      case BudgetPeriod.monthly:
-      // Reiniciar el primer día de cada mes
-        if (now.day == 1) {
-          return !_isSameDay(lastReset, now);
-        }
-        return false;
-
-      case BudgetPeriod.yearly:
-      // Reiniciar el 1 de enero de cada año
-        if (now.month == 1 && now.day == 1) {
-          return !_isSameDay(lastReset, now);
-        }
-        return false;
-    }
+    return !_isSameDay(lastReset, now);
   }
 
   // Método auxiliar para comparar fechas (solo día, mes, año)
@@ -253,7 +236,7 @@ class Budget {
 
   // Calcular status basado en gasto actual
   BudgetStatus getStatus(double spentAmount) {
-    final percentage = spentAmount / amount;
+    final percentage = amount > 0 ? spentAmount / amount : 0.0;
 
     if (percentage >= 1.0) return BudgetStatus.exceeded;
     if (percentage >= 0.9) return BudgetStatus.danger;

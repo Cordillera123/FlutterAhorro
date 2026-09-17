@@ -206,11 +206,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
                   color: isSelected ? item.color : textMedium,
                   letterSpacing: -0.2,
                 ),
-                child: Text(
-                  item.label,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    item.label,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                  ),
                 ),
               ),
             ],

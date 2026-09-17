@@ -20,7 +20,7 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
   static const Color dangerRed = Color(0xFFDC2626);
   static const Color textDark = Color(0xFF1E293B);
   static const Color textMedium = Color(0xFF64748B);
-  static const Color borderLight = Color(0xFFE2E8F0);
+  static const Color borderLight = Color(0xFFE5E7EB);
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -136,7 +136,7 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
 
   Widget _buildAppBar() {
     return SliverAppBar(
-      expandedHeight: 140,
+      expandedHeight: 180,
       floating: false,
       pinned: true,
       elevation: 0,
@@ -170,7 +170,7 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 70, 20, 16),
+              padding: const EdgeInsets.fromLTRB(20, 40, 20, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -432,9 +432,16 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
   }
   
   Widget _buildMonthBar(MonthlyStats month, double maxAmount, double animationValue, int index) {
-    final incomeHeight = maxAmount > 0 ? (month.income / maxAmount) * 100 : 0.0;
-    final expenseHeight = maxAmount > 0 ? (month.expenses / maxAmount) * 100 : 0.0;
-    
+    // Presupuesto de alto disponible para las dos barras apiladas dentro del
+    // SizedBox(height: 140) del gráfico, descontando gaps (3+6) y la etiqueta (~14).
+    const double barsHeightBudget = 117;
+    final rawIncomeHeight = maxAmount > 0 ? (month.income / maxAmount) * barsHeightBudget : 0.0;
+    final rawExpenseHeight = maxAmount > 0 ? (month.expenses / maxAmount) * barsHeightBudget : 0.0;
+    final combined = rawIncomeHeight + rawExpenseHeight;
+    final scale = combined > barsHeightBudget ? barsHeightBudget / combined : 1.0;
+    final incomeHeight = rawIncomeHeight * scale;
+    final expenseHeight = rawExpenseHeight * scale;
+
     // Delay progresivo para cada barra
     final barDelay = (index * 0.05).clamp(0.0, 0.5);
     final barValue = ((animationValue - barDelay) / (1 - barDelay)).clamp(0.0, 1.0);

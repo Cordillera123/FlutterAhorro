@@ -154,7 +154,7 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
 
   String get _descriptionHint => 'Ej. Ahorrar para mis vacaciones';
 
-  String get _amountHint => 'Ej. 1.500.000';
+  String get _amountHint => 'Ej. 1500000';
 
   String _goalStatusMessage(double targetAmount, double currentAmount) {
     if (targetAmount <= 0) {
