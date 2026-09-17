@@ -6,10 +6,17 @@ import '../services/recurring_expense_service.dart';
 import '../services/stats_service.dart';
 import '../services/category_service.dart';
 import '../services/account_service.dart';
+import '../services/goal_service.dart';
+import '../services/dashboard/smart_dashboard_service.dart';
+import '../models/dashboard/smart_dashboard_data.dart';
 import '../utils/format_utils.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/account_selector.dart';
+import '../widgets/dashboard/achievement_card.dart';
+import '../widgets/dashboard/dashboard_theme.dart';
+import 'achievements_screen.dart';
 import 'add_transaction_screen.dart';
+import 'financial_insights_screen.dart';
 import 'recurring_expenses_screen.dart';
 import 'stats_screen.dart';
 import 'settings_screen.dart';
@@ -31,6 +38,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final StatsService _statsService = StatsService();
   final CategoryService _categoryService = CategoryService();
   final AccountService _accountService = AccountService();
+  final GoalService _goalService = GoalService();
+  final SmartDashboardService _dashboardService = SmartDashboardService();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _isLoading = true;
   bool _isRefreshing = false;
@@ -38,6 +47,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late Animation<double> _fadeInAnimation;
   late Animation<double> _slideAnimation;
   FinancialStats? _financialStats;
+  SmartDashboardData? _dashboardData;
 
   @override
   void initState() {
@@ -51,6 +61,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _categoryService.addListener(_onCategoryServiceChanged);
     // Escuchar cambios de cuenta activa
     _accountService.addListener(_onAccountChanged);
+    // Escuchar cambios en metas (afectan la puntuación y los logros)
+    _goalService.addListener(_onGoalServiceChanged);
   }
 
   // NUEVO: Método que se ejecuta cuando el TransactionService notifica cambios
@@ -60,6 +72,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       setState(() {
         // Forzar rebuild cuando cambien los datos del servicio
       });
+      _loadDashboardData(forceRefresh: true);
     }
   }
 
@@ -79,11 +92,38 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       setState(() {
         // Recargar datos para la nueva cuenta activa
       });
+      _loadDashboardData(forceRefresh: true);
+    }
+  }
+
+  // Método que se ejecuta cuando GoalService notifica cambios (metas/contribuciones)
+  void _onGoalServiceChanged() {
+    if (mounted) {
+      _loadDashboardData(forceRefresh: true);
     }
   }
 
   void _updateStats() {
     _financialStats = _statsService.getCurrentVsPreviousStats();
+  }
+
+  // Alimenta el resumen de insight y la vitrina de logros de Inicio.
+  // Es intencionalmente silencioso ante errores: el análisis es un módulo
+  // de solo lectura y complementario; si falla, el resto de Inicio sigue
+  // funcionando con normalidad.
+  Future<void> _loadDashboardData({bool forceRefresh = false}) async {
+    try {
+      final data = await _dashboardService.getDashboardData(
+        forceRefresh: forceRefresh,
+      );
+      if (mounted) {
+        setState(() {
+          _dashboardData = data;
+        });
+      }
+    } catch (e) {
+      // Silencioso: el Dashboard es complementario, no debe romper Inicio.
+    }
   }
 
   void _initAnimations() {
@@ -107,13 +147,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadData({bool forceRefreshDashboard = false}) async {
     try {
       await _transactionService.loadTransactions();
       await _recurringExpenseService.loadRecurringExpenses();
       await _recurringExpenseService.processRecurringExpensesForToday();
 
       _updateStats();
+      await _loadDashboardData(forceRefresh: forceRefreshDashboard);
 
       if (mounted) {
         setState(() {
@@ -137,7 +178,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     setState(() {
       _isRefreshing = true;
     });
-    await _loadData();
+    await _loadData(forceRefreshDashboard: true);
   }
 
   @override
@@ -146,6 +187,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _transactionService.removeListener(_onTransactionServiceChanged);
     _categoryService.removeListener(_onCategoryServiceChanged);
     _accountService.removeListener(_onAccountChanged);
+    _goalService.removeListener(_onGoalServiceChanged);
     _animationController.dispose();
     super.dispose();
   }
@@ -188,10 +230,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildBalanceCard(),
+                                _buildInsightEntryCard(),
                                 const SizedBox(height: 24),
                                 _buildFinancialOverview(),
                                 const SizedBox(height: 28),
+                                ..._buildAchievementsPreview(),
                                 _buildQuickActions(),
                                 const SizedBox(height: 28),
                                 _buildRecentTransactions(),
@@ -388,8 +431,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       child: SafeArea(
         child: Column(
           children: [
-            // Header del drawer
-            Container(
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _buildDrawerContent(),
+                  ],
+                ),
+              ),
+            ),
+            // Footer
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                'Versión 1.0.0',
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawerContent() {
+    return Column(
+      children: [
+        // Header del drawer
+        Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: const BoxDecoration(
@@ -454,6 +523,35 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               },
             ),
             const Divider(height: 16),
+            _buildDrawerItem(
+              icon: Icons.auto_awesome_outlined,
+              title: 'Insight financiero',
+              subtitle: 'Análisis, predicciones y consejos',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const FinancialInsightsScreen(),
+                  ),
+                );
+              },
+            ),
+            _buildDrawerItem(
+              icon: Icons.emoji_events_outlined,
+              title: 'Logros',
+              subtitle: 'Tus trofeos y lo que viene',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AchievementsScreen(),
+                  ),
+                );
+              },
+            ),
+            const Divider(height: 16),
             // Opciones del menú
             _buildDrawerItem(
               icon: Icons.category_outlined,
@@ -510,18 +608,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 );
               },
             ),
-            const Spacer(),
-            // Footer
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(
-                'Versión 1.0.0',
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
-              ),
-            ),
           ],
-        ),
-      ),
     );
   }
 
@@ -831,100 +918,310 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildBalanceCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF4CAF50).withOpacity(0.08),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
-        border: Border.all(color: const Color(0xFFE8F5E9), width: 1),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF66BB6A), Color(0xFF43A047)],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF4CAF50).withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+  // Acceso al análisis completo. En Inicio solo mostramos el titular: la
+  // puntuación, una frase y, si las hay, cuántas cosas conviene revisar.
+  // El detalle vive en FinancialInsightsScreen para no saturar la pantalla.
+  Widget _buildInsightEntryCard() {
+    final data = _dashboardData;
+    final score = data?.health.score ?? 0;
+    final ready = data != null && data.hasSufficientData;
+    final color = ready
+        ? DashboardTheme.healthColor(score)
+        : const Color(0xFF64748B);
+
+    final headline = data == null
+        ? 'Analizando tus finanzas...'
+        : (ready
+            ? data.summary.message
+            : 'Registra algunos movimientos y te contamos cómo vas');
+    final alertCount = data?.alerts.length ?? 0;
+
+    return GestureDetector(
+      onTap: _navigateToInsights,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          color: Colors.white,
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.10),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
-            child: const Icon(
-              Icons.insights_rounded,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
               children: [
-                Text(
-                  _getGrowthMessage(),
-                  style: const TextStyle(
-                    color: Color(0xFF1E293B),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getGrowthColor().withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
+                _buildScoreBadge(score, color, ready),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
                           Icon(
-                            _getGrowthIcon(),
-                            color: _getGrowthColor(),
-                            size: 14,
+                            Icons.auto_awesome_rounded,
+                            size: 15,
+                            color: color,
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 6),
                           Text(
-                            _getGrowthText(),
+                            'Insight financiero',
                             style: TextStyle(
-                              color: _getGrowthColor(),
-                              fontSize: 12,
+                              fontSize: 12.5,
                               fontWeight: FontWeight.w700,
+                              color: color,
+                              letterSpacing: -0.1,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 6),
+                      Text(
+                        headline,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          height: 1.35,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: Colors.grey.shade400,
+                  size: 22,
                 ),
               ],
             ),
+            if (alertCount > 0) ...[
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 9,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B).withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.notifications_active_outlined,
+                      size: 16,
+                      color: Color(0xFFB45309),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        alertCount == 1
+                            ? 'Hay 1 cosa que conviene revisar'
+                            : 'Hay $alertCount cosas que conviene revisar',
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFB45309),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScoreBadge(int score, Color color, bool ready) {
+    return Container(
+      width: 54,
+      height: 54,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color.withValues(alpha: 0.12),
+        border: Border.all(color: color.withValues(alpha: 0.28), width: 2),
+      ),
+      child: Center(
+        child: ready
+            ? Text(
+                '$score',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                  letterSpacing: -0.5,
+                ),
+              )
+            : Icon(Icons.insights_rounded, color: color, size: 22),
+      ),
+    );
+  }
+
+  // Vitrina de trofeos: refuerzo positivo en Inicio sin datos densos.
+  // El detalle y los logros pendientes viven en AchievementsScreen.
+  List<Widget> _buildAchievementsPreview() {
+    final data = _dashboardData;
+    if (data == null) return const [];
+
+    final unlocked = data.unlockedAchievements;
+    final total = data.totalAchievementCount;
+
+    final section = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text(
+              'Tus logros',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1E293B),
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(width: 8),
+            if (total > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 9,
+                  vertical: 3,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Text(
+                  '${unlocked.length}/$total',
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFB45309),
+                  ),
+                ),
+              ),
+            const Spacer(),
+            GestureDetector(
+              onTap: _navigateToAchievements,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                child: Text(
+                  'Ver todos',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFB45309),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        if (unlocked.isEmpty)
+          _buildNoAchievementsYet(data)
+        else
+          SizedBox(
+            height: 108,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              itemCount: unlocked.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (context, index) => AchievementChip(
+                achievement: unlocked[index],
+                onTap: _navigateToAchievements,
+              ),
+            ),
           ),
-        ],
+      ],
+    );
+
+    return [section, const SizedBox(height: 28)];
+  }
+
+  Widget _buildNoAchievementsYet(SmartDashboardData data) {
+    // La lista bloqueada llega ordenada por progreso. Sin ningún avance real
+    // cualquier sugerencia sería arbitraria, así que preferimos el mensaje
+    // genérico antes que proponer una meta lejana al azar.
+    final closest = data.lockedAchievements.isNotEmpty
+        ? data.lockedAchievements.first
+        : null;
+    final next = (closest != null && closest.progress > 0) ? closest : null;
+
+    return GestureDetector(
+      onTap: _navigateToAchievements,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: Colors.white,
+          border: Border.all(
+            color: const Color(0xFFF59E0B).withValues(alpha: 0.25),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+              ),
+              child: const Icon(
+                Icons.emoji_events_outlined,
+                color: Color(0xFFF59E0B),
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Tu primer trofeo te espera',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    next?.nextGoalLabel ?? 'Registra tu primer movimiento',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.grey.shade400,
+              size: 22,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1473,6 +1770,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
+  void _navigateToInsights() {
+    HapticFeedback.lightImpact();
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const FinancialInsightsScreen()),
+    );
+  }
+
+  void _navigateToAchievements() {
+    HapticFeedback.lightImpact();
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AchievementsScreen()),
+    );
+  }
+
   void _navigateToExport() {
     HapticFeedback.lightImpact();
     Navigator.push(
@@ -1511,60 +1824,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         transitionDuration: const Duration(milliseconds: 300),
       ),
     );
-  }
-
-  // Métodos para obtener datos reales del crecimiento financiero
-  String _getGrowthMessage() {
-    final stats = _financialStats;
-    if (stats == null || !stats.hasData) {
-      return 'Agrega transacciones para ver tu progreso';
-    }
-
-    if (!stats.hasCurrentData) {
-      return 'Aún no tienes transacciones este mes';
-    }
-
-    if (!stats.hasPreviousData) {
-      return 'Tu primer mes registrado';
-    }
-
-    return FormatUtils.getGrowthMessage(stats.balanceGrowthPercentage);
-  }
-
-  IconData _getGrowthIcon() {
-    final stats = _financialStats;
-    if (stats == null || !stats.hasData || !stats.hasPreviousData) {
-      return Icons.show_chart_rounded;
-    }
-
-    return FormatUtils.getGrowthIcon(stats.balanceGrowthPercentage);
-  }
-
-  Color _getGrowthColor() {
-    final stats = _financialStats;
-    if (stats == null || !stats.hasData || !stats.hasPreviousData) {
-      return const Color(0xFF64748B);
-    }
-
-    return FormatUtils.getGrowthColor(stats.balanceGrowthPercentage);
-  }
-
-  String _getGrowthText() {
-    final stats = _financialStats;
-    if (stats == null || !stats.hasData) {
-      return 'Sin datos';
-    }
-
-    if (!stats.hasCurrentData) {
-      return 'Este mes: \$0';
-    }
-
-    if (!stats.hasPreviousData) {
-      return 'Primer mes';
-    }
-
-    final percentage = stats.balanceGrowthPercentage;
-    return '${FormatUtils.formatPercentageWithSign(percentage)} este mes';
   }
 
   String _getIncomeGrowthText() {
