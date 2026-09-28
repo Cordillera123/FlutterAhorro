@@ -10,9 +10,9 @@ enum ExportFormat {
 /// Tipo de reporte: controla qué hojas incluye el exportador.
 enum ReportType {
   transactions, // Transacciones + Por Categoría
-  budgets,      // Solo presupuestos
-  goals,        // Solo metas
-  fullReport,   // Todas las hojas
+  budgets, // Solo presupuestos
+  goals, // Solo metas
+  fullReport, // Todas las hojas
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -90,14 +90,18 @@ class ExportFilters {
     if (hasAccountFilter) parts.add('${accountIds.length} cuenta(s)');
     if (hasCategoryFilter) parts.add('Categorías filtradas');
     if (hasTypeFilter) {
-      final names = transactionTypes.map((t) {
-        switch (t) {
-          case TransactionType.income:
-            return 'Ingresos';
-          case TransactionType.expense:
-            return 'Gastos';
-        }
-      }).join(', ');
+      final names = transactionTypes
+          .map((t) {
+            switch (t) {
+              case TransactionType.income:
+                return 'Ingresos';
+              case TransactionType.expense:
+                return 'Gastos';
+              case TransactionType.transfer:
+                return 'Transferencias';
+            }
+          })
+          .join(', ');
       parts.add(names);
     }
     return parts.join(' · ');
@@ -172,7 +176,7 @@ class ExportFilters {
 ///
 /// Combina los [filters] de datos con las opciones del reporte ([reportType],
 /// [format], [includeSummarySheet]). Se construye en la UI y se pasa a
-/// [ExportService.generateAndShare].
+/// [ExportService.generateAndSave].
 class ExportConfig {
   /// Filtros que determinan qué registros se incluyen en el reporte.
   final ExportFilters filters;

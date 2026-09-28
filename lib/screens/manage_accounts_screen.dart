@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../models/account.dart';
 import '../services/account_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/common/common.dart';
 
 /// Pantalla para gestionar las cuentas del usuario.
 /// Permite crear, editar y eliminar cuentas financieras.
@@ -97,24 +98,14 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
     );
   }
 
-    Widget _buildModernAppBar() {
+  Widget _buildModernAppBar() {
     return SliverAppBar(
       expandedHeight: 160, // antes: 140 -> causaba overflow de 1px
       floating: false,
       pinned: true,
       backgroundColor: primaryBlue,
       elevation: 0,
-      leading: IconButton(
-        icon: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
-        ),
-        onPressed: () => Navigator.pop(context),
-      ),
+      leading: const AppBackButton(light: true),
       systemOverlayStyle: SystemUiOverlayStyle.light,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
@@ -144,7 +135,8 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
                       fontSize: 26,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.5,
-                      height: 1.0, // evita altura extra del line-height por defecto
+                      height:
+                          1.0, // evita altura extra del line-height por defecto
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -165,7 +157,6 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
       ),
     );
   }
- 
 
   Widget _buildAccountsSummary() {
     final total = _accountService.accountCount;
@@ -289,14 +280,14 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isActive
-              ? account.color.withValues(alpha: 0.3)
-              : borderLight,
+          color: isActive ? account.color.withValues(alpha: 0.3) : borderLight,
           width: isActive ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: (isActive ? account.color : Colors.black).withValues(alpha: 0.06),
+            color: (isActive ? account.color : Colors.black).withValues(
+              alpha: 0.06,
+            ),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -372,11 +363,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
                     ),
                     if (account.isDefault) ...[
                       const SizedBox(width: 8),
-                      Icon(
-                        Icons.star_rounded,
-                        size: 14,
-                        color: warningYellow,
-                      ),
+                      Icon(Icons.star_rounded, size: 14, color: warningYellow),
                       const SizedBox(width: 2),
                       const Text(
                         'Principal',
@@ -408,7 +395,11 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
                     value: 'activate',
                     child: Row(
                       children: [
-                        Icon(Icons.check_circle_outline, size: 18, color: successGreen),
+                        Icon(
+                          Icons.check_circle_outline,
+                          size: 18,
+                          color: successGreen,
+                        ),
                         SizedBox(width: 10),
                         Text('Activar cuenta'),
                       ],
@@ -490,7 +481,9 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
             content: Text('Cuenta "${account.name}" activada'),
             backgroundColor: successGreen,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             margin: const EdgeInsets.all(16),
           ),
         );
@@ -541,7 +534,13 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
     required String title,
     required String subtitle,
     required String confirmLabel,
-    required Future<void> Function(String name, AccountType type, String emoji, Color color) onConfirm,
+    required Future<void> Function(
+      String name,
+      AccountType type,
+      String emoji,
+      Color color,
+    )
+    onConfirm,
     String? initialName,
     AccountType? initialType,
     String? initialEmoji,
@@ -549,8 +548,10 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
   }) {
     final nameController = TextEditingController(text: initialName ?? '');
     AccountType selectedType = initialType ?? AccountType.personal;
-    String selectedEmoji = initialEmoji ?? Account.defaultEmojiForType(selectedType);
-    Color selectedColor = initialColor ?? Account.defaultColorForType(selectedType);
+    String selectedEmoji =
+        initialEmoji ?? Account.defaultEmojiForType(selectedType);
+    Color selectedColor =
+        initialColor ?? Account.defaultColorForType(selectedType);
 
     showModalBottomSheet(
       context: context,
@@ -644,14 +645,19 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
                           controller: nameController,
                           decoration: InputDecoration(
                             hintText: 'Ej: Ahorro vacaciones',
-                            hintStyle: TextStyle(color: textMedium.withValues(alpha: 0.6)),
+                            hintStyle: TextStyle(
+                              color: textMedium.withValues(alpha: 0.6),
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
                               borderSide: const BorderSide(color: borderLight),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: selectedColor, width: 2),
+                              borderSide: BorderSide(
+                                color: selectedColor,
+                                width: 2,
+                              ),
                             ),
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 16,
@@ -686,11 +692,23 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
                                 setSheetState(() {
                                   selectedType = type;
                                   // Auto-actualizar emoji y color si no fueron personalizados
-                                  if (initialEmoji == null || selectedEmoji == Account.defaultEmojiForType(initialType ?? AccountType.personal)) {
-                                    selectedEmoji = Account.defaultEmojiForType(type);
+                                  if (initialEmoji == null ||
+                                      selectedEmoji ==
+                                          Account.defaultEmojiForType(
+                                            initialType ?? AccountType.personal,
+                                          )) {
+                                    selectedEmoji = Account.defaultEmojiForType(
+                                      type,
+                                    );
                                   }
-                                  if (initialColor == null || selectedColor == Account.defaultColorForType(initialType ?? AccountType.personal)) {
-                                    selectedColor = Account.defaultColorForType(type);
+                                  if (initialColor == null ||
+                                      selectedColor ==
+                                          Account.defaultColorForType(
+                                            initialType ?? AccountType.personal,
+                                          )) {
+                                    selectedColor = Account.defaultColorForType(
+                                      type,
+                                    );
                                   }
                                 });
                               },
@@ -715,7 +733,10 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Text(typeEmoji, style: const TextStyle(fontSize: 16)),
+                                    Text(
+                                      typeEmoji,
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
                                     const SizedBox(width: 6),
                                     Text(
                                       _getTypeName(type),
@@ -724,7 +745,9 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
                                         fontWeight: isSelected
                                             ? FontWeight.w600
                                             : FontWeight.w500,
-                                        color: isSelected ? typeColor : textMedium,
+                                        color: isSelected
+                                            ? typeColor
+                                            : textMedium,
                                       ),
                                     ),
                                   ],
@@ -742,16 +765,25 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
                             onPressed: () async {
                               final name = nameController.text.trim();
                               if (name.isEmpty) {
-                                _showErrorSnackbar('Ingresa un nombre para la cuenta');
+                                _showErrorSnackbar(
+                                  'Ingresa un nombre para la cuenta',
+                                );
                                 return;
                               }
 
                               try {
-                                await onConfirm(name, selectedType, selectedEmoji, selectedColor);
+                                await onConfirm(
+                                  name,
+                                  selectedType,
+                                  selectedEmoji,
+                                  selectedColor,
+                                );
                                 if (context.mounted) Navigator.pop(context);
                                 _showSuccessSnackbar('$title exitoso');
                               } catch (e) {
-                                _showErrorSnackbar(e.toString().replaceFirst('Exception: ', ''));
+                                _showErrorSnackbar(
+                                  e.toString().replaceFirst('Exception: ', ''),
+                                );
                               }
                             },
                             style: ElevatedButton.styleFrom(
@@ -782,78 +814,23 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
     );
   }
 
-  void _showDeleteConfirmation(Account account) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: dangerRed, size: 28),
-              SizedBox(width: 12),
-              Text(
-                '¿Eliminar cuenta?',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: textDark,
-                ),
-              ),
-            ],
-          ),
-          content: RichText(
-            text: TextSpan(
-              style: const TextStyle(fontSize: 14, color: textMedium, height: 1.5),
-              children: [
-                const TextSpan(text: 'Se eliminará la cuenta '),
-                TextSpan(
-                  text: '"${account.name}"',
-                  style: const TextStyle(fontWeight: FontWeight.w700, color: textDark),
-                ),
-                const TextSpan(
-                  text: '.\n\n⚠️ Los datos asociados (transacciones, presupuestos, metas) se perderán permanentemente.',
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                'Cancelar',
-                style: TextStyle(
-                  color: textMedium,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                try {
-                  await _accountService.deleteAccount(account.id);
-                  _showSuccessSnackbar('Cuenta "${account.name}" eliminada');
-                } catch (e) {
-                  _showErrorSnackbar(e.toString().replaceFirst('Exception: ', ''));
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: dangerRed,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'Eliminar',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        );
-      },
+  Future<void> _showDeleteConfirmation(Account account) async {
+    final confirmed = await showAppConfirmDialog(
+      context,
+      title: '¿Eliminar cuenta?',
+      message:
+          'Se eliminará la cuenta "${account.name}". Los datos asociados '
+          '(transacciones, presupuestos, metas) se perderán permanentemente.',
+      icon: Icons.warning_amber_rounded,
     );
+    if (confirmed != true) return;
+
+    try {
+      await _accountService.deleteAccount(account.id);
+      _showSuccessSnackbar('Cuenta "${account.name}" eliminada');
+    } catch (e) {
+      _showErrorSnackbar(e.toString().replaceFirst('Exception: ', ''));
+    }
   }
 
   String _getTypeName(AccountType type) {
@@ -893,7 +870,11 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
                 color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+              child: const Icon(
+                Icons.check_circle_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -924,7 +905,11 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
                 color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.error_outline, color: Colors.white, size: 18),
+              child: const Icon(
+                Icons.error_outline,
+                color: Colors.white,
+                size: 18,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(

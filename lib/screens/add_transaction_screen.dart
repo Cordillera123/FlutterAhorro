@@ -8,6 +8,7 @@ import '../services/category_service.dart';
 import '../services/account_service.dart';
 import '../utils/format_utils.dart';
 import '../theme/app_colors.dart';
+import '../widgets/common/common.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final TransactionType initialType;
@@ -39,7 +40,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
   String? _selectedCustomCategoryId;
   String? _selectedCustomCategoryName;
   String? _selectedCustomCategoryEmoji;
-  
+
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
   late AnimationController _animationController;
@@ -202,17 +203,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
       backgroundColor: backgroundLight,
       elevation: 0,
       systemOverlayStyle: SystemUiOverlayStyle.dark,
-      leading: IconButton(
-        icon: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
-        ),
-        onPressed: () => Navigator.pop(context),
-      ),
+      leading: const AppBackButton(light: true),
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: BoxDecoration(
@@ -578,7 +569,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
               LengthLimitingTextInputFormatter(
                 13,
               ), // Máximo 13 caracteres (999999999.99)
-              _AmountInputFormatter(),
+              AmountInputFormatter(),
             ],
             decoration: InputDecoration(
               hintText: '\$0.00',
@@ -804,7 +795,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
       {'category': IncomeCategory.salary, 'name': 'Salario', 'icon': '💼'},
       {'category': IncomeCategory.freelance, 'name': 'Freelance', 'icon': '💻'},
       {'category': IncomeCategory.business, 'name': 'Negocio', 'icon': '🏪'},
-      {'category': IncomeCategory.investment, 'name': 'Inversiones', 'icon': '📈'},
+      {
+        'category': IncomeCategory.investment,
+        'name': 'Inversiones',
+        'icon': '📈',
+      },
       {'category': IncomeCategory.rental, 'name': 'Alquiler', 'icon': '🏠'},
       {'category': IncomeCategory.bonus, 'name': 'Bonificación', 'icon': '🎯'},
       {'category': IncomeCategory.commission, 'name': 'Comisión', 'icon': '🤝'},
@@ -862,9 +857,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
               children: [
                 Text(
                   category['icon'] as String,
-                  style: TextStyle(
-                    fontSize: isSelected ? 26 : 24,
-                  ),
+                  style: TextStyle(fontSize: isSelected ? 26 : 24),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -889,27 +882,91 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
   Widget _buildExpenseCategoryGrid() {
     // Categorías del sistema
     final systemCategories = [
-      {'category': ExpenseCategory.transport, 'name': 'Transporte', 'icon': '🚗', 'isSystem': true},
-      {'category': ExpenseCategory.food, 'name': 'Alimentación', 'icon': '🍕', 'isSystem': true},
-      {'category': ExpenseCategory.utilities, 'name': 'Servicios', 'icon': '💡', 'isSystem': true},
-      {'category': ExpenseCategory.health, 'name': 'Salud', 'icon': '🏥', 'isSystem': true},
-      {'category': ExpenseCategory.education, 'name': 'Educación', 'icon': '📚', 'isSystem': true},
-      {'category': ExpenseCategory.entertainment, 'name': 'Diversión', 'icon': '🎬', 'isSystem': true},
-      {'category': ExpenseCategory.clothing, 'name': 'Ropa', 'icon': '👕', 'isSystem': true},
-      {'category': ExpenseCategory.home, 'name': 'Hogar', 'icon': '🏠', 'isSystem': true},
-      {'category': ExpenseCategory.technology, 'name': 'Tecnología', 'icon': '📱', 'isSystem': true},
-      {'category': ExpenseCategory.savings, 'name': 'Ahorros', 'icon': '💰', 'isSystem': true},
-      {'category': ExpenseCategory.gifts, 'name': 'Regalos', 'icon': '🎁', 'isSystem': true},
-      {'category': ExpenseCategory.other, 'name': 'Otros', 'icon': '📦', 'isSystem': true},
+      {
+        'category': ExpenseCategory.transport,
+        'name': 'Transporte',
+        'icon': '🚗',
+        'isSystem': true,
+      },
+      {
+        'category': ExpenseCategory.food,
+        'name': 'Alimentación',
+        'icon': '🍕',
+        'isSystem': true,
+      },
+      {
+        'category': ExpenseCategory.utilities,
+        'name': 'Servicios',
+        'icon': '💡',
+        'isSystem': true,
+      },
+      {
+        'category': ExpenseCategory.health,
+        'name': 'Salud',
+        'icon': '🏥',
+        'isSystem': true,
+      },
+      {
+        'category': ExpenseCategory.education,
+        'name': 'Educación',
+        'icon': '📚',
+        'isSystem': true,
+      },
+      {
+        'category': ExpenseCategory.entertainment,
+        'name': 'Diversión',
+        'icon': '🎬',
+        'isSystem': true,
+      },
+      {
+        'category': ExpenseCategory.clothing,
+        'name': 'Ropa',
+        'icon': '👕',
+        'isSystem': true,
+      },
+      {
+        'category': ExpenseCategory.home,
+        'name': 'Hogar',
+        'icon': '🏠',
+        'isSystem': true,
+      },
+      {
+        'category': ExpenseCategory.technology,
+        'name': 'Tecnología',
+        'icon': '📱',
+        'isSystem': true,
+      },
+      {
+        'category': ExpenseCategory.savings,
+        'name': 'Ahorros',
+        'icon': '💰',
+        'isSystem': true,
+      },
+      {
+        'category': ExpenseCategory.gifts,
+        'name': 'Regalos',
+        'icon': '🎁',
+        'isSystem': true,
+      },
+      {
+        'category': ExpenseCategory.other,
+        'name': 'Otros',
+        'icon': '📦',
+        'isSystem': true,
+      },
     ];
 
     // Agregar categorías personalizadas
-    final customCategories = _categoryService.customCategories.map((c) => {
-      'customId': c.id,
-      'name': c.name,
-      'icon': c.emoji,
-      'isSystem': false,
-    }).toList();
+    final customCategories = _categoryService.customCategories
+        .map(
+          (c) => {
+            'customId': c.id,
+            'name': c.name,
+            'icon': c.emoji,
+            'isSystem': false,
+          },
+        )
+        .toList();
 
     // Combinar todas las categorías
     final allCategories = [...systemCategories, ...customCategories];
@@ -935,11 +992,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
 
         final category = allCategories[index];
         final isSystem = category['isSystem'] as bool;
-        
+
         bool isSelected;
         if (isSystem) {
-          isSelected = _selectedCustomCategoryId == null && 
-                       _selectedExpenseCategory == category['category'];
+          isSelected =
+              _selectedCustomCategoryId == null &&
+              _selectedExpenseCategory == category['category'];
         } else {
           isSelected = _selectedCustomCategoryId == category['customId'];
         }
@@ -949,7 +1007,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
             HapticFeedback.lightImpact();
             setState(() {
               if (isSystem) {
-                _selectedExpenseCategory = category['category'] as ExpenseCategory;
+                _selectedExpenseCategory =
+                    category['category'] as ExpenseCategory;
                 _selectedCustomCategoryId = null;
                 _selectedCustomCategoryName = null;
                 _selectedCustomCategoryEmoji = null;
@@ -1000,7 +1059,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                   child: Text(
                     category['name'] as String,
                     style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w600,
                       fontSize: 10,
                       color: isSelected ? primaryRed : textDark,
                       height: 1.1,
@@ -1041,11 +1102,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                 color: primaryBlue.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
-                Icons.add,
-                color: primaryBlue,
-                size: 18,
-              ),
+              child: const Icon(Icons.add, color: primaryBlue, size: 18),
             ),
             const SizedBox(height: 4),
             const Text(
@@ -1071,9 +1128,30 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     bool isCreating = false;
 
     final emojis = [
-      '🏋️', '🐕', '🐱', '💅', '🎮', '🎨', '🎵', '📷',
-      '✈️', '🏖️', '☕', '🍺', '🛒', '💊', '📱', '💻',
-      '🏠', '🚗', '🎓', '💼', '🎁', '💰', '📦', '⭐',
+      '🏋️',
+      '🐕',
+      '🐱',
+      '💅',
+      '🎮',
+      '🎨',
+      '🎵',
+      '📷',
+      '✈️',
+      '🏖️',
+      '☕',
+      '🍺',
+      '🛒',
+      '💊',
+      '📱',
+      '💻',
+      '🏠',
+      '🚗',
+      '🎓',
+      '💼',
+      '🎁',
+      '💰',
+      '📦',
+      '⭐',
     ];
 
     showModalBottomSheet(
@@ -1144,11 +1222,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 8,
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 8,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 8,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                          ),
                       itemCount: emojis.length,
                       itemBuilder: (context, index) {
                         final emoji = emojis[index];
@@ -1167,14 +1246,18 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                                   : Colors.grey.shade100,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: isSelected ? primaryBlue : Colors.transparent,
+                                color: isSelected
+                                    ? primaryBlue
+                                    : Colors.transparent,
                                 width: 2,
                               ),
                             ),
                             child: Center(
                               child: Text(
                                 emoji,
-                                style: TextStyle(fontSize: isSelected ? 22 : 18),
+                                style: TextStyle(
+                                  fontSize: isSelected ? 22 : 18,
+                                ),
                               ),
                             ),
                           ),
@@ -1206,11 +1289,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: primaryBlue, width: 2),
+                          borderSide: const BorderSide(
+                            color: primaryBlue,
+                            width: 2,
+                          ),
                         ),
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: primaryRed, width: 2),
+                          borderSide: const BorderSide(
+                            color: primaryRed,
+                            width: 2,
+                          ),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 18,
@@ -1269,60 +1358,85 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                             onPressed: isCreating
                                 ? null
                                 : () async {
-                              if (formKey.currentState!.validate()) {
-                                setModalState(() => isCreating = true);
-                                try {
-                                  final newCategory = await _categoryService.addCategory(
-                                    name: nameController.text.trim(),
-                                    emoji: selectedEmoji,
-                                  );
-                                  if (!mounted) return;
-                                  Navigator.pop(context);
-                                  // Seleccionar la nueva categoría
-                                  setState(() {
-                                    _selectedCustomCategoryId = newCategory.id;
-                                    _selectedCustomCategoryName = newCategory.name;
-                                    _selectedCustomCategoryEmoji = newCategory.emoji;
-                                    _selectedExpenseCategory = null;
-                                  });
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Row(
-                                        children: [
-                                          Text(newCategory.emoji, style: const TextStyle(fontSize: 18)),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Text(
-                                              '¡Categoría "${newCategory.name}" creada!',
-                                              style: const TextStyle(fontWeight: FontWeight.w500),
+                                    if (formKey.currentState!.validate()) {
+                                      setModalState(() => isCreating = true);
+                                      try {
+                                        final newCategory =
+                                            await _categoryService.addCategory(
+                                              name: nameController.text.trim(),
+                                              emoji: selectedEmoji,
+                                            );
+                                        if (!mounted) return;
+                                        Navigator.pop(context);
+                                        // Seleccionar la nueva categoría
+                                        setState(() {
+                                          _selectedCustomCategoryId =
+                                              newCategory.id;
+                                          _selectedCustomCategoryName =
+                                              newCategory.name;
+                                          _selectedCustomCategoryEmoji =
+                                              newCategory.emoji;
+                                          _selectedExpenseCategory = null;
+                                        });
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Row(
+                                              children: [
+                                                Text(
+                                                  newCategory.emoji,
+                                                  style: const TextStyle(
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Text(
+                                                    '¡Categoría "${newCategory.name}" creada!',
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
                                             ),
+                                            backgroundColor: const Color(
+                                              0xFF059669,
+                                            ),
+                                            behavior: SnackBarBehavior.floating,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            margin: const EdgeInsets.all(16),
                                           ),
-                                        ],
-                                      ),
-                                      backgroundColor: const Color(0xFF059669),
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      margin: const EdgeInsets.all(16),
-                                    ),
-                                  );
-                                } catch (e) {
-                                  setModalState(() => isCreating = false);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(e.toString().replaceAll('Exception: ', '')),
-                                      backgroundColor: primaryRed,
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      margin: const EdgeInsets.all(16),
-                                    ),
-                                  );
-                                }
-                              }
-                            },
+                                        );
+                                      } catch (e) {
+                                        setModalState(() => isCreating = false);
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              e.toString().replaceAll(
+                                                'Exception: ',
+                                                '',
+                                              ),
+                                            ),
+                                            backgroundColor: primaryRed,
+                                            behavior: SnackBarBehavior.floating,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            margin: const EdgeInsets.all(16),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: primaryBlue,
                               foregroundColor: Colors.white,
@@ -1338,23 +1452,25 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                                     height: 20,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
                                     ),
                                   )
                                 : const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.add, size: 20),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Crear categoría',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 15,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.add, size: 20),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Crear categoría',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
-                            ),
                           ),
                         ),
                       ],
@@ -1684,97 +1800,24 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     final color = isIncome ? primaryGreen : primaryRed;
     final darkColor = isIncome ? darkGreen : darkRed;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      width: double.infinity,
-      height: 64, // MEJORADO: Botón más alto
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(32),
-        gradient: LinearGradient(colors: [color, darkColor]),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.4), // MEJORADO: Sombra más pronunciada
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(32),
-          onTap: _isLoading
-              ? null
-              : () {
-                  HapticFeedback.mediumImpact();
-                  _saveTransaction();
-                },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (_isLoading)
-                  const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 3,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                else
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      isIncome ? Icons.savings_rounded : Icons.payment_rounded,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    _isLoading
-                        ? 'Guardando transacción...'
-                        : isIncome
-                        ? 'Agregar Ingreso'
-                        : 'Agregar Gasto',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18, // MEJORADO: Texto más grande
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                if (!_isLoading)
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.arrow_forward_rounded,
-                      color: Colors.white,
-                      size: 18,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: AppPrimaryButton(
+        label: _isLoading
+            ? 'Guardando transacción...'
+            : isIncome
+            ? 'Agregar Ingreso'
+            : 'Agregar Gasto',
+        icon: isIncome ? Icons.savings_rounded : Icons.payment_rounded,
+        loading: _isLoading,
+        showTrailingArrow: true,
+        gradientColors: [color, darkColor],
+        onPressed: _isLoading
+            ? null
+            : () {
+                HapticFeedback.mediumImpact();
+                _saveTransaction();
+              },
       ),
     );
   }
@@ -1838,7 +1881,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
       }
     } else {
       // Si hay categoría personalizada seleccionada, usar su emoji
-      if (_selectedCustomCategoryId != null && _selectedCustomCategoryEmoji != null) {
+      if (_selectedCustomCategoryId != null &&
+          _selectedCustomCategoryEmoji != null) {
         return _selectedCustomCategoryEmoji!;
       }
       switch (_selectedExpenseCategory) {
@@ -1902,7 +1946,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
       }
     } else {
       // Si hay categoría personalizada seleccionada, usar su nombre
-      if (_selectedCustomCategoryId != null && _selectedCustomCategoryName != null) {
+      if (_selectedCustomCategoryId != null &&
+          _selectedCustomCategoryName != null) {
         return _selectedCustomCategoryName!;
       }
       switch (_selectedExpenseCategory) {
@@ -2096,32 +2141,5 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
         );
       },
     );
-  }
-  // Agregar esta clase al final de tu archivo AddTransactionScreen, antes del último }
-}
-
-class _AmountInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    // Si está vacío, permitir
-    if (newValue.text.isEmpty) {
-      return newValue;
-    }
-
-    // Validar que solo contenga números y un punto decimal
-    if (!RegExp(r'^\d*\.?\d{0,2}$').hasMatch(newValue.text)) {
-      return oldValue;
-    }
-
-    // Convertir a double para validar rango
-    final double? amount = double.tryParse(newValue.text);
-    if (amount != null && amount > 999999999.99) {
-      return oldValue;
-    }
-
-    return newValue;
   }
 }

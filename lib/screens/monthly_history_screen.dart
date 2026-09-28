@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../services/stats_service.dart';
 import '../utils/format_utils.dart';
 import '../theme/app_colors.dart';
+import '../widgets/common/common.dart';
 
 class MonthlyHistoryScreen extends StatefulWidget {
   const MonthlyHistoryScreen({Key? key}) : super(key: key);
@@ -11,9 +12,8 @@ class MonthlyHistoryScreen extends StatefulWidget {
   State<MonthlyHistoryScreen> createState() => _MonthlyHistoryScreenState();
 }
 
-class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen> 
+class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
     with SingleTickerProviderStateMixin {
-  
   // Colores del sistema
   static const Color primaryBlue = AppColors.primaryBlue;
   static const Color darkBlue = AppColors.darkBlue;
@@ -50,15 +50,13 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
       ),
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.1),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.2, 0.7, curve: Curves.easeOut),
-      ),
-    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: const Interval(0.2, 0.7, curve: Curves.easeOut),
+          ),
+        );
 
     _animationController.forward();
   }
@@ -67,7 +65,7 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
     try {
       final statsService = StatsService();
       final history = statsService.getMonthlyStatsHistory(months: 12);
-      
+
       setState(() {
         _monthlyHistory = history.where((m) => m.hasData).toList();
         _isLoading = false;
@@ -142,24 +140,7 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
       pinned: true,
       elevation: 0,
       backgroundColor: Colors.transparent,
-      leading: Padding(
-        padding: const EdgeInsets.only(left: 8),
-        child: IconButton(
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-          ),
-          color: Colors.white,
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Navigator.pop(context);
-          },
-        ),
-      ),
+      leading: const AppBackButton(light: true),
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: const BoxDecoration(
@@ -223,7 +204,7 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
                                         letterSpacing: -0.5,
                                       ),
                                     ),
-                                   ),
+                                  ),
                                 );
                               },
                             ),
@@ -265,8 +246,11 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
   Widget _buildHeaderSection() {
     final totalMonths = _monthlyHistory.length;
     final totalIncome = _monthlyHistory.fold(0.0, (sum, m) => sum + m.income);
-    final totalExpenses = _monthlyHistory.fold(0.0, (sum, m) => sum + m.expenses);
-    
+    final totalExpenses = _monthlyHistory.fold(
+      0.0,
+      (sum, m) => sum + m.expenses,
+    );
+
     return TweenAnimationBuilder<double>(
       duration: const Duration(milliseconds: 700),
       tween: Tween(begin: 0.0, end: 1.0),
@@ -304,7 +288,11 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
                           color: primaryBlue.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(Icons.calendar_month_rounded, color: primaryBlue, size: 24),
+                        child: const Icon(
+                          Icons.calendar_month_rounded,
+                          color: primaryBlue,
+                          size: 24,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Text(
@@ -352,7 +340,7 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
                       ),
                     ],
                   ),
-                  
+
                   // Gráfico de barras mensual
                   const SizedBox(height: 20),
                   _buildMonthlyChart(),
@@ -364,13 +352,13 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
       },
     );
   }
-  
+
   Widget _buildMonthlyChart() {
     if (_monthlyHistory.isEmpty) return const SizedBox.shrink();
-    
-    final maxAmount = _monthlyHistory.map((m) => 
-      [m.income, m.expenses].reduce((a, b) => a > b ? a : b)
-    ).reduce((a, b) => a > b ? a : b);
+
+    final maxAmount = _monthlyHistory
+        .map((m) => [m.income, m.expenses].reduce((a, b) => a > b ? a : b))
+        .reduce((a, b) => a > b ? a : b);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,7 +371,11 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
                 color: primaryBlue.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.bar_chart_rounded, color: primaryBlue, size: 18),
+              child: const Icon(
+                Icons.bar_chart_rounded,
+                color: primaryBlue,
+                size: 18,
+              ),
             ),
             const SizedBox(width: 10),
             const Text(
@@ -431,21 +423,35 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
       ],
     );
   }
-  
-  Widget _buildMonthBar(MonthlyStats month, double maxAmount, double animationValue, int index) {
+
+  Widget _buildMonthBar(
+    MonthlyStats month,
+    double maxAmount,
+    double animationValue,
+    int index,
+  ) {
     // Presupuesto de alto disponible para las dos barras apiladas dentro del
     // SizedBox(height: 140) del gráfico, descontando gaps (3+6) y la etiqueta (~14).
     const double barsHeightBudget = 117;
-    final rawIncomeHeight = maxAmount > 0 ? (month.income / maxAmount) * barsHeightBudget : 0.0;
-    final rawExpenseHeight = maxAmount > 0 ? (month.expenses / maxAmount) * barsHeightBudget : 0.0;
+    final rawIncomeHeight = maxAmount > 0
+        ? (month.income / maxAmount) * barsHeightBudget
+        : 0.0;
+    final rawExpenseHeight = maxAmount > 0
+        ? (month.expenses / maxAmount) * barsHeightBudget
+        : 0.0;
     final combined = rawIncomeHeight + rawExpenseHeight;
-    final scale = combined > barsHeightBudget ? barsHeightBudget / combined : 1.0;
+    final scale = combined > barsHeightBudget
+        ? barsHeightBudget / combined
+        : 1.0;
     final incomeHeight = rawIncomeHeight * scale;
     final expenseHeight = rawExpenseHeight * scale;
 
     // Delay progresivo para cada barra
     final barDelay = (index * 0.05).clamp(0.0, 0.5);
-    final barValue = ((animationValue - barDelay) / (1 - barDelay)).clamp(0.0, 1.0);
+    final barValue = ((animationValue - barDelay) / (1 - barDelay)).clamp(
+      0.0,
+      1.0,
+    );
 
     return Container(
       width: 50,
@@ -461,12 +467,11 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  successGreen,
-                  successGreen.withOpacity(0.7),
-                ],
+                colors: [successGreen, successGreen.withOpacity(0.7)],
               ),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(6),
+              ),
               boxShadow: [
                 BoxShadow(
                   color: successGreen.withOpacity(0.3),
@@ -476,9 +481,9 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
               ],
             ),
           ),
-          
+
           const SizedBox(height: 3),
-          
+
           // Expense bar
           Container(
             width: double.infinity,
@@ -487,12 +492,11 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  dangerRed.withOpacity(0.7),
-                  dangerRed,
-                ],
+                colors: [dangerRed.withOpacity(0.7), dangerRed],
               ),
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(6)),
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(6),
+              ),
               boxShadow: [
                 BoxShadow(
                   color: dangerRed.withOpacity(0.3),
@@ -502,9 +506,9 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
               ],
             ),
           ),
-          
+
           const SizedBox(height: 6),
-          
+
           // Month label
           Text(
             month.shortMonthLabel,
@@ -520,7 +524,7 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
       ),
     );
   }
-  
+
   Widget _buildLegendItem(String label, Color color) {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -553,7 +557,12 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
     );
   }
 
-  Widget _buildTotalCard(String label, double amount, Color color, IconData icon) {
+  Widget _buildTotalCard(
+    String label,
+    double amount,
+    Color color,
+    IconData icon,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -616,10 +625,7 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
           offset: Offset(0, 30 * (1 - value)),
           child: Transform.scale(
             scale: 0.85 + (0.15 * value),
-            child: Opacity(
-              opacity: value,
-              child: child,
-            ),
+            child: Opacity(opacity: value, child: child),
           ),
         );
       },
@@ -630,7 +636,7 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: isPositive 
+              color: isPositive
                   ? successGreen.withOpacity(0.08)
                   : dangerRed.withOpacity(0.08),
               blurRadius: 20,
@@ -643,7 +649,7 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
             ),
           ],
           border: Border.all(
-            color: isPositive 
+            color: isPositive
                 ? successGreen.withOpacity(0.1)
                 : dangerRed.withOpacity(0.1),
             width: 1.5,
@@ -670,13 +676,16 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
                             end: Alignment.bottomRight,
                             colors: [
                               isPositive ? successGreen : dangerRed,
-                              isPositive ? successGreen.withOpacity(0.7) : dangerRed.withOpacity(0.7),
+                              isPositive
+                                  ? successGreen.withOpacity(0.7)
+                                  : dangerRed.withOpacity(0.7),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(14),
                           boxShadow: [
                             BoxShadow(
-                              color: (isPositive ? successGreen : dangerRed).withOpacity(0.3),
+                              color: (isPositive ? successGreen : dangerRed)
+                                  .withOpacity(0.3),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),
@@ -733,17 +742,21 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
                   curve: Curves.easeOutCubic,
                   builder: (context, animValue, child) {
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: isPositive 
+                          colors: isPositive
                               ? [successGreen, successGreen.withOpacity(0.8)]
                               : [dangerRed, dangerRed.withOpacity(0.8)],
                         ),
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: [
                           BoxShadow(
-                            color: (isPositive ? successGreen : dangerRed).withOpacity(0.3),
+                            color: (isPositive ? successGreen : dangerRed)
+                                .withOpacity(0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -765,7 +778,7 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
             ),
 
             const SizedBox(height: 20),
-            
+
             Container(
               height: 2,
               decoration: BoxDecoration(
@@ -778,7 +791,7 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 18),
 
             // Detalles financieros con animación
@@ -829,7 +842,7 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
             ),
 
             const SizedBox(height: 18),
-            
+
             // Balance con animación de contador
             TweenAnimationBuilder<double>(
               duration: Duration(milliseconds: 800 + (index * 50)),
@@ -842,7 +855,7 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: isPositive 
+                      colors: isPositive
                           ? [
                               successGreen.withOpacity(0.15),
                               successGreen.withOpacity(0.05),
@@ -854,14 +867,15 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
                     ),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: isPositive 
-                          ? successGreen.withOpacity(0.4) 
+                      color: isPositive
+                          ? successGreen.withOpacity(0.4)
                           : dangerRed.withOpacity(0.4),
                       width: 2,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: (isPositive ? successGreen : dangerRed).withOpacity(0.1),
+                        color: (isPositive ? successGreen : dangerRed)
+                            .withOpacity(0.1),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -875,12 +889,13 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: (isPositive ? successGreen : dangerRed).withOpacity(0.15),
+                              color: (isPositive ? successGreen : dangerRed)
+                                  .withOpacity(0.15),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(
-                              isPositive 
-                                  ? Icons.account_balance_wallet_rounded 
+                              isPositive
+                                  ? Icons.account_balance_wallet_rounded
                                   : Icons.warning_rounded,
                               color: isPositive ? successGreen : dangerRed,
                               size: 22,
@@ -923,14 +938,15 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.star_rounded, color: primaryBlue, size: 16),
+                    const Icon(
+                      Icons.star_rounded,
+                      color: primaryBlue,
+                      size: 16,
+                    ),
                     const SizedBox(width: 8),
                     const Text(
                       'Categoría principal: ',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: textMedium,
-                      ),
+                      style: TextStyle(fontSize: 12, color: textMedium),
                     ),
                     Text(
                       '${month.topExpenseCategory!.categoryIcon} ${month.topExpenseCategory!.categoryName}',
@@ -950,7 +966,12 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
     );
   }
 
-  Widget _buildDetailItem(String label, double amount, Color color, IconData icon) {
+  Widget _buildDetailItem(
+    String label,
+    double amount,
+    Color color,
+    IconData icon,
+  ) {
     return Column(
       children: [
         Container(
@@ -958,10 +979,7 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
           decoration: BoxDecoration(
             color: color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: color.withOpacity(0.2),
-              width: 1.5,
-            ),
+            border: Border.all(color: color.withOpacity(0.2), width: 1.5),
           ),
           child: Icon(icon, color: color, size: 22),
         ),
@@ -1013,7 +1031,10 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               gradient: LinearGradient(
-                colors: [primaryBlue.withOpacity(0.2), primaryBlue.withOpacity(0.05)],
+                colors: [
+                  primaryBlue.withOpacity(0.2),
+                  primaryBlue.withOpacity(0.05),
+                ],
               ),
             ),
             child: const Icon(
@@ -1036,11 +1057,7 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
           const Text(
             'Agrega transacciones para ver tu historial mensual',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: textMedium,
-              fontSize: 15,
-              height: 1.5,
-            ),
+            style: TextStyle(color: textMedium, fontSize: 15, height: 1.5),
           ),
         ],
       ),

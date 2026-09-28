@@ -5,6 +5,7 @@ import '../services/account_service.dart';
 import '../services/goal_service.dart';
 import '../utils/format_utils.dart';
 import '../theme/app_colors.dart';
+import '../widgets/common/common.dart';
 
 class CreateGoalScreen extends StatefulWidget {
   final FinancialGoal? goalToEdit;
@@ -162,7 +163,10 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
       return 'Escribe un monto para ver tu guía automática.';
     }
 
-    final remainingAmount = (targetAmount - currentAmount).clamp(0.0, double.infinity);
+    final remainingAmount = (targetAmount - currentAmount).clamp(
+      0.0,
+      double.infinity,
+    );
     if (remainingAmount <= 0) {
       return '¡Meta alcanzada! Ya reuniste lo necesario.';
     }
@@ -172,13 +176,19 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
       return 'Ya casi lo logras. Te falta muy poco para completar tu meta.';
     }
 
-    final elapsedDays = DateTime.now().difference(_isEditMode && widget.goalToEdit != null
-            ? widget.goalToEdit!.startDate
-            : DateTime.now())
+    final elapsedDays = DateTime.now()
+        .difference(
+          _isEditMode && widget.goalToEdit != null
+              ? widget.goalToEdit!.startDate
+              : DateTime.now(),
+        )
         .inDays;
-    final totalDays = _targetDate.difference(_isEditMode && widget.goalToEdit != null
-            ? widget.goalToEdit!.startDate
-            : DateTime.now())
+    final totalDays = _targetDate
+        .difference(
+          _isEditMode && widget.goalToEdit != null
+              ? widget.goalToEdit!.startDate
+              : DateTime.now(),
+        )
         .inDays;
 
     if (currentAmount > 0 && totalDays > 0) {
@@ -197,19 +207,28 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
       return primaryBlue;
     }
 
-    final remainingAmount = (targetAmount - currentAmount).clamp(0.0, double.infinity);
+    final remainingAmount = (targetAmount - currentAmount).clamp(
+      0.0,
+      double.infinity,
+    );
     if (remainingAmount <= 0) return successGreen;
 
     final progress = (currentAmount / targetAmount).clamp(0.0, 1.0);
     if (progress >= 0.85) return successGreen;
 
-    final elapsedDays = DateTime.now().difference(_isEditMode && widget.goalToEdit != null
-            ? widget.goalToEdit!.startDate
-            : DateTime.now())
+    final elapsedDays = DateTime.now()
+        .difference(
+          _isEditMode && widget.goalToEdit != null
+              ? widget.goalToEdit!.startDate
+              : DateTime.now(),
+        )
         .inDays;
-    final totalDays = _targetDate.difference(_isEditMode && widget.goalToEdit != null
-            ? widget.goalToEdit!.startDate
-            : DateTime.now())
+    final totalDays = _targetDate
+        .difference(
+          _isEditMode && widget.goalToEdit != null
+              ? widget.goalToEdit!.startDate
+              : DateTime.now(),
+        )
         .inDays;
     if (currentAmount > 0 && totalDays > 0) {
       final expectedProgress = elapsedDays / totalDays;
@@ -338,7 +357,11 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
                     const SizedBox(height: 16),
                     _buildTargetAmountSection(),
                     const SizedBox(height: 16),
-                    _buildSuggestionCard(suggestion, targetAmount, currentAmount),
+                    _buildSuggestionCard(
+                      suggestion,
+                      targetAmount,
+                      currentAmount,
+                    ),
                     const SizedBox(height: 16),
                     _buildTypeSelector(),
                     const SizedBox(height: 16),
@@ -364,10 +387,7 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
       floating: false,
       pinned: true,
       backgroundColor: backgroundLight,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: textDark),
-        onPressed: () => Navigator.pop(context),
-      ),
+      leading: const AppBackButton(),
       flexibleSpace: FlexibleSpaceBar(
         background: SafeArea(
           child: Padding(
@@ -488,7 +508,9 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
                 builder: (context, child) {
                   return Theme(
                     data: Theme.of(context).copyWith(
-                      colorScheme: const ColorScheme.light(primary: primaryBlue),
+                      colorScheme: const ColorScheme.light(
+                        primary: primaryBlue,
+                      ),
                     ),
                     child: child!,
                   );
@@ -588,6 +610,7 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
           TextFormField(
             controller: _targetAmountController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: const [AmountInputFormatter()],
             decoration: InputDecoration(
               labelText: 'Monto total a alcanzar',
               hintText: _amountHint,
@@ -598,7 +621,10 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
               fillColor: Colors.white,
               helperText: _amountHelpText,
               helperMaxLines: 2,
-              prefixIcon: const Icon(Icons.savings_outlined, color: primaryBlue),
+              prefixIcon: const Icon(
+                Icons.savings_outlined,
+                color: primaryBlue,
+              ),
             ),
             validator: (value) {
               final amount = _parseNumber(value ?? '');
@@ -618,8 +644,13 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
     double targetAmount,
     double currentAmount,
   ) {
-    final remainingAmount = (targetAmount - currentAmount).clamp(0.0, double.infinity);
-    final progress = targetAmount > 0 ? (currentAmount / targetAmount).clamp(0.0, 1.0) : 0.0;
+    final remainingAmount = (targetAmount - currentAmount).clamp(
+      0.0,
+      double.infinity,
+    );
+    final progress = targetAmount > 0
+        ? (currentAmount / targetAmount).clamp(0.0, 1.0)
+        : 0.0;
     final statusColor = _goalStatusColor(targetAmount, currentAmount);
     final statusMessage = _goalStatusMessage(targetAmount, currentAmount);
 
@@ -732,7 +763,9 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
                     value: progress,
                     minHeight: 8,
                     backgroundColor: Colors.white.withOpacity(0.7),
-                    valueColor: const AlwaysStoppedAnimation<Color>(primaryBlue),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      primaryBlue,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -746,7 +779,10 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
                 ),
                 const SizedBox(height: 10),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
@@ -757,10 +793,10 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
                         remainingAmount <= 0
                             ? Icons.check_circle_outline_rounded
                             : progress >= 0.85
-                                ? Icons.celebration_rounded
-                                : statusColor == successGreen
-                                    ? Icons.trending_up_rounded
-                                    : Icons.arrow_upward_rounded,
+                            ? Icons.celebration_rounded
+                            : statusColor == successGreen
+                            ? Icons.trending_up_rounded
+                            : Icons.arrow_upward_rounded,
                         size: 18,
                         color: statusColor,
                       ),
@@ -830,14 +866,17 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
                   setState(() {
                     _selectedType = type;
                     _selectedEmoji = _emojisByType[type]!.first;
-                    if (_nameController.text == _getDefaultName(_selectedType) ||
+                    if (_nameController.text ==
+                            _getDefaultName(_selectedType) ||
                         _nameController.text.isEmpty) {
                       _nameController.text = _getDefaultName(type);
                     }
                     if (_descriptionController.text ==
                             _getDefaultDescription(_selectedType) ||
                         _descriptionController.text.isEmpty) {
-                      _descriptionController.text = _getDefaultDescription(type);
+                      _descriptionController.text = _getDefaultDescription(
+                        type,
+                      );
                     }
                   });
                 },
@@ -935,8 +974,9 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
                       color: isSelected
                           ? _getPriorityColor(priority)
                           : textDark,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                     ),
                   ),
                 ),
@@ -1004,29 +1044,13 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
   }
 
   Widget _buildFAB() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: AppPrimaryButton(
+        label: _isEditMode ? 'Guardar Cambios' : 'Crear Meta',
+        icon: _isEditMode ? Icons.save_rounded : Icons.add_rounded,
+        loading: _isLoading,
         onPressed: _canSubmit ? _saveGoal : null,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: _canSubmit ? primaryBlue : Colors.grey,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
-          elevation: _canSubmit ? 8 : 0,
-        ),
-        child: _isLoading
-            ? const CircularProgressIndicator(color: Colors.white)
-            : Text(
-                _isEditMode ? 'Guardar Cambios' : 'Crear Meta',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
       ),
     );
   }
@@ -1071,7 +1095,8 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
         final result = await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => GoalSuccessScreen(goal: goal, isEdit: _isEditMode),
+            builder: (context) =>
+                GoalSuccessScreen(goal: goal, isEdit: _isEditMode),
           ),
         );
         Navigator.pop(context, result);

@@ -1,15 +1,33 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/transaction.dart';
+import '../models/history_filters.dart';
 import '../services/transaction_service.dart';
 import '../services/category_service.dart';
 import '../services/account_service.dart';
 import '../utils/format_utils.dart';
+import '../widgets/history_filters_sheet.dart';
 import 'add_transaction_screen.dart';
 import 'export_screen.dart';
 import 'financial_calendar_screen.dart';
 import '../models/export_config.dart';
 import '../theme/app_colors.dart';
+import '../widgets/common/common.dart';
+
+/// Marcadores livianos usados para aplanar (encabezado / transacción /
+/// separador) en una sola lista consumida por el SliverList perezoso de
+/// _buildTransactionsSliver — ver esa función para el porqué.
+class _DateHeaderItem {
+  final String date;
+  final List<Transaction> transactions;
+  const _DateHeaderItem(this.date, this.transactions);
+}
+
+class _GroupSpacer {
+  const _GroupSpacer();
+}
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -24,7 +42,9 @@ class _HistoryScreenState extends State<HistoryScreen>
   final CategoryService _categoryService = CategoryService();
   final AccountService _accountService = AccountService();
   List<Transaction> _filteredTransactions = [];
-  String _selectedFilter = 'Todas';
+  HistoryFilters _filters = HistoryFilters.empty;
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _searchDebounce;
   bool _isLoading = true;
   late AnimationController _animationController;
   late Animation<double> _fadeInAnimation;
@@ -35,11 +55,8 @@ class _HistoryScreenState extends State<HistoryScreen>
   static const Color darkBlue = AppColors.darkBlue;
   static const Color deepBlue = AppColors.deepBlue;
   static const Color successGreen = AppColors.primaryGreen;
-  static const Color warningYellow = AppColors.warningYellow;
   static const Color dangerRed = AppColors.dangerRed;
   static const Color infoBlue = AppColors.primaryBlue;
-  static const Color darkGreen = AppColors.darkGreen;
-  static const Color darkRed = AppColors.darkRed;
 
   // Colores de texto y fondo
   static const Color textDark = AppColors.textDark;
@@ -105,32 +122,101 @@ class _HistoryScreenState extends State<HistoryScreen>
     }
   }
 
+  // Un solo recorrido O(n) combinando todos los criterios activos — rápido
+  // incluso con historiales grandes, en vez de encadenar varios .where().
   void _applyFilter() {
     setState(() {
-      switch (_selectedFilter) {
-        case 'Ingresos':
-          _filteredTransactions = _transactionService.transactions
-              .where((t) => t.type == TransactionType.income)
-              .toList();
-          break;
-        case 'Gastos':
-          _filteredTransactions = _transactionService.transactions
-              .where((t) => t.type == TransactionType.expense)
-              .toList();
-          break;
-        case 'Este mes':
-          _filteredTransactions = _transactionService.thisMonthTransactions;
-          break;
-        default:
-          _filteredTransactions = _transactionService.transactions;
-      }
+      _filteredTransactions = _transactionService.transactions
+          .where(_filters.matches)
+          .toList();
     });
+  }
+
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+      _filters = _filters.copyWith(searchQuery: value);
+      _applyFilter();
+    });
+  }
+
+  void _clearSearch() {
+    _searchDebounce?.cancel();
+    _searchController.clear();
+    _filters = _filters.copyWith(searchQuery: '');
+    _applyFilter();
+  }
+
+  // Alterna un chip de tipo rápido (Ingresos/Gastos/Transferencias). Tocar
+  // el mismo chip otra vez lo desactiva (vuelve a "Todas").
+  void _toggleQuickType(TransactionType type) {
+    HapticFeedback.lightImpact();
+    final isActive =
+        _filters.transactionTypes.length == 1 &&
+        _filters.transactionTypes.contains(type);
+    _filters = _filters.copyWith(transactionTypes: isActive ? {} : {type});
+    _applyFilter();
+  }
+
+  void _selectAllTypes() {
+    HapticFeedback.lightImpact();
+    _filters = _filters.copyWith(transactionTypes: {});
+    _applyFilter();
+  }
+
+  // "Este mes" es independiente del tipo — se puede combinar, ej. Gastos +
+  // Este mes. Tocarlo de nuevo lo desactiva.
+  void _toggleThisMonth() {
+    HapticFeedback.lightImpact();
+    final now = DateTime.now();
+    final from = DateTime(now.year, now.month, 1);
+    final to = DateTime(now.year, now.month + 1, 0);
+    final isActive =
+        _isSameDay(_filters.dateFrom, from) && _isSameDay(_filters.dateTo, to);
+    if (isActive) {
+      _filters = _filters.copyWith(clearDateFrom: true, clearDateTo: true);
+    } else {
+      _filters = _filters.copyWith(dateFrom: from, dateTo: to);
+    }
+    _applyFilter();
+  }
+
+  bool _isSameDay(DateTime? a, DateTime? b) {
+    if (a == null || b == null) return false;
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  Future<void> _openAdvancedFilters() async {
+    HapticFeedback.lightImpact();
+    final result = await showModalBottomSheet<HistoryFilters>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => HistoryFiltersSheet(
+        initialFilters: _filters,
+        accounts: _accountService.accounts,
+        customCategories: _categoryService.customCategories,
+      ),
+    );
+    if (result != null) {
+      setState(() => _filters = result);
+      _applyFilter();
+    }
+  }
+
+  void _clearAllFilters() {
+    HapticFeedback.lightImpact();
+    _searchController.clear();
+    _filters = HistoryFilters.empty;
+    _applyFilter();
   }
 
   @override
   void dispose() {
     _categoryService.removeListener(_onCategoryChanged);
     _accountService.removeListener(_onAccountChanged);
+    _searchDebounce?.cancel();
+    _searchController.dispose();
     _animationController.dispose();
     super.dispose();
   }
@@ -201,8 +287,6 @@ class _HistoryScreenState extends State<HistoryScreen>
                         children: [
                           _buildFilterSection(),
                           _buildSummarySection(),
-                          _buildTransactionsList(),
-                          const SizedBox(height: 120),
                         ],
                       ),
                     ),
@@ -210,6 +294,8 @@ class _HistoryScreenState extends State<HistoryScreen>
                 },
               ),
             ),
+            _buildTransactionsSliver(),
+            const SliverToBoxAdapter(child: SizedBox(height: 120)),
           ],
         ),
       ),
@@ -319,39 +405,38 @@ class _HistoryScreenState extends State<HistoryScreen>
     return Tooltip(
       message: tooltip,
       child: GestureDetector(
-      onTap: () {
-        if (isEnabled) {
-          HapticFeedback.lightImpact();
-          onPressed();
-        }
-      },
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          color: isEnabled
-              ? Colors.white.withOpacity(0.2)
-              : Colors.white.withOpacity(0.1),
-          border: Border.all(
+        onTap: () {
+          if (isEnabled) {
+            HapticFeedback.lightImpact();
+            onPressed();
+          }
+        },
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
             color: isEnabled
-                ? Colors.white.withOpacity(0.3)
+                ? Colors.white.withOpacity(0.2)
                 : Colors.white.withOpacity(0.1),
-            width: 1,
+            border: Border.all(
+              color: isEnabled
+                  ? Colors.white.withOpacity(0.3)
+                  : Colors.white.withOpacity(0.1),
+              width: 1,
+            ),
+          ),
+          child: Icon(
+            icon,
+            color: isEnabled ? Colors.white : Colors.white.withOpacity(0.5),
+            size: 22,
           ),
         ),
-        child: Icon(
-          icon,
-          color: isEnabled ? Colors.white : Colors.white.withOpacity(0.5),
-          size: 22,
-        ),
       ),
-    ));
+    );
   }
 
   Widget _buildFilterSection() {
-    final filters = ['Todas', 'Ingresos', 'Gastos', 'Este mes'];
-
     return Container(
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(20),
@@ -407,59 +492,193 @@ class _HistoryScreenState extends State<HistoryScreen>
                   ],
                 ),
               ),
+              if (_filters.hasAnyFilter)
+                TextButton(
+                  onPressed: _clearAllFilters,
+                  child: const Text('Limpiar'),
+                ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+          _buildSearchField(),
+          const SizedBox(height: 16),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: filters.map((filter) {
-                final isSelected = _selectedFilter == filter;
-                return GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    setState(() {
-                      _selectedFilter = filter;
-                    });
-                    _applyFilter();
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 12),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected ? primaryBlue : backgroundCard,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isSelected ? primaryBlue : borderLight,
-                        width: 1,
+              children: [
+                _buildQuickChip(
+                  label: 'Todas',
+                  isSelected: !_filters.hasTypeFilter,
+                  onTap: _selectAllTypes,
+                ),
+                _buildQuickChip(
+                  label: 'Ingresos',
+                  isSelected:
+                      _filters.transactionTypes.length == 1 &&
+                      _filters.transactionTypes.contains(
+                        TransactionType.income,
                       ),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: primaryBlue.withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ]
-                          : null,
-                    ),
-                    child: Text(
-                      filter,
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : textDark,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                  onTap: () => _toggleQuickType(TransactionType.income),
+                ),
+                _buildQuickChip(
+                  label: 'Gastos',
+                  isSelected:
+                      _filters.transactionTypes.length == 1 &&
+                      _filters.transactionTypes.contains(
+                        TransactionType.expense,
                       ),
-                    ),
-                  ),
-                );
-              }).toList(),
+                  onTap: () => _toggleQuickType(TransactionType.expense),
+                ),
+                _buildQuickChip(
+                  label: 'Transferencias',
+                  isSelected:
+                      _filters.transactionTypes.length == 1 &&
+                      _filters.transactionTypes.contains(
+                        TransactionType.transfer,
+                      ),
+                  onTap: () => _toggleQuickType(TransactionType.transfer),
+                ),
+                _buildQuickChip(
+                  label: 'Este mes',
+                  isSelected:
+                      _isSameDay(
+                        _filters.dateFrom,
+                        DateTime(DateTime.now().year, DateTime.now().month, 1),
+                      ) &&
+                      _isSameDay(
+                        _filters.dateTo,
+                        DateTime(
+                          DateTime.now().year,
+                          DateTime.now().month + 1,
+                          0,
+                        ),
+                      ),
+                  onTap: _toggleThisMonth,
+                ),
+                _buildMoreFiltersChip(),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSearchField() {
+    return TextField(
+      controller: _searchController,
+      onChanged: _onSearchChanged,
+      decoration: InputDecoration(
+        hintText: 'Buscar por descripción o categoría...',
+        hintStyle: const TextStyle(color: textMedium, fontSize: 14),
+        prefixIcon: const Icon(
+          Icons.search_rounded,
+          color: textMedium,
+          size: 22,
+        ),
+        suffixIcon: ValueListenableBuilder<TextEditingValue>(
+          valueListenable: _searchController,
+          builder: (context, value, _) {
+            if (value.text.isEmpty) return const SizedBox.shrink();
+            return IconButton(
+              icon: const Icon(
+                Icons.close_rounded,
+                color: textMedium,
+                size: 20,
+              ),
+              onPressed: _clearSearch,
+            );
+          },
+        ),
+        filled: true,
+        fillColor: backgroundCard,
+        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: borderLight),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: borderLight),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: primaryBlue, width: 2),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? primaryBlue : backgroundCard,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? primaryBlue : borderLight,
+            width: 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: primaryBlue.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : textDark,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMoreFiltersChip() {
+    final count = _filters.advancedFilterCount;
+    final isActive = count > 0;
+    return GestureDetector(
+      onTap: _openAdvancedFilters,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isActive ? primaryBlue : backgroundCard,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: isActive ? primaryBlue : borderLight),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.tune_rounded,
+              size: 16,
+              color: isActive ? Colors.white : textDark,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              isActive ? 'Más filtros ($count)' : 'Más filtros',
+              style: TextStyle(
+                color: isActive ? Colors.white : textDark,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -653,107 +872,117 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
   }
 
-  Widget _buildTransactionsList() {
+  // Construye la lista de transacciones como un SliverList perezoso: con
+  // historiales grandes, solo se construyen los widgets de las filas
+  // realmente visibles (antes se armaban todas de una vez en un Column).
+  Widget _buildTransactionsSliver() {
     if (_filteredTransactions.isEmpty) {
-      return _buildEmptyState();
+      return SliverToBoxAdapter(child: _buildEmptyState());
     }
 
-    // Agrupar transacciones por fecha
     final groupedTransactions = _groupTransactionsByDate(_filteredTransactions);
 
+    // Aplanamos (encabezados de fecha + transacciones + separadores) en una
+    // sola lista liviana — son referencias, no widgets, así que hacerlo de
+    // una vez es barato incluso con miles de transacciones.
+    final items = <Object>[];
+    for (final entry in groupedTransactions.entries) {
+      items.add(_DateHeaderItem(entry.key, entry.value));
+      items.addAll(entry.value);
+      items.add(const _GroupSpacer());
+    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate((context, index) {
+          if (index == 0) {
+            return const Padding(
+              padding: EdgeInsets.only(bottom: 20),
+              child: Text(
+                'Transacciones',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: textDark,
+                  letterSpacing: -0.5,
+                ),
+              ),
+            );
+          }
+          final item = items[index - 1];
+          if (item is _DateHeaderItem) {
+            return _buildDateHeader(item.date, item.transactions);
+          }
+          if (item is _GroupSpacer) {
+            return const SizedBox(height: 16);
+          }
+          return _buildTransactionItem(item as Transaction);
+        }, childCount: items.length + 1),
+      ),
+    );
+  }
+
+  Widget _buildDateHeader(String date, List<Transaction> transactions) {
+    // Las transferencias no son ingreso ni gasto: no participan del total
+    // neto del día (solo se muestran como su propia línea, más abajo).
+    final totalAmount = transactions.fold(0.0, (sum, t) {
+      if (t.type == TransactionType.income) return sum + t.amount;
+      if (t.type == TransactionType.expense) return sum - t.amount;
+      return sum;
+    });
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: backgroundCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderLight, width: 1),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            'Transacciones',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: textDark,
-              letterSpacing: -0.5,
-            ),
+          Row(
+            children: [
+              Icon(Icons.calendar_today_rounded, color: textMedium, size: 16),
+              const SizedBox(width: 8),
+              Text(
+                date,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: textDark,
+                  fontSize: 15,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
-          ...groupedTransactions.entries.map(
-            (entry) => _buildDateGroup(entry.key, entry.value),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: totalAmount >= 0
+                  ? successGreen.withOpacity(0.1)
+                  : dangerRed.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              '${totalAmount >= 0 ? '+' : ''}${FormatUtils.formatMoney(totalAmount.abs())}',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: totalAmount >= 0 ? successGreen : dangerRed,
+                fontSize: 12,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDateGroup(String date, List<Transaction> transactions) {
-    final totalAmount = transactions.fold(0.0, (sum, t) {
-      return sum + (t.type == TransactionType.income ? t.amount : -t.amount);
-    });
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Encabezado de fecha
-        Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: backgroundCard,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: borderLight, width: 1),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.calendar_today_rounded,
-                    color: textMedium,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    date,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: textDark,
-                      fontSize: 15,
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: totalAmount >= 0
-                      ? successGreen.withOpacity(0.1)
-                      : dangerRed.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '${totalAmount >= 0 ? '+' : ''}${FormatUtils.formatMoney(totalAmount.abs())}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: totalAmount >= 0 ? successGreen : dangerRed,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // Transacciones del día
-        ...transactions.map(
-          (transaction) => _buildTransactionItem(transaction),
-        ),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
-
   Widget _buildTransactionItem(Transaction transaction) {
-    final isIncome = transaction.type == TransactionType.income;
+    final color = _transactionColor(transaction);
+    final sign = _transactionSign(transaction);
+    final isTransfer = transaction.isTransfer;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -828,8 +1057,12 @@ class _HistoryScreenState extends State<HistoryScreen>
             // Swipe izquierda = eliminar
             return await _confirmDelete(transaction);
           } else if (direction == DismissDirection.startToEnd) {
-            // Swipe derecha = editar
-            _editTransaction(transaction);
+            // Swipe derecha = editar (las transferencias no son editables)
+            if (isTransfer) {
+              _showTransferNotEditableMessage();
+            } else {
+              _editTransaction(transaction);
+            }
             return false; // No eliminar el widget
           }
           return false;
@@ -851,9 +1084,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    color: isIncome
-                        ? successGreen.withOpacity(0.1)
-                        : dangerRed.withOpacity(0.1),
+                    color: color.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Center(
@@ -900,11 +1131,11 @@ class _HistoryScreenState extends State<HistoryScreen>
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerRight,
                     child: Text(
-                      '${isIncome ? '+' : '-'}${FormatUtils.formatMoney(transaction.amount)}',
+                      '$sign${FormatUtils.formatMoney(transaction.amount)}',
                       style: TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 16,
-                        color: isIncome ? successGreen : dangerRed,
+                        color: color,
                       ),
                     ),
                   ),
@@ -915,6 +1146,31 @@ class _HistoryScreenState extends State<HistoryScreen>
         ),
       ),
     );
+  }
+
+  /// Color semántico según el tipo de transacción (verde/rojo/azul).
+  Color _transactionColor(Transaction t) {
+    switch (t.type) {
+      case TransactionType.income:
+        return successGreen;
+      case TransactionType.expense:
+        return dangerRed;
+      case TransactionType.transfer:
+        return primaryBlue;
+    }
+  }
+
+  /// Signo del monto según el tipo de transacción (una transferencia usa
+  /// [Transaction.isTransferOut] en vez del tipo para saber el signo).
+  String _transactionSign(Transaction t) {
+    switch (t.type) {
+      case TransactionType.income:
+        return '+';
+      case TransactionType.expense:
+        return '-';
+      case TransactionType.transfer:
+        return (t.isTransferOut ?? true) ? '-' : '+';
+    }
   }
 
   /// Obtiene el nombre actualizado de la categoría
@@ -942,33 +1198,16 @@ class _HistoryScreenState extends State<HistoryScreen>
   }
 
   Widget _buildEmptyState() {
-    String message;
-    String subtitle;
-    IconData icon;
-
-    switch (_selectedFilter) {
-      case 'Ingresos':
-        message = 'Sin ingresos registrados';
-        subtitle =
-            'Agrega tu primer ingreso para empezar a ver resultados aquí';
-        icon = Icons.trending_up_rounded;
-        break;
-      case 'Gastos':
-        message = 'Sin gastos registrados';
-        subtitle =
-            'Cuando registres gastos, aparecerán aquí organizados por fecha';
-        icon = Icons.trending_down_rounded;
-        break;
-      case 'Este mes':
-        message = 'Sin transacciones este mes';
-        subtitle = 'Las transacciones de este mes aparecerán aquí';
-        icon = Icons.calendar_month_rounded;
-        break;
-      default:
-        message = 'Historial vacío';
-        subtitle = 'Comienza agregando tu primera transacción';
-        icon = Icons.history_rounded;
-    }
+    // Distinguimos "no hay transacciones" de "ninguna coincide con los
+    // filtros" — son situaciones distintas y ameritan mensajes/CTA distintos.
+    final hasFilters = _filters.hasAnyFilter;
+    final String message = hasFilters ? 'Sin resultados' : 'Historial vacío';
+    final String subtitle = hasFilters
+        ? 'No encontramos transacciones que coincidan con tu búsqueda o filtros'
+        : 'Comienza agregando tu primera transacción';
+    final IconData icon = hasFilters
+        ? Icons.search_off_rounded
+        : Icons.history_rounded;
 
     return Container(
       margin: const EdgeInsets.all(32),
@@ -1020,7 +1259,7 @@ class _HistoryScreenState extends State<HistoryScreen>
           GestureDetector(
             onTap: () {
               HapticFeedback.lightImpact();
-              _navigateToAddTransaction();
+              hasFilters ? _clearAllFilters() : _navigateToAddTransaction();
             },
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
@@ -1035,15 +1274,21 @@ class _HistoryScreenState extends State<HistoryScreen>
                   ),
                 ],
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.add_rounded, color: Colors.white, size: 20),
-                  SizedBox(width: 8),
+                  Icon(
+                    hasFilters
+                        ? Icons.filter_alt_off_rounded
+                        : Icons.add_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
                   Text(
-                    'Agregar Transacción',
-                    style: TextStyle(
+                    hasFilters ? 'Limpiar filtros' : 'Agregar Transacción',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
@@ -1076,99 +1321,14 @@ class _HistoryScreenState extends State<HistoryScreen>
   }
 
   Future<bool?> _confirmDelete(Transaction transaction) {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                color: dangerRed.withOpacity(0.1),
-                border: Border.all(color: dangerRed.withOpacity(0.3), width: 2),
-              ),
-              child: const Icon(
-                Icons.delete_rounded,
-                color: dangerRed,
-                size: 30,
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              '¿Eliminar transacción?',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: dangerRed,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Esta acción no se puede deshacer. ¿Estás seguro de eliminar "${transaction.description}"?',
-              style: const TextStyle(
-                fontSize: 14,
-                color: textMedium,
-                height: 1.4,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => Navigator.of(context).pop(false),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: borderLight,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        'Cancelar',
-                        style: TextStyle(
-                          color: textMedium,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => Navigator.of(context).pop(true),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: dangerRed,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        'Eliminar',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+    return showAppConfirmDialog(
+      context,
+      title: '¿Eliminar transacción?',
+      message: transaction.isTransfer
+          ? 'Esta acción no se puede deshacer. Se eliminará la transferencia '
+                'completa (en ambas cuentas).'
+          : 'Esta acción no se puede deshacer. ¿Estás seguro de eliminar '
+                '"${transaction.description}"?',
     );
   }
 
@@ -1275,9 +1435,7 @@ class _HistoryScreenState extends State<HistoryScreen>
   void _navigateToCalendar() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const FinancialCalendarScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const FinancialCalendarScreen()),
     );
   }
 
@@ -1296,7 +1454,24 @@ class _HistoryScreenState extends State<HistoryScreen>
   }
 
   // Método para editar una transacción
+  void _showTransferNotEditableMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Las transferencias no se pueden editar. Bórrala y crea una '
+          'nueva si necesitas corregirla.',
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   Future<void> _editTransaction(Transaction transaction) async {
+    if (transaction.isTransfer) {
+      _showTransferNotEditableMessage();
+      return;
+    }
+
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -1322,7 +1497,9 @@ class _HistoryScreenState extends State<HistoryScreen>
   }
 
   Widget _buildTransactionOptionsBottomSheet(Transaction transaction) {
-    final isIncome = transaction.type == TransactionType.income;
+    final color = _transactionColor(transaction);
+    final sign = _transactionSign(transaction);
+    final isTransfer = transaction.isTransfer;
 
     return Container(
       decoration: const BoxDecoration(
@@ -1352,9 +1529,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: isIncome
-                        ? successGreen.withOpacity(0.1)
-                        : dangerRed.withOpacity(0.1),
+                    color: color.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
@@ -1381,11 +1556,11 @@ class _HistoryScreenState extends State<HistoryScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${isIncome ? '+' : '-'}${FormatUtils.formatMoney(transaction.amount)}',
+                        '$sign${FormatUtils.formatMoney(transaction.amount)}',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: isIncome ? successGreen : dangerRed,
+                          color: color,
                         ),
                       ),
                     ],
@@ -1398,19 +1573,21 @@ class _HistoryScreenState extends State<HistoryScreen>
             // Opciones
             Row(
               children: [
-                Expanded(
-                  child: _buildOptionButton(
-                    'Editar',
-                    'Modificar datos',
-                    Icons.edit_rounded,
-                    primaryBlue,
-                    () {
-                      Navigator.pop(context);
-                      _editTransaction(transaction);
-                    },
+                if (!isTransfer) ...[
+                  Expanded(
+                    child: _buildOptionButton(
+                      'Editar',
+                      'Modificar datos',
+                      Icons.edit_rounded,
+                      primaryBlue,
+                      () {
+                        Navigator.pop(context);
+                        _editTransaction(transaction);
+                      },
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
+                  const SizedBox(width: 16),
+                ],
                 Expanded(
                   child: _buildOptionButton(
                     'Eliminar',

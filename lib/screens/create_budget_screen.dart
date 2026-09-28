@@ -9,6 +9,7 @@ import '../services/category_service.dart';
 import '../services/account_service.dart';
 import '../utils/format_utils.dart';
 import '../theme/app_colors.dart';
+import '../widgets/common/common.dart';
 
 class CreateBudgetScreen extends StatefulWidget {
   final Budget? budgetToEdit;
@@ -42,7 +43,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
   String? _selectedCustomCategoryId;
   String? _selectedCustomCategoryName;
   String? _selectedCustomCategoryEmoji;
-  
+
   bool _alertsEnabled = true;
   double _alertThreshold = 0.8;
   bool _isLoading = false;
@@ -204,6 +205,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
       backgroundColor: backgroundLight,
       elevation: 0,
       systemOverlayStyle: SystemUiOverlayStyle.dark,
+      leading: const AppBackButton(light: true),
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: const BoxDecoration(
@@ -446,7 +448,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
               LengthLimitingTextInputFormatter(13),
-              _BudgetAmountInputFormatter(),
+              AmountInputFormatter(),
             ],
             decoration: InputDecoration(
               hintText: '\$0.00',
@@ -653,20 +655,28 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
 
   Widget _buildCategorySelector() {
     // Categorías del sistema
-    final systemCategories = ExpenseCategory.values.map((c) => {
-      'category': c,
-      'name': _getCategoryName(c),
-      'icon': _getCategoryIcon(c),
-      'isSystem': true,
-    }).toList();
+    final systemCategories = ExpenseCategory.values
+        .map(
+          (c) => {
+            'category': c,
+            'name': _getCategoryName(c),
+            'icon': _getCategoryIcon(c),
+            'isSystem': true,
+          },
+        )
+        .toList();
 
     // Categorías personalizadas
-    final customCategories = _categoryService.customCategories.map((c) => {
-      'customId': c.id,
-      'name': c.name,
-      'icon': c.emoji,
-      'isSystem': false,
-    }).toList();
+    final customCategories = _categoryService.customCategories
+        .map(
+          (c) => {
+            'customId': c.id,
+            'name': c.name,
+            'icon': c.emoji,
+            'isSystem': false,
+          },
+        )
+        .toList();
 
     // Combinar todas
     final allCategories = [...systemCategories, ...customCategories];
@@ -739,13 +749,15 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
             itemBuilder: (context, index) {
               final categoryData = allCategories[index];
               final isSystem = categoryData['isSystem'] as bool;
-              
+
               bool isSelected;
               if (isSystem) {
-                isSelected = _selectedCustomCategoryId == null && 
-                             _selectedCategory == categoryData['category'];
+                isSelected =
+                    _selectedCustomCategoryId == null &&
+                    _selectedCategory == categoryData['category'];
               } else {
-                isSelected = _selectedCustomCategoryId == categoryData['customId'];
+                isSelected =
+                    _selectedCustomCategoryId == categoryData['customId'];
               }
 
               return GestureDetector(
@@ -753,16 +765,20 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
                   HapticFeedback.lightImpact();
                   setState(() {
                     if (isSystem) {
-                      _selectedCategory = categoryData['category'] as ExpenseCategory;
+                      _selectedCategory =
+                          categoryData['category'] as ExpenseCategory;
                       _selectedCustomCategoryId = null;
                       _selectedCustomCategoryName = null;
                       _selectedCustomCategoryEmoji = null;
                       _nameController.text =
                           'Presupuesto ${_getCategoryName(_selectedCategory)} ${_getPeriodName(_selectedPeriod).toLowerCase()}';
                     } else {
-                      _selectedCustomCategoryId = categoryData['customId'] as String;
-                      _selectedCustomCategoryName = categoryData['name'] as String;
-                      _selectedCustomCategoryEmoji = categoryData['icon'] as String;
+                      _selectedCustomCategoryId =
+                          categoryData['customId'] as String;
+                      _selectedCustomCategoryName =
+                          categoryData['name'] as String;
+                      _selectedCustomCategoryEmoji =
+                          categoryData['icon'] as String;
                       _nameController.text =
                           'Presupuesto ${categoryData['name']} ${_getPeriodName(_selectedPeriod).toLowerCase()}';
                     }
@@ -1105,65 +1121,22 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
   }
 
   Widget _buildModernFAB() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      width: double.infinity,
-      height: 56,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(colors: [primaryBlue, darkBlue]),
-        boxShadow: [
-          BoxShadow(
-            color: primaryBlue.withOpacity(0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(28),
-          onTap: _isLoading
-              ? null
-              : () {
-                  HapticFeedback.mediumImpact();
-                  _saveBudget();
-                },
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (_isLoading)
-                const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              else
-                Icon(
-                  _isEditMode ? Icons.save_rounded : Icons.add_rounded,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              const SizedBox(width: 10),
-              Text(
-                _isLoading
-                    ? 'Guardando...'
-                    : _isEditMode
-                    ? 'Guardar Cambios'
-                    : 'Crear Presupuesto',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: AppPrimaryButton(
+        label: _isLoading
+            ? 'Guardando...'
+            : _isEditMode
+            ? 'Guardar Cambios'
+            : 'Crear Presupuesto',
+        icon: _isEditMode ? Icons.save_rounded : Icons.add_rounded,
+        loading: _isLoading,
+        onPressed: _isLoading
+            ? null
+            : () {
+                HapticFeedback.mediumImpact();
+                _saveBudget();
+              },
       ),
     );
   }
@@ -1262,17 +1235,16 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
               'start': widget.budgetToEdit!.startDate,
               'end': widget.budgetToEdit!.endDate,
             }
-          : BudgetService.generateBudgetDates(
-              _selectedPeriod,
-              DateTime.now(),
-            );
+          : BudgetService.generateBudgetDates(_selectedPeriod, DateTime.now());
 
       final budget = Budget(
         id: _isEditMode ? widget.budgetToEdit!.id : null,
         name: _nameController.text,
         amount: amount,
         period: _selectedPeriod,
-        category: _selectedCustomCategoryId != null ? ExpenseCategory.other : _selectedCategory,
+        category: _selectedCustomCategoryId != null
+            ? ExpenseCategory.other
+            : _selectedCategory,
         customCategoryId: _selectedCustomCategoryId,
         customCategoryName: _selectedCustomCategoryName,
         customCategoryEmoji: _selectedCustomCategoryEmoji,
@@ -1479,31 +1451,5 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
         );
       },
     );
-  }
-}
-
-class _BudgetAmountInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    // Si está vacío, permitir
-    if (newValue.text.isEmpty) {
-      return newValue;
-    }
-
-    // Validar que solo contenga números y un punto decimal
-    if (!RegExp(r'^\d*\.?\d{0,2}$').hasMatch(newValue.text)) {
-      return oldValue;
-    }
-
-    // Convertir a double para validar rango
-    final double? amount = double.tryParse(newValue.text);
-    if (amount != null && amount > 999999999.99) {
-      return oldValue;
-    }
-
-    return newValue;
   }
 }

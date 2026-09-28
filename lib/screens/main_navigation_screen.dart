@@ -6,7 +6,9 @@ import 'budget_screen.dart';
 import 'goals_screen.dart';
 import 'recurring_expenses_screen.dart';
 import 'add_transaction_screen.dart';
+import 'lock_screen.dart';
 import '../models/transaction.dart';
+import '../services/security_service.dart';
 import '../theme/app_colors.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -16,11 +18,18 @@ class MainNavigationScreen extends StatefulWidget {
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
-class _MainNavigationScreenState extends State<MainNavigationScreen> with TickerProviderStateMixin {
+class _MainNavigationScreenState extends State<MainNavigationScreen>
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   int _currentIndex = 0;
   late AnimationController _fabAnimationController;
   late Animation<double> _fabAnimation;
   late PageController _pageController;
+  late AnimationController _tabFadeController;
+  late Animation<double> _tabFadeAnimation;
+
+  // Re-bloqueo al volver del segundo plano (si el usuario activó el PIN).
+  AppLifecycleState? _lastLifecycleState;
+  bool _isShowingLockScreen = false;
 
   // Definición de colores consistentes
   static const Color primaryBlue = AppColors.primaryBlue;
@@ -78,7 +87,45 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
   void initState() {
     super.initState();
     _pageController = PageController();
+    _tabFadeController = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+      value: 1.0,
+    );
+    _tabFadeAnimation = CurvedAnimation(
+      parent: _tabFadeController,
+      curve: Curves.easeOut,
+    );
     _initFabAnimation();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Solo re-bloquear al volver de un backgrounding real (paused →
+    // resumed), no ante transiciones pasajeras como un diálogo del sistema
+    // (inactive) que no llegan a `paused`.
+    if (state == AppLifecycleState.resumed &&
+        _lastLifecycleState == AppLifecycleState.paused) {
+      _maybeShowLockScreen();
+    }
+    _lastLifecycleState = state;
+  }
+
+  Future<void> _maybeShowLockScreen() async {
+    if (_isShowingLockScreen || !SecurityService().isLockEnabled) return;
+    _isShowingLockScreen = true;
+
+    await Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => LockScreen(
+          onUnlocked: () => Navigator.of(context, rootNavigator: true).pop(),
+        ),
+      ),
+    );
+
+    _isShowingLockScreen = false;
   }
 
   void _initFabAnimation() {
@@ -87,20 +134,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
       vsync: this,
     );
 
-    _fabAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _fabAnimationController,
-      curve: Curves.easeInOut,
-    ));
+    _fabAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fabAnimationController, curve: Curves.easeInOut),
+    );
 
     _fabAnimationController.forward();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _fabAnimationController.dispose();
+    _tabFadeController.dispose();
     _pageController.dispose();
     super.dispose();
   }
@@ -109,18 +154,24 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundLight,
-      body: PageView.builder(
-        controller: _pageController,
-        onPageChanged: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-          HapticFeedback.lightImpact();
-        },
-        itemCount: _navigationItems.length,
-        itemBuilder: (context, index) {
-          return _navigationItems[index].screen;
-        },
+      body: FadeTransition(
+        opacity: _tabFadeAnimation,
+        child: PageView.builder(
+          controller: _pageController,
+          onPageChanged: (index) {
+            // Un toque en la barra ya actualizó el índice y vibró; solo los
+            // deslizamientos con el dedo llegan aquí con un índice nuevo.
+            if (index == _currentIndex) return;
+            setState(() {
+              _currentIndex = index;
+            });
+            HapticFeedback.lightImpact();
+          },
+          itemCount: _navigationItems.length,
+          itemBuilder: (context, index) {
+            return _navigationItems[index].screen;
+          },
+        ),
       ),
       bottomNavigationBar: _buildModernBottomNav(),
       floatingActionButton: _buildFloatingActionButton(),
@@ -147,10 +198,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(
-          color: borderLight.withOpacity(0.5),
-          width: 1,
-        ),
+        border: Border.all(color: borderLight.withOpacity(0.5), width: 1),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
@@ -240,10 +288,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
           icon: const Icon(Icons.add_rounded, size: 20),
           label: const Text(
             'Agregar',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           ),
         ),
       );
@@ -253,18 +298,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
 
   void _onNavItemTap(int index) {
     HapticFeedback.lightImpact();
+    if (index == _currentIndex) return;
 
-    if (index != _currentIndex) {
-      setState(() {
-        _currentIndex = index;
-      });
+    setState(() {
+      _currentIndex = index;
+    });
 
-      _pageController.animateToPage(
-        index,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
+    // Salto directo + fundido: animateToPage deslizaba por cada pestaña
+    // intermedia, construyéndolas y vibrando en cada una.
+    _pageController.jumpToPage(index);
+    _tabFadeController.forward(from: 0.0);
   }
 
   void _showAddTransactionOptions() {
@@ -357,7 +400,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
                     Icons.trending_up_rounded,
                     primaryGreen,
                     darkGreen,
-                        () => _navigateToAddTransaction(TransactionType.income),
+                    () => _navigateToAddTransaction(TransactionType.income),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -368,7 +411,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
                     Icons.trending_down_rounded,
                     primaryRed,
                     darkRed,
-                        () => _navigateToAddTransaction(TransactionType.expense),
+                    () => _navigateToAddTransaction(TransactionType.expense),
                   ),
                 ),
               ],
@@ -382,9 +425,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
               decoration: BoxDecoration(
                 color: primaryBlue.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: primaryBlue.withOpacity(0.1),
-                ),
+                border: Border.all(color: primaryBlue.withOpacity(0.1)),
               ),
               child: Row(
                 children: [
@@ -417,13 +458,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
   }
 
   Widget _buildQuickActionButton(
-      String title,
-      String subtitle,
-      IconData icon,
-      Color primaryColor,
-      Color darkColor,
-      VoidCallback onPressed,
-      ) {
+    String title,
+    String subtitle,
+    IconData icon,
+    Color primaryColor,
+    Color darkColor,
+    VoidCallback onPressed,
+  ) {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -441,10 +482,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
             ],
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: primaryColor.withOpacity(0.2),
-            width: 1,
-          ),
+          border: Border.all(color: primaryColor.withOpacity(0.2), width: 1),
         ),
         child: Column(
           children: [
@@ -453,15 +491,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
               height: 48,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
-                gradient: LinearGradient(
-                  colors: [primaryColor, darkColor],
-                ),
+                gradient: LinearGradient(colors: [primaryColor, darkColor]),
               ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 24,
-              ),
+              child: Icon(icon, color: Colors.white, size: 24),
             ),
             const SizedBox(height: 16),
             Text(
@@ -505,9 +537,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
           const end = Offset.zero;
           const curve = Curves.easeInOut;
 
-          var tween = Tween(begin: begin, end: end).chain(
-            CurveTween(curve: curve),
-          );
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
 
           return SlideTransition(
             position: animation.drive(tween),
@@ -555,9 +588,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
         ),
         backgroundColor: textDark,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 3),
       ),

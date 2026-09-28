@@ -6,9 +6,9 @@ import '../services/budget_service.dart';
 import '../services/transaction_service.dart';
 import '../services/account_service.dart';
 import '../utils/format_utils.dart';
-import '../widgets/app_logo.dart';
 import 'create_budget_screen.dart';
 import '../theme/app_colors.dart';
+import '../widgets/common/common.dart';
 
 class BudgetsScreen extends StatefulWidget {
   const BudgetsScreen({super.key});
@@ -562,88 +562,33 @@ class _BudgetsScreenState extends State<BudgetsScreen>
         Row(
           children: [
             Expanded(
-              child: _buildQuickActionCard(
-                'Presupuesto Mensual',
-                'Para gastos del mes',
-                Icons.calendar_month_rounded,
-                const LinearGradient(colors: [primaryBlue, darkBlue]),
-                () => _createQuickBudget(BudgetPeriod.monthly),
+              child: QuickActionCard(
+                title: 'Presupuesto Mensual',
+                subtitle: 'Para gastos del mes',
+                icon: Icons.calendar_month_rounded,
+                gradientColors: const [primaryBlue, darkBlue],
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  _createQuickBudget(BudgetPeriod.monthly);
+                },
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildQuickActionCard(
-                'Presupuesto Semanal',
-                'Control semanal',
-                Icons.date_range_rounded,
-                const LinearGradient(colors: [successGreen, Color(0xFF047857)]),
-                () => _createQuickBudget(BudgetPeriod.weekly),
+              child: QuickActionCard(
+                title: 'Presupuesto Semanal',
+                subtitle: 'Control semanal',
+                icon: Icons.date_range_rounded,
+                gradientColors: const [successGreen, AppColors.darkGreen],
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  _createQuickBudget(BudgetPeriod.weekly);
+                },
               ),
             ),
           ],
         ),
       ],
-    );
-  }
-
-  Widget _buildQuickActionCard(
-    String title,
-    String subtitle,
-    IconData icon,
-    Gradient gradient,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onTap();
-      },
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: gradient,
-          boxShadow: [
-            BoxShadow(
-              color: gradient.colors.first.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: Colors.white, size: 22),
-            const SizedBox(height: 10),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
-                maxLines: 1,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -1029,68 +974,14 @@ class _BudgetsScreenState extends State<BudgetsScreen>
   }
 
   Widget _buildEmptyState() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(36),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        color: Colors.white,
-        border: Border.all(color: primaryBlue.withOpacity(0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: primaryBlue.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Logo de la app en lugar del ícono genérico
-          const AppLogo.medium(showText: false),
-          const SizedBox(height: 24),
-          const Text(
-            'Controla tus gastos',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: textDark,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Crea presupuestos para diferentes categorías y mantén tus finanzas bajo control de manera inteligente',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 14,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 28),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _navigateToCreateBudget,
-              icon: const Icon(Icons.add_rounded, size: 22),
-              label: const Text(
-                'Crear Primer Presupuesto',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryBlue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 0,
-              ),
-            ),
-          ),
-        ],
-      ),
+    return AppEmptyState(
+      icon: Icons.account_balance_wallet_outlined,
+      title: 'Controla tus gastos',
+      message:
+          'Crea presupuestos para diferentes categorías y mantén tus '
+          'finanzas bajo control de manera inteligente',
+      ctaLabel: 'Crear Primer Presupuesto',
+      onCta: _navigateToCreateBudget,
     );
   }
 
@@ -1188,140 +1079,35 @@ class _BudgetsScreenState extends State<BudgetsScreen>
   }
 
   Future<void> _deleteBudget(Budget budget) async {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  color: dangerRed.withOpacity(0.1),
-                  border: Border.all(
-                    color: dangerRed.withOpacity(0.3),
-                    width: 2,
-                  ),
-                ),
-                child: const Icon(
-                  Icons.delete_rounded,
-                  color: dangerRed,
-                  size: 30,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                '¿Eliminar presupuesto?',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: dangerRed,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Esta acción no se puede deshacer. El presupuesto "${budget.name}" será eliminado permanentemente.',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: textMedium,
-                  height: 1.4,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          'Cancelar',
-                          style: TextStyle(
-                            color: textMedium,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () async {
-                        Navigator.pop(context);
-
-                        try {
-                          // Eliminar el presupuesto
-                          await _budgetService.deleteBudget(budget.id!);
-
-                          // Verificar que el widget aún está montado antes de continuar
-                          if (!mounted) return;
-
-                          // Refrescar los datos
-                          await _refreshData();
-
-                          // Verificar nuevamente antes de mostrar el mensaje
-                          if (!mounted) return;
-
-                          _showMessage(
-                            'Presupuesto eliminado',
-                            'El presupuesto "${budget.name}" ha sido eliminado correctamente.',
-                            dangerRed,
-                            Icons.delete_rounded,
-                          );
-                        } catch (e) {
-                          // Verificar que el widget está montado antes de mostrar error
-                          if (!mounted) return;
-
-                          _showMessage(
-                            'Error',
-                            'No se pudo eliminar el presupuesto. Inténtalo de nuevo.',
-                            dangerRed,
-                            Icons.error_rounded,
-                          );
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: dangerRed,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          'Eliminar',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
+    final confirmed = await showAppConfirmDialog(
+      context,
+      title: '¿Eliminar presupuesto?',
+      message:
+          'Esta acción no se puede deshacer. El presupuesto '
+          '"${budget.name}" será eliminado permanentemente.',
     );
+    if (confirmed != true) return;
+
+    try {
+      await _budgetService.deleteBudget(budget.id!);
+      if (!mounted) return;
+      await _refreshData();
+      if (!mounted) return;
+      _showMessage(
+        'Presupuesto eliminado',
+        'El presupuesto "${budget.name}" ha sido eliminado correctamente.',
+        dangerRed,
+        Icons.delete_rounded,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      _showMessage(
+        'Error',
+        'No se pudo eliminar el presupuesto. Inténtalo de nuevo.',
+        dangerRed,
+        Icons.error_rounded,
+      );
+    }
   }
 
   void _showMessage(String title, String message, Color color, IconData icon) {

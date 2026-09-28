@@ -7,8 +7,11 @@ import '../services/stats_service.dart';
 import '../services/category_service.dart';
 import '../services/account_service.dart';
 import '../services/goal_service.dart';
+import '../services/security_service.dart';
+import '../services/reminder_service.dart';
 import '../services/dashboard/smart_dashboard_service.dart';
 import '../models/dashboard/smart_dashboard_data.dart';
+import '../models/reminder.dart';
 import '../utils/format_utils.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/account_selector.dart';
@@ -21,9 +24,13 @@ import 'recurring_expenses_screen.dart';
 import 'stats_screen.dart';
 import 'settings_screen.dart';
 import 'manage_accounts_screen.dart';
+import 'create_transfer_screen.dart';
 import 'export_screen.dart';
 import '../models/export_config.dart';
 import 'history_screen.dart';
+import 'goals_screen.dart';
+import '../theme/app_colors.dart';
+import '../widgets/common/common.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -35,12 +42,14 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final TransactionService _transactionService = TransactionService();
   final RecurringExpenseService _recurringExpenseService =
-  RecurringExpenseService();
+      RecurringExpenseService();
   final StatsService _statsService = StatsService();
   final CategoryService _categoryService = CategoryService();
   final AccountService _accountService = AccountService();
   final GoalService _goalService = GoalService();
+  final SecurityService _securityService = SecurityService();
   final SmartDashboardService _dashboardService = SmartDashboardService();
+  final ReminderService _reminderService = ReminderService();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _isLoading = true;
   bool _isRefreshing = false;
@@ -49,6 +58,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late Animation<double> _slideAnimation;
   FinancialStats? _financialStats;
   SmartDashboardData? _dashboardData;
+  List<Reminder> _reminders = [];
 
   @override
   void initState() {
@@ -64,6 +74,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _accountService.addListener(_onAccountChanged);
     // Escuchar cambios en metas (afectan la puntuación y los logros)
     _goalService.addListener(_onGoalServiceChanged);
+    // Escuchar cambios en la preferencia de ocultar saldos
+    _securityService.addListener(_onSecurityServiceChanged);
+  }
+
+  void _onSecurityServiceChanged() {
+    if (mounted) setState(() {});
   }
 
   // NUEVO: Método que se ejecuta cuando el TransactionService notifica cambios
@@ -120,6 +136,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       if (mounted) {
         setState(() {
           _dashboardData = data;
+          // Los recordatorios dependen de gastos recurrentes y metas, ambos
+          // ya cargados en memoria (las metas las carga el propio dashboard
+          // service) — se recalculan aquí para no repetir la lectura.
+          _reminders = _reminderService.buildReminders();
         });
       }
     } catch (e) {
@@ -189,6 +209,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _categoryService.removeListener(_onCategoryServiceChanged);
     _accountService.removeListener(_onAccountChanged);
     _goalService.removeListener(_onGoalServiceChanged);
+    _securityService.removeListener(_onSecurityServiceChanged);
     _animationController.dispose();
     super.dispose();
   }
@@ -232,6 +253,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _buildInsightEntryCard(),
+                                if (_reminders.isNotEmpty) ...[
+                                  const SizedBox(height: 20),
+                                  _buildRemindersSection(),
+                                ],
                                 const SizedBox(height: 24),
                                 _buildFinancialOverview(),
                                 const SizedBox(height: 28),
@@ -371,10 +396,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.18),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.25),
-            width: 1,
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.25), width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -396,11 +418,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(
-              Icons.swap_horiz_rounded,
-              color: Colors.white,
-              size: 16,
-            ),
+            const Icon(Icons.swap_horiz_rounded, color: Colors.white, size: 16),
           ],
         ),
       ),
@@ -434,11 +452,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    _buildDrawerContent(),
-                  ],
-                ),
+                child: Column(children: [_buildDrawerContent()]),
               ),
             ),
             // Footer
@@ -460,156 +474,148 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       children: [
         // Header del drawer
         Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF34D399),
-                    Color(0xFF059669),
-                    Color(0xFF047857),
-                  ],
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF34D399), Color(0xFF059669), Color(0xFF047857)],
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Center(
+                  child: Text('💰', style: TextStyle(fontSize: 28)),
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Center(
-                      child: Text('💰', style: TextStyle(fontSize: 28)),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Mi Ahorro',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Gestiona tus finanzas',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 16),
+              const Text(
+                'Mi Ahorro',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            // Opción de cuentas
-            _buildDrawerItem(
-              icon: Icons.account_balance_outlined,
-              title: 'Mis Cuentas',
-              subtitle: 'Gestiona tus cuentas financieras',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ManageAccountsScreen(),
-                  ),
-                );
-              },
-            ),
-            const Divider(height: 16),
-            _buildDrawerItem(
-              icon: Icons.auto_awesome_outlined,
-              title: 'Insight financiero',
-              subtitle: 'Análisis, predicciones y consejos',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const FinancialInsightsScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildDrawerItem(
-              icon: Icons.emoji_events_outlined,
-              title: 'Logros',
-              subtitle: 'Tus trofeos y lo que viene',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AchievementsScreen(),
-                  ),
-                );
-              },
-            ),
-            const Divider(height: 16),
-            // Opciones del menú
-            _buildDrawerItem(
-              icon: Icons.category_outlined,
-              title: 'Categorías de gastos',
-              subtitle: 'Personaliza tus categorías',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SettingsScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildDrawerItem(
-              icon: Icons.repeat_outlined,
-              title: 'Gastos recurrentes',
-              subtitle: 'Configura pagos automáticos',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const RecurringExpensesScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildDrawerItem(
-              icon: Icons.bar_chart_outlined,
-              title: 'Estadísticas',
-              subtitle: 'Analiza tus gastos',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const StatsScreen()),
-                );
-              },
-            ),
-            const Divider(height: 32),
-            _buildDrawerItem(
-              icon: Icons.settings_outlined,
-              title: 'Configuración',
-              subtitle: 'Gestionar categorías y más',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SettingsScreen(),
-                  ),
-                );
-              },
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                'Gestiona tus finanzas',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Opción de cuentas
+        _buildDrawerItem(
+          icon: Icons.account_balance_outlined,
+          title: 'Mis Cuentas',
+          subtitle: 'Gestiona tus cuentas financieras',
+          onTap: () {
+            Navigator.pop(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ManageAccountsScreen(),
+              ),
+            );
+          },
+        ),
+        const Divider(height: 16),
+        _buildDrawerItem(
+          icon: Icons.auto_awesome_outlined,
+          title: 'Insight financiero',
+          subtitle: 'Análisis, predicciones y consejos',
+          onTap: () {
+            Navigator.pop(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const FinancialInsightsScreen(),
+              ),
+            );
+          },
+        ),
+        _buildDrawerItem(
+          icon: Icons.emoji_events_outlined,
+          title: 'Logros',
+          subtitle: 'Tus trofeos y lo que viene',
+          onTap: () {
+            Navigator.pop(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AchievementsScreen(),
+              ),
+            );
+          },
+        ),
+        const Divider(height: 16),
+        // Opciones del menú
+        _buildDrawerItem(
+          icon: Icons.category_outlined,
+          title: 'Categorías de gastos',
+          subtitle: 'Personaliza tus categorías',
+          onTap: () {
+            Navigator.pop(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SettingsScreen()),
+            );
+          },
+        ),
+        _buildDrawerItem(
+          icon: Icons.repeat_outlined,
+          title: 'Gastos recurrentes',
+          subtitle: 'Configura pagos automáticos',
+          onTap: () {
+            Navigator.pop(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const RecurringExpensesScreen(),
+              ),
+            );
+          },
+        ),
+        _buildDrawerItem(
+          icon: Icons.bar_chart_outlined,
+          title: 'Estadísticas',
+          subtitle: 'Analiza tus gastos',
+          onTap: () {
+            Navigator.pop(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const StatsScreen()),
+            );
+          },
+        ),
+        const Divider(height: 32),
+        _buildDrawerItem(
+          icon: Icons.settings_outlined,
+          title: 'Configuración',
+          subtitle: 'Gestionar categorías y más',
+          onTap: () {
+            Navigator.pop(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SettingsScreen()),
+            );
+          },
+        ),
+      ],
     );
   }
 
@@ -665,19 +671,39 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            'Balance',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Balance',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(width: 6),
+              GestureDetector(
+                onTap: () => _securityService.setHideBalances(
+                  !_securityService.hideBalances,
+                ),
+                child: Icon(
+                  _securityService.hideBalances
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  size: 15,
+                  color: Colors.white.withOpacity(0.8),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
-              FormatUtils.formatMoney(_transactionService.totalBalance),
+              _securityService.hideBalances
+                  ? '••••••'
+                  : FormatUtils.formatMoney(_transactionService.totalBalance),
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 32,
@@ -692,7 +718,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             GestureDetector(
               onTap: _showInitialBalanceDialog,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.18),
                   borderRadius: BorderRadius.circular(20),
@@ -811,7 +840,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     // Campo de monto
                     TextField(
                       controller: controller,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       autofocus: true,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
@@ -837,7 +868,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         fillColor: const Color(0xFFF8FAFC),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE5E7EB),
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
@@ -933,8 +966,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final headline = data == null
         ? 'Analizando tus finanzas...'
         : (ready
-            ? data.summary.message
-            : 'Registra algunos movimientos y te contamos cómo vas');
+              ? data.summary.message
+              : 'Registra algunos movimientos y te contamos cómo vas');
     final alertCount = data?.alerts.length ?? 0;
 
     return GestureDetector(
@@ -1015,7 +1048,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   vertical: 9,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF59E0B).withValues(alpha: 0.10),
+                  color: AppColors.warningYellow.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -1023,7 +1056,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     const Icon(
                       Icons.notifications_active_outlined,
                       size: 16,
-                      color: Color(0xFFB45309),
+                      color: AppColors.deepYellow,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -1034,7 +1067,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         style: const TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFFB45309),
+                          color: AppColors.deepYellow,
                         ),
                       ),
                     ),
@@ -1046,6 +1079,149 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       ),
     );
+  }
+
+  Widget _buildRemindersSection() {
+    final visible = _reminders.take(4).toList();
+    final overflow = _reminders.length - visible.length;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+        border: Border.all(
+          color: const Color(0xFF3B82F6).withValues(alpha: 0.15),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.notifications_active_rounded,
+                color: Color(0xFF3B82F6),
+                size: 20,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Recordatorios',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...visible.map(_buildReminderTile),
+          if (overflow > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                'y $overflow más',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade500,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReminderTile(Reminder reminder) {
+    return GestureDetector(
+      onTap: () => _onReminderTap(reminder),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: reminder.accentColor.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: reminder.accentColor.withValues(alpha: 0.12),
+              ),
+              child: Icon(reminder.icon, color: reminder.accentColor, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    reminder.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    reminder.message,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.grey.shade400,
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _onReminderTap(Reminder reminder) {
+    HapticFeedback.lightImpact();
+    switch (reminder.type) {
+      case ReminderType.recurringExpense:
+        _navigateToRecurringExpenses();
+        break;
+      case ReminderType.goalDeadline:
+      case ReminderType.goalOffTrack:
+        _navigateToGoals();
+        break;
+    }
+  }
+
+  Future<void> _navigateToGoals() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const GoalsScreen()),
+    );
+    if (mounted) {
+      setState(() {
+        _reminders = _reminderService.buildReminders();
+      });
+    }
   }
 
   Widget _buildScoreBadge(int score, Color color, bool ready) {
@@ -1099,12 +1275,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             const SizedBox(width: 8),
             if (total > 0)
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 9,
-                  vertical: 3,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                  color: AppColors.warningYellow.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(9),
                 ),
                 child: Text(
@@ -1112,7 +1285,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   style: const TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFFB45309),
+                    color: AppColors.deepYellow,
                   ),
                 ),
               ),
@@ -1126,7 +1299,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFFB45309),
+                    color: AppColors.deepYellow,
                   ),
                 ),
               ),
@@ -1174,7 +1347,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           borderRadius: BorderRadius.circular(20),
           color: Colors.white,
           border: Border.all(
-            color: const Color(0xFFF59E0B).withValues(alpha: 0.25),
+            color: AppColors.warningYellow.withValues(alpha: 0.25),
           ),
         ),
         child: Row(
@@ -1184,11 +1357,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               height: 44,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                color: AppColors.warningYellow.withValues(alpha: 0.12),
               ),
               child: const Icon(
                 Icons.emoji_events_outlined,
-                color: Color(0xFFF59E0B),
+                color: AppColors.warningYellow,
                 size: 22,
               ),
             ),
@@ -1408,8 +1581,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             _buildActionCard(
               title: 'Recurrentes',
               icon: Icons.sync_rounded,
-              color: const Color(0xFFF59E0B),
+              color: AppColors.warningYellow,
               onTap: _navigateToRecurringExpenses,
+            ),
+            _buildActionCard(
+              title: 'Transferir',
+              icon: Icons.swap_horiz_rounded,
+              color: const Color(0xFF3B82F6),
+              onTap: _navigateToTransfer,
             ),
             _buildActionCard(
               title: 'Estadísticas',
@@ -1554,93 +1733,41 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           _buildEmptyState()
         else
           ...recentTransactions.map(
-                (transaction) => _buildTransactionItem(transaction),
+            (transaction) => _buildTransactionItem(transaction),
           ),
       ],
     );
   }
 
   Widget _buildEmptyState() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(36),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFF059669).withOpacity(0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF059669).withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              gradient: const LinearGradient(
-                colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
-              ),
-            ),
-            child: const Icon(
-              Icons.trending_up_rounded,
-              color: Colors.white,
-              size: 40,
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Comienza tu viaje financiero',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1E293B),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Agrega tu primera transacción para comenzar a controlar tus finanzas de manera inteligente y serena',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 28),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _navigateToAddSalary,
-              icon: const Icon(Icons.add_rounded, size: 22),
-              label: const Text(
-                'Agregar Primer Salario',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF3B82F6),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 0,
-              ),
-            ),
-          ),
-        ],
-      ),
+    return AppEmptyState(
+      icon: Icons.trending_up_rounded,
+      title: 'Comienza tu viaje financiero',
+      message:
+          'Agrega tu primera transacción para comenzar a controlar tus '
+          'finanzas de manera inteligente y serena',
+      ctaLabel: 'Agregar Primer Salario',
+      onCta: _navigateToAddSalary,
     );
   }
 
   Widget _buildTransactionItem(Transaction transaction) {
-    final isIncome = transaction.type == TransactionType.income;
+    final Color amountColor;
+    final String sign;
+    switch (transaction.type) {
+      case TransactionType.income:
+        amountColor = const Color(0xFF059669);
+        sign = '+';
+        break;
+      case TransactionType.expense:
+        amountColor = const Color(0xFFDC2626);
+        sign = '-';
+        break;
+      case TransactionType.transfer:
+        amountColor = const Color(0xFF3B82F6);
+        sign = (transaction.isTransferOut ?? true) ? '-' : '+';
+        break;
+    }
 
     // Obtener nombre/emoji actualizado de la categoría
     final categoryInfo = _categoryService.getCategoryInfo(
@@ -1676,9 +1803,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             height: 48,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
-              color: isIncome
-                  ? const Color(0xFF059669).withOpacity(0.1)
-                  : const Color(0xFFDC2626).withOpacity(0.1),
+              color: amountColor.withOpacity(0.1),
             ),
             child: Center(
               child: Text(categoryEmoji, style: const TextStyle(fontSize: 20)),
@@ -1715,13 +1840,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             children: [
               FittedBox(
                 child: Text(
-                  '${isIncome ? '+' : '-'}${FormatUtils.formatMoney(transaction.amount)}',
+                  '$sign${FormatUtils.formatMoney(transaction.amount)}',
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
-                    color: isIncome
-                        ? const Color(0xFF059669)
-                        : const Color(0xFFDC2626),
+                    color: amountColor,
                   ),
                 ),
               ),
@@ -1744,7 +1867,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       context,
       MaterialPageRoute(
         builder: (context) =>
-        const AddTransactionScreen(initialType: TransactionType.income),
+            const AddTransactionScreen(initialType: TransactionType.income),
       ),
     );
     // No se necesita código adicional - el listener actualiza automáticamente
@@ -1755,8 +1878,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       context,
       MaterialPageRoute(
         builder: (context) =>
-        const AddTransactionScreen(initialType: TransactionType.expense),
+            const AddTransactionScreen(initialType: TransactionType.expense),
       ),
+    );
+    // No se necesita código adicional - el listener actualiza automáticamente
+  }
+
+  Future<void> _navigateToTransfer() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CreateTransferScreen()),
     );
     // No se necesita código adicional - el listener actualiza automáticamente
   }
@@ -1771,6 +1902,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (mounted) {
       await _transactionService.loadTransactions();
       await _recurringExpenseService.loadRecurringExpenses();
+      setState(() {
+        _reminders = _reminderService.buildReminders();
+      });
     }
   }
 
@@ -1795,9 +1929,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ExportScreen(
-          initialConfig: ExportConfig.currentMonth(),
-        ),
+        builder: (context) =>
+            ExportScreen(initialConfig: ExportConfig.currentMonth()),
       ),
     );
   }
@@ -1809,7 +1942,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
-        const StatsScreen(),
+            const StatsScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;

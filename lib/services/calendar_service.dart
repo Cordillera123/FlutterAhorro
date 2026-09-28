@@ -76,9 +76,11 @@ class CalendarService {
 
     for (final t in monthTransactions) {
       (movementsByDay[t.date.day] ??= []).add(t);
+      // Las transferencias aparecen en la lista de movimientos del día pero
+      // no se contabilizan como ingreso ni gasto (no distorsionan el resumen).
       if (t.type == TransactionType.income) {
         monthIncome += t.amount;
-      } else {
+      } else if (t.type == TransactionType.expense) {
         monthExpense += t.amount;
       }
       monthCount++;
@@ -94,7 +96,7 @@ class CalendarService {
       for (final m in movements) {
         if (m.type == TransactionType.income) {
           dayIncome += m.amount;
-        } else {
+        } else if (m.type == TransactionType.expense) {
           dayExpense += m.amount;
         }
       }

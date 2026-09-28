@@ -4,9 +4,9 @@ import '../models/financial_goal.dart';
 import '../services/goal_service.dart';
 import '../services/account_service.dart';
 import '../utils/format_utils.dart';
-import '../widgets/app_logo.dart';
 import 'create_goal_screen.dart';
 import '../theme/app_colors.dart';
+import '../widgets/common/common.dart';
 
 class GoalsScreen extends StatefulWidget {
   const GoalsScreen({super.key});
@@ -493,22 +493,28 @@ class _GoalsScreenState extends State<GoalsScreen>
         Row(
           children: [
             Expanded(
-              child: _buildQuickActionCard(
-                'Meta de Compra',
-                'Para algo específico',
-                Icons.shopping_bag_rounded,
-                const LinearGradient(colors: [primaryBlue, darkBlue]),
-                () => _createQuickGoal(GoalType.purchase),
+              child: QuickActionCard(
+                title: 'Meta de Compra',
+                subtitle: 'Para algo específico',
+                icon: Icons.shopping_bag_rounded,
+                gradientColors: const [primaryBlue, darkBlue],
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  _createQuickGoal(GoalType.purchase);
+                },
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildQuickActionCard(
-                'Fondo de Emergencia',
-                'Para imprevistos',
-                Icons.security_rounded,
-                const LinearGradient(colors: [dangerRed, Color(0xFFEF4444)]),
-                () => _createQuickGoal(GoalType.emergency),
+              child: QuickActionCard(
+                title: 'Fondo de Emergencia',
+                subtitle: 'Para imprevistos',
+                icon: Icons.security_rounded,
+                gradientColors: const [dangerRed, Color(0xFFEF4444)],
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  _createQuickGoal(GoalType.emergency);
+                },
               ),
             ),
           ],
@@ -517,88 +523,33 @@ class _GoalsScreenState extends State<GoalsScreen>
         Row(
           children: [
             Expanded(
-              child: _buildQuickActionCard(
-                'Vacaciones',
-                'Tu próximo viaje',
-                Icons.flight_rounded,
-                const LinearGradient(colors: [successGreen, Color(0xFF10B981)]),
-                () => _createQuickGoal(GoalType.vacation),
+              child: QuickActionCard(
+                title: 'Vacaciones',
+                subtitle: 'Tu próximo viaje',
+                icon: Icons.flight_rounded,
+                gradientColors: const [successGreen, AppColors.emeraldGreen],
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  _createQuickGoal(GoalType.vacation);
+                },
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildQuickActionCard(
-                'Educación',
-                'Invierte en ti',
-                Icons.school_rounded,
-                const LinearGradient(colors: [purpleAccent, Color(0xFF8B5CF6)]),
-                () => _createQuickGoal(GoalType.education),
+              child: QuickActionCard(
+                title: 'Educación',
+                subtitle: 'Invierte en ti',
+                icon: Icons.school_rounded,
+                gradientColors: const [purpleAccent, Color(0xFF8B5CF6)],
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  _createQuickGoal(GoalType.education);
+                },
               ),
             ),
           ],
         ),
       ],
-    );
-  }
-
-  Widget _buildQuickActionCard(
-    String title,
-    String subtitle,
-    IconData icon,
-    Gradient gradient,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onTap();
-      },
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: gradient,
-          boxShadow: [
-            BoxShadow(
-              color: gradient.colors.first.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: Colors.white, size: 22),
-            const SizedBox(height: 10),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
-                maxLines: 1,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -983,103 +934,27 @@ class _GoalsScreenState extends State<GoalsScreen>
   }
 
   Widget _buildEmptyState() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(36),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Logo de la app para dar coherencia visual
-          const AppLogo.medium(showText: false),
-          const SizedBox(height: 20),
-          const Text(
-            'Sin metas activas',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: textDark,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Crea tu primera meta financiera y comienza a ahorrar para tus sueños',
-            style: TextStyle(fontSize: 14, color: textMedium, height: 1.5),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          GestureDetector(
-            onTap: _navigateToCreateGoal,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-              decoration: BoxDecoration(
-                color: primaryBlue,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text(
-                'Crear mi primera meta',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+    return AppEmptyState(
+      icon: Icons.flag_outlined,
+      title: 'Sin metas activas',
+      message:
+          'Crea tu primera meta financiera y comienza a ahorrar para '
+          'tus sueños',
+      ctaLabel: 'Crear mi primera meta',
+      onCta: _navigateToCreateGoal,
     );
   }
 
   Widget _buildModernFAB() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      width: double.infinity,
-      height: 56,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(colors: [primaryBlue, darkBlue]),
-        boxShadow: [
-          BoxShadow(
-            color: primaryBlue.withOpacity(0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(28),
-          onTap: () {
-            HapticFeedback.mediumImpact();
-            _navigateToCreateGoal();
-          },
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.add_rounded, color: Colors.white, size: 24),
-              SizedBox(width: 10),
-              Text(
-                'Nueva Meta',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: AppPrimaryButton(
+        label: 'Nueva Meta',
+        icon: Icons.add_rounded,
+        onPressed: () {
+          HapticFeedback.mediumImpact();
+          _navigateToCreateGoal();
+        },
       ),
     );
   }
@@ -1154,140 +1029,141 @@ class _GoalsScreenState extends State<GoalsScreen>
 
         return StatefulBuilder(
           builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Column(
-            children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  color: successGreen.withOpacity(0.1),
-                  border: Border.all(
-                    color: successGreen.withOpacity(0.3),
-                    width: 2,
-                  ),
-                ),
-                child: const Icon(
-                  Icons.add_rounded,
-                  color: successGreen,
-                  size: 30,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Aportar a ${goal.name}',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: textDark,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: amountController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Monto a aportar',
-                  hintText: '\$0',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  prefixIcon: const Icon(Icons.attach_money),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: noteController,
-                decoration: InputDecoration(
-                  labelText: 'Nota (opcional)',
-                  hintText: 'Ej: Ahorro del mes',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  prefixIcon: const Icon(Icons.note),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar'),
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
-            ElevatedButton(
-              onPressed: isSubmitting
-                  ? null
-                  : () async {
-                      final amount = double.tryParse(
-                        amountController.text.replaceAll(',', ''),
-                      );
-                      if (amount != null && amount > 0) {
-                        setDialogState(() => isSubmitting = true);
-                        try {
-                          await _goalService.addContribution(
-                            goal.id!,
-                            amount,
-                            note: noteController.text.isNotEmpty
-                                ? noteController.text
-                                : null,
-                          );
-                          if (mounted) {
-                            Navigator.pop(context);
-                            _refreshData();
+            title: Column(
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    color: successGreen.withOpacity(0.1),
+                    border: Border.all(
+                      color: successGreen.withOpacity(0.3),
+                      width: 2,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.add_rounded,
+                    color: successGreen,
+                    size: 30,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Aportar a ${goal.name}',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: textDark,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: amountController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Monto a aportar',
+                    hintText: '\$0',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    prefixIcon: const Icon(Icons.attach_money),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: noteController,
+                  decoration: InputDecoration(
+                    labelText: 'Nota (opcional)',
+                    hintText: 'Ej: Ahorro del mes',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    prefixIcon: const Icon(Icons.note),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: isSubmitting
+                    ? null
+                    : () async {
+                        final amount = double.tryParse(
+                          amountController.text.replaceAll(',', ''),
+                        );
+                        if (amount != null && amount > 0) {
+                          setDialogState(() => isSubmitting = true);
+                          try {
+                            await _goalService.addContribution(
+                              goal.id!,
+                              amount,
+                              note: noteController.text.isNotEmpty
+                                  ? noteController.text
+                                  : null,
+                            );
+                            if (mounted) {
+                              Navigator.pop(context);
+                              _refreshData();
+                              _showMessage(
+                                'Aporte exitoso',
+                                'Se agregaron ${FormatUtils.formatMoney(amount)} a tu meta',
+                                successGreen,
+                                Icons.check_circle_rounded,
+                              );
+                            }
+                          } catch (e) {
+                            setDialogState(() => isSubmitting = false);
                             _showMessage(
-                              'Aporte exitoso',
-                              'Se agregaron ${FormatUtils.formatMoney(amount)} a tu meta',
-                              successGreen,
-                              Icons.check_circle_rounded,
+                              'Error',
+                              'No se pudo agregar el aporte',
+                              dangerRed,
+                              Icons.error_rounded,
                             );
                           }
-                        } catch (e) {
-                          setDialogState(() => isSubmitting = false);
-                          _showMessage(
-                            'Error',
-                            'No se pudo agregar el aporte',
-                            dangerRed,
-                            Icons.error_rounded,
-                          );
                         }
-                      }
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: successGreen,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: successGreen,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-              ),
-              child: isSubmitting
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                child: isSubmitting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                    : const Text(
+                        'Aportar',
+                        style: TextStyle(color: Colors.white),
                       ),
-                    )
-                  : const Text(
-                      'Aportar',
-                      style: TextStyle(color: Colors.white),
-                    ),
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
         );
       },
     );
   }
-
 
   void _toggleGoalStatus(FinancialGoal goal) async {
     try {
@@ -1319,157 +1195,50 @@ class _GoalsScreenState extends State<GoalsScreen>
     }
   }
 
-  void _deleteGoal(FinancialGoal goal) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          contentPadding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: dangerRed.withOpacity(0.1),
-                  border: Border.all(
-                    color: dangerRed.withOpacity(0.3),
-                    width: 2,
-                  ),
-                ),
-                child: const Icon(
-                  Icons.delete_rounded,
-                  color: dangerRed,
-                  size: 24,
-                ),
+  Future<void> _deleteGoal(FinancialGoal goal) async {
+    final confirmed = await showAppConfirmDialog(
+      context,
+      title: '¿Eliminar?',
+      message: '¿Eliminar "${goal.name}"? Esta acción no se puede deshacer.',
+      extra: goal.currentAmount > 0
+          ? Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: warningYellow.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
               ),
-              const SizedBox(height: 16),
-              const Text(
-                '¿Eliminar?',
+              child: Text(
+                'Ahorrado: ${FormatUtils.formatMoney(goal.currentAmount)}',
                 style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: dangerRed,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 10),
-              Text(
-                '¿Eliminar "${goal.name}"?',
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: textDark,
+                  fontSize: 11,
+                  color: warningYellow,
                   fontWeight: FontWeight.w600,
-                  height: 1.3,
                 ),
                 textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 6),
-              const Text(
-                'Esta acción no se puede deshacer.',
-                style: TextStyle(fontSize: 11, color: textMedium),
-                textAlign: TextAlign.center,
-              ),
-              if (goal.currentAmount > 0) ...[
-                const SizedBox(height: 10),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: warningYellow.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'Ahorrado: ${FormatUtils.formatMoney(goal.currentAmount)}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: warningYellow,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => Navigator.of(context).pop(),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Text(
-                          'Cancelar',
-                          style: TextStyle(
-                            color: textMedium,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () async {
-                        Navigator.of(context).pop();
-                        try {
-                          await _goalService.deleteGoal(goal.id!);
-                          _showMessage(
-                            'Eliminada',
-                            'La meta ha sido eliminada.',
-                            successGreen,
-                            Icons.check_circle_rounded,
-                          );
-                          await _refreshData();
-                        } catch (e) {
-                          _showMessage(
-                            'Error',
-                            'No se pudo eliminar la meta.',
-                            dangerRed,
-                            Icons.error_rounded,
-                          );
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        decoration: BoxDecoration(
-                          color: dangerRed,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Text(
-                          'Eliminar',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
+            )
+          : null,
     );
+    if (confirmed != true) return;
+
+    try {
+      await _goalService.deleteGoal(goal.id!);
+      _showMessage(
+        'Eliminada',
+        'La meta ha sido eliminada.',
+        successGreen,
+        Icons.check_circle_rounded,
+      );
+      await _refreshData();
+    } catch (e) {
+      _showMessage(
+        'Error',
+        'No se pudo eliminar la meta.',
+        dangerRed,
+        Icons.error_rounded,
+      );
+    }
   }
 
   void _showMessage(String title, String message, Color color, IconData icon) {

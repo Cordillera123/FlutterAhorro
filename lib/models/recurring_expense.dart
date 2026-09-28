@@ -148,29 +148,35 @@ class RecurringExpense {
   }
 
   // Verificar si debe ejecutarse hoy
-  bool shouldRunToday() {
-    final today = DateTime.now();
-    final todayDate = DateTime(today.year, today.month, today.day);
+  bool shouldRunToday() => _runsOn(DateTime.now());
+
+  // Verificar si el gasto debe ejecutarse en una fecha específica. Comparte
+  // la lógica con [shouldRunToday] para que [nextOccurrence] nunca pueda
+  // desincronizarse de lo que realmente procesa RecurringExpenseService.
+  bool _runsOn(DateTime date) {
+    final targetDate = DateTime(date.year, date.month, date.day);
 
     // Si no está activo, no ejecutar
     if (!isActive) return false;
 
     // Si tiene fecha de fin y ya pasó, no ejecutar
-    if (endDate != null && todayDate.isAfter(endDate!)) return false;
-
-    // Si es antes de la fecha de inicio, no ejecutar
-    if (todayDate.isBefore(DateTime(startDate.year, startDate.month, startDate.day))) {
+    if (endDate != null && targetDate.isAfter(DateTime(endDate!.year, endDate!.month, endDate!.day))) {
       return false;
     }
 
-    // Si ya se procesó hoy, no ejecutar
+    // Si es antes de la fecha de inicio, no ejecutar
+    if (targetDate.isBefore(DateTime(startDate.year, startDate.month, startDate.day))) {
+      return false;
+    }
+
+    // Si ya se procesó ese día, no ejecutar de nuevo
     if (lastProcessed != null) {
       final lastProcessedDate = DateTime(
           lastProcessed!.year,
           lastProcessed!.month,
           lastProcessed!.day
       );
-      if (lastProcessedDate == todayDate) return false;
+      if (lastProcessedDate == targetDate) return false;
     }
 
     switch (frequency) {
@@ -179,26 +185,25 @@ class RecurringExpense {
 
       case RecurrenceFrequency.weekly:
         if (weekDays != null && weekDays!.isNotEmpty) {
-          final todayWeekDay = _getTodayWeekDay();
-          return weekDays!.contains(todayWeekDay);
+          return weekDays!.contains(_weekDayOf(targetDate));
         }
         return false;
 
       case RecurrenceFrequency.monthly:
         if (monthlyDay != null) {
-          return today.day == monthlyDay;
+          return targetDate.day == monthlyDay;
         }
         return false;
 
       case RecurrenceFrequency.custom:
         if (customDays != null && lastProcessed != null) {
-          final daysSinceLastProcessed = todayDate.difference(
+          final daysSinceLastProcessed = targetDate.difference(
               DateTime(lastProcessed!.year, lastProcessed!.month, lastProcessed!.day)
           ).inDays;
           return daysSinceLastProcessed >= customDays!;
         } else if (customDays != null) {
           // Primera vez, verificar desde startDate
-          final daysSinceStart = todayDate.difference(
+          final daysSinceStart = targetDate.difference(
               DateTime(startDate.year, startDate.month, startDate.day)
           ).inDays;
           return daysSinceStart % customDays! == 0;
@@ -207,9 +212,8 @@ class RecurringExpense {
     }
   }
 
-  WeekDay _getTodayWeekDay() {
-    final today = DateTime.now();
-    switch (today.weekday) {
+  WeekDay _weekDayOf(DateTime date) {
+    switch (date.weekday) {
       case 1: return WeekDay.monday;
       case 2: return WeekDay.tuesday;
       case 3: return WeekDay.wednesday;
@@ -219,6 +223,34 @@ class RecurringExpense {
       case 7: return WeekDay.sunday;
       default: return WeekDay.monday;
     }
+  }
+
+  /// Próxima fecha (estrictamente después de [from], por defecto hoy) en la
+  /// que este gasto recurrente volverá a ejecutarse. Devuelve `null` si está
+  /// inactivo o si no hay ninguna ocurrencia dentro del horizonte de
+  /// búsqueda (p. ej. porque ya pasó su fecha de fin).
+  ///
+  /// Se usa para los recordatorios ("próximos pagos") — el día de hoy no se
+  /// incluye porque ya lo cubre [shouldRunToday]/`processRecurringExpensesForToday`.
+  DateTime? nextOccurrence({DateTime? from, int horizonDays = 400}) {
+    if (!isActive) return null;
+
+    final base = DateTime(
+      (from ?? DateTime.now()).year,
+      (from ?? DateTime.now()).month,
+      (from ?? DateTime.now()).day,
+    );
+    var candidate = base.add(const Duration(days: 1));
+
+    for (var i = 0; i < horizonDays; i++) {
+      if (endDate != null &&
+          candidate.isAfter(DateTime(endDate!.year, endDate!.month, endDate!.day))) {
+        return null;
+      }
+      if (_runsOn(candidate)) return candidate;
+      candidate = candidate.add(const Duration(days: 1));
+    }
+    return null;
   }
 
   // Crear transacción a partir del gasto recurrente

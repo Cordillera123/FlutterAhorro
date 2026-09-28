@@ -293,6 +293,35 @@ class AccountService extends ChangeNotifier {
     return activeAccountId;
   }
 
+  /// Reemplaza TODAS las cuentas y la cuenta activa (usado al restaurar una
+  /// copia de seguridad). El llamador es responsable de validar los datos
+  /// antes. Si [activeAccountId] no existe entre las cuentas restauradas,
+  /// se usa la primera cuenta disponible.
+  Future<void> replaceAllForRestore(
+    List<Account> accounts,
+    String activeAccountId,
+  ) async {
+    if (accounts.isEmpty) {
+      throw Exception('La copia de seguridad no contiene ninguna cuenta.');
+    }
+
+    _accounts = List.of(accounts)
+      ..sort((a, b) {
+        if (a.isDefault && !b.isDefault) return -1;
+        if (!a.isDefault && b.isDefault) return 1;
+        return a.createdAt.compareTo(b.createdAt);
+      });
+
+    _activeAccountId = _accounts.any((a) => a.id == activeAccountId)
+        ? activeAccountId
+        : _accounts.first.id;
+
+    await _saveAccounts();
+    await _saveActiveAccountId();
+    await markDataMigrated();
+    notifyListeners();
+  }
+
   /// Marcar migración de datos como completada
   Future<void> markDataMigrated() async {
     final prefs = await SharedPreferences.getInstance();

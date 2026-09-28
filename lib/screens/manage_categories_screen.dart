@@ -4,6 +4,7 @@ import '../models/custom_category.dart';
 import '../models/transaction.dart';
 import '../services/category_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/common/common.dart';
 
 class ManageCategoriesScreen extends StatefulWidget {
   const ManageCategoriesScreen({super.key});
@@ -93,11 +94,11 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                     children: [
                       _buildInfoCard(),
                       const SizedBox(height: 24),
-                      _buildSectionTitle('Categorías del sistema'),
+                      const SectionHeader('Categorías del sistema'),
                       const SizedBox(height: 12),
                       _buildSystemCategories(),
                       const SizedBox(height: 24),
-                      _buildSectionTitle('Categorías personalizadas'),
+                      const SectionHeader('Categorías personalizadas'),
                       const SizedBox(height: 12),
                       _buildCustomCategories(),
                       const SizedBox(height: 100), // Espacio para FAB
@@ -120,27 +121,13 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
-      leading: IconButton(
-        icon: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(
-            Icons.arrow_back_ios_new,
-            size: 18,
-            color: Color(0xFF1E293B),
-          ),
-        ),
-        onPressed: () => Navigator.pop(context),
-      ),
+      leading: const AppBackButton(),
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
         title: const Text(
           'Categorías',
           style: TextStyle(
-            color: Color(0xFF1E293B),
+            color: AppColors.textDark,
             fontWeight: FontWeight.w700,
             fontSize: 24,
           ),
@@ -150,7 +137,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Colors.white, Color(0xFFF8FAFC)],
+              colors: [Colors.white, AppColors.backgroundCard],
             ),
           ),
         ),
@@ -166,25 +153,19 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: primaryBlue.withOpacity(0.1),
+        color: primaryBlue.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: primaryBlue.withOpacity(0.2),
-        ),
+        border: Border.all(color: primaryBlue.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: primaryBlue.withOpacity(0.15),
+              color: primaryBlue.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.info_outline,
-              color: primaryBlue,
-              size: 24,
-            ),
+            child: const Icon(Icons.info_outline, color: primaryBlue, size: 24),
           ),
           const SizedBox(width: 16),
           const Expanded(
@@ -196,16 +177,13 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF1E293B),
+                    color: AppColors.textDark,
                   ),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'Crea categorías para organizar mejor tus gastos y presupuestos',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: secondaryGray,
-                  ),
+                  style: TextStyle(fontSize: 12, color: secondaryGray),
                 ),
               ],
             ),
@@ -215,34 +193,8 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: secondaryGray,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
-
   Widget _buildSystemCategories() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return AppCard(
       child: Column(
         children: ExpenseCategory.values.map((category) {
           final isLast = category == ExpenseCategory.values.last;
@@ -261,68 +213,14 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
     final customCategories = _categoryService.customCategories;
 
     if (customCategories.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(32),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(50),
-              ),
-              child: Icon(
-                Icons.add_circle_outline,
-                size: 48,
-                color: Colors.grey.shade400,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Sin categorías personalizadas',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Toca el botón + para crear tu primera categoría',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey.shade500,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+      return const AppEmptyState(
+        icon: Icons.add_circle_outline,
+        title: 'Sin categorías personalizadas',
+        message: 'Toca el botón + para crear tu primera categoría',
       );
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return AppCard(
       child: Column(
         children: customCategories.asMap().entries.map((entry) {
           final index = entry.key;
@@ -349,52 +247,18 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
     VoidCallback? onEdit,
     VoidCallback? onDelete,
   }) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Text(
-                    emoji,
-                    style: const TextStyle(fontSize: 22),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1E293B),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      isSystem ? 'Del sistema' : 'Personalizada',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isSystem ? secondaryGray : primaryBlue,
-                        fontWeight: isSystem ? FontWeight.normal : FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (!isSystem) ...[
+    return AppListTile(
+      emoji: emoji,
+      title: name,
+      subtitle: isSystem ? 'Del sistema' : 'Personalizada',
+      subtitleColor: isSystem ? null : primaryBlue,
+      subtitleFontWeight: isSystem ? null : FontWeight.w500,
+      showDivider: showDivider,
+      trailing: isSystem
+          ? Icon(Icons.lock_outline, size: 18, color: Colors.grey.shade400)
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 IconButton(
                   icon: Icon(
                     Icons.edit_outlined,
@@ -414,22 +278,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                   tooltip: 'Eliminar',
                 ),
               ],
-              if (isSystem)
-                Icon(
-                  Icons.lock_outline,
-                  size: 18,
-                  color: Colors.grey.shade400,
-                ),
-            ],
-          ),
-        ),
-        if (showDivider)
-          Divider(
-            height: 1,
-            indent: 76,
-            color: Colors.grey.shade200,
-          ),
-      ],
+            ),
     );
   }
 
@@ -439,7 +288,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: primaryBlue.withOpacity(0.3),
+            color: primaryBlue.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -452,10 +301,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text(
           'Nueva categoría',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
       ),
     );
@@ -515,9 +361,30 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
     final formKey = GlobalKey<FormState>();
 
     final emojis = [
-      '🏋️', '🐕', '🐱', '💅', '🎮', '🎨', '🎵', '📷',
-      '✈️', '🏖️', '☕', '🍺', '🛒', '💊', '📱', '💻',
-      '🏠', '🚗', '🎓', '💼', '🎁', '💰', '📦', '⭐',
+      '🏋️',
+      '🐕',
+      '🐱',
+      '💅',
+      '🎮',
+      '🎨',
+      '🎵',
+      '📷',
+      '✈️',
+      '🏖️',
+      '☕',
+      '🍺',
+      '🛒',
+      '💊',
+      '📱',
+      '💻',
+      '🏠',
+      '🚗',
+      '🎓',
+      '💼',
+      '🎁',
+      '💰',
+      '📦',
+      '⭐',
     ];
 
     showModalBottomSheet(
@@ -563,12 +430,12 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 20,
-                        color: Color(0xFF1E293B),
+                        color: AppColors.textDark,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      initialName != null 
+                      initialName != null
                           ? 'Modifica los datos de tu categoría'
                           : 'Crea una categoría personalizada para tus gastos',
                       style: TextStyle(
@@ -583,18 +450,19 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1E293B),
+                        color: AppColors.textDark,
                       ),
                     ),
                     const SizedBox(height: 12),
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 8,
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 8,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 8,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                          ),
                       itemCount: emojis.length,
                       itemBuilder: (context, index) {
                         final emoji = emojis[index];
@@ -609,18 +477,22 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                             duration: const Duration(milliseconds: 200),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? primaryBlue.withOpacity(0.15)
+                                  ? primaryBlue.withValues(alpha: 0.15)
                                   : Colors.grey.shade100,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: isSelected ? primaryBlue : Colors.transparent,
+                                color: isSelected
+                                    ? primaryBlue
+                                    : Colors.transparent,
                                 width: 2,
                               ),
                             ),
                             child: Center(
                               child: Text(
                                 emoji,
-                                style: TextStyle(fontSize: isSelected ? 22 : 18),
+                                style: TextStyle(
+                                  fontSize: isSelected ? 22 : 18,
+                                ),
                               ),
                             ),
                           ),
@@ -634,7 +506,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1E293B),
+                        color: AppColors.textDark,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -652,11 +524,17 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: primaryBlue, width: 2),
+                          borderSide: const BorderSide(
+                            color: primaryBlue,
+                            width: 2,
+                          ),
                         ),
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: dangerRed, width: 2),
+                          borderSide: const BorderSide(
+                            color: dangerRed,
+                            width: 2,
+                          ),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 18,
@@ -714,7 +592,10 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                           child: ElevatedButton(
                             onPressed: () {
                               if (formKey.currentState!.validate()) {
-                                onConfirm(nameController.text.trim(), selectedEmoji);
+                                onConfirm(
+                                  nameController.text.trim(),
+                                  selectedEmoji,
+                                );
                               }
                             },
                             style: ElevatedButton.styleFrom(
@@ -761,22 +642,22 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
   void _confirmDeleteCategory(CustomCategory category) async {
     // Verificar si tiene presupuestos
     final hasBudgets = await _categoryService.categoryHasBudgets(category.id);
-    final hasTransactions = await _categoryService.categoryHasTransactions(category.id);
+    final hasTransactions = await _categoryService.categoryHasTransactions(
+      category.id,
+    );
 
     if (!mounted) return;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: dangerRed.withOpacity(0.1),
+                color: dangerRed.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(
@@ -788,10 +669,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
             const SizedBox(width: 12),
             const Text(
               'Eliminar categoría',
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 18,
-              ),
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
             ),
           ],
         ),
@@ -801,19 +679,18 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
           children: [
             Text(
               '¿Eliminar "${category.emoji} ${category.name}"?',
-              style: const TextStyle(
-                fontSize: 15,
-                color: Color(0xFF1E293B),
-              ),
+              style: const TextStyle(fontSize: 15, color: AppColors.textDark),
             ),
             if (hasBudgets || hasTransactions) ...[
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: warningYellow.withOpacity(0.1),
+                  color: warningYellow.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: warningYellow.withOpacity(0.3)),
+                  border: Border.all(
+                    color: warningYellow.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -821,12 +698,19 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                     if (hasBudgets)
                       Row(
                         children: [
-                          Icon(Icons.pie_chart_outline, size: 16, color: warningYellow),
+                          Icon(
+                            Icons.pie_chart_outline,
+                            size: 16,
+                            color: warningYellow,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'Se eliminarán los presupuestos de esta categoría',
-                              style: TextStyle(fontSize: 13, color: warningYellow),
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: warningYellow,
+                              ),
                             ),
                           ),
                         ],
@@ -836,12 +720,19 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                     if (hasTransactions)
                       Row(
                         children: [
-                          Icon(Icons.receipt_outlined, size: 16, color: warningYellow),
+                          Icon(
+                            Icons.receipt_outlined,
+                            size: 16,
+                            color: warningYellow,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'Las transacciones pasarán a "Otros"',
-                              style: TextStyle(fontSize: 13, color: warningYellow),
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: warningYellow,
+                              ),
                             ),
                           ),
                         ],
@@ -886,7 +777,10 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
     );
   }
 
-  Future<void> _deleteCategory(CustomCategory category, {bool deleteBudgets = false}) async {
+  Future<void> _deleteCategory(
+    CustomCategory category, {
+    bool deleteBudgets = false,
+  }) async {
     try {
       final result = await _categoryService.deleteCategory(
         category.id,

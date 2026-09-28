@@ -10,6 +10,7 @@ import '../services/transaction_service.dart';
 import '../widgets/dashboard/achievement_card.dart';
 import '../widgets/dashboard/dashboard_theme.dart';
 import '../theme/app_colors.dart';
+import '../widgets/common/common.dart';
 
 /// Sala de trofeos. Muestra lo conseguido y, sobre todo, lo que está a punto
 /// de conseguirse: ver el progreso es lo que empuja a seguir.
@@ -103,6 +104,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
       pinned: true,
       backgroundColor: _gold,
       foregroundColor: Colors.white,
+      leading: const AppBackButton(light: true),
       systemOverlayStyle: SystemUiOverlayStyle.light,
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.only(left: 56, bottom: 16, right: 16),

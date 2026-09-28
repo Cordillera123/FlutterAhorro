@@ -5,11 +5,24 @@ import '../models/export_config.dart';
 import '../services/account_service.dart';
 import '../services/export_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/common/common.dart';
 
 // Metadatos de cada formato disponible para la UI.
 const _formatOptions = [
-  (ExportFormat.excel, Icons.table_chart_outlined, 'Excel', '.xlsx', 'Estilos y múltiples hojas'),
-  (ExportFormat.csv,   Icons.code_outlined,        'CSV',   '.csv',  'Texto plano universal'),
+  (
+    ExportFormat.excel,
+    Icons.table_chart_outlined,
+    'Excel',
+    '.xlsx',
+    'Estilos y múltiples hojas',
+  ),
+  (
+    ExportFormat.csv,
+    Icons.code_outlined,
+    'CSV',
+    '.csv',
+    'Texto plano universal',
+  ),
 ];
 
 /// Pantalla de configuración y ejecución de exportación de reportes.
@@ -149,15 +162,24 @@ class _ExportScreenState extends State<ExportScreen>
     switch (preset) {
       case _DatePreset.thisMonth:
         final base = ExportFilters.currentMonth();
-        updated = _filters.copyWith(dateFrom: base.dateFrom, dateTo: base.dateTo);
+        updated = _filters.copyWith(
+          dateFrom: base.dateFrom,
+          dateTo: base.dateTo,
+        );
         break;
       case _DatePreset.thisYear:
         final base = ExportFilters.currentYear();
-        updated = _filters.copyWith(dateFrom: base.dateFrom, dateTo: base.dateTo);
+        updated = _filters.copyWith(
+          dateFrom: base.dateFrom,
+          dateTo: base.dateTo,
+        );
         break;
       case _DatePreset.allTime:
         final base = ExportFilters.allTime();
-        updated = _filters.copyWith(dateFrom: base.dateFrom, dateTo: base.dateTo);
+        updated = _filters.copyWith(
+          dateFrom: base.dateFrom,
+          dateTo: base.dateTo,
+        );
         break;
       case _DatePreset.custom:
         return;
@@ -223,11 +245,11 @@ class _ExportScreenState extends State<ExportScreen>
     });
 
     try {
-      await _exportService.generateAndShare(_buildConfig());
-      if (mounted) {
+      final savedPath = await _exportService.generateAndSave(_buildConfig());
+      if (savedPath != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Reporte generado correctamente'),
+            content: Text('Reporte guardado en tu teléfono'),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -236,8 +258,10 @@ class _ExportScreenState extends State<ExportScreen>
       if (mounted) setState(() => _errorMessage = e.message);
     } catch (e) {
       if (mounted) {
-        setState(() => _errorMessage =
-            'No se pudo generar el reporte. Verifica el espacio disponible e intenta de nuevo.');
+        setState(
+          () => _errorMessage =
+              'No se pudo generar el reporte. Verifica el espacio disponible e intenta de nuevo.',
+        );
       }
     } finally {
       if (mounted) setState(() => _isExporting = false);
@@ -304,21 +328,7 @@ class _ExportScreenState extends State<ExportScreen>
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
-      leading: IconButton(
-        icon: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(
-            Icons.arrow_back_ios_new,
-            size: 18,
-            color: textDark,
-          ),
-        ),
-        onPressed: () => Navigator.pop(context),
-      ),
+      leading: const AppBackButton(),
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
         title: const Text(
@@ -415,7 +425,7 @@ class _ExportScreenState extends State<ExportScreen>
                           color: primaryBlue.withOpacity(0.22),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
-                        )
+                        ),
                       ]
                     : [],
               ),
@@ -595,7 +605,10 @@ class _ExportScreenState extends State<ExportScreen>
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   margin: const EdgeInsets.all(4),
-                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 14,
+                    horizontal: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: isSelected ? primaryBlue : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
@@ -684,12 +697,7 @@ class _ExportScreenState extends State<ExportScreen>
         'Presupuestos',
         'Límites de gasto',
       ),
-      (
-        ReportType.goals,
-        Icons.flag_outlined,
-        'Metas',
-        'Objetivos de ahorro',
-      ),
+      (ReportType.goals, Icons.flag_outlined, 'Metas', 'Objetivos de ahorro'),
     ];
 
     return GridView.count(
@@ -752,9 +760,7 @@ class _ExportScreenState extends State<ExportScreen>
                           opt.$4,
                           style: TextStyle(
                             fontSize: 11,
-                            color: isSelected
-                                ? Colors.white70
-                                : textMedium,
+                            color: isSelected ? Colors.white70 : textMedium,
                           ),
                         ),
                       ],
@@ -804,7 +810,8 @@ class _ExportScreenState extends State<ExportScreen>
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                           TextSpan(
-                            text: 'El reporte incluirá las primeras '
+                            text:
+                                'El reporte incluirá las primeras '
                                 '$_rowLimit '
                                 '(~$_estimatedCount en el rango).',
                           ),
@@ -835,11 +842,7 @@ class _ExportScreenState extends State<ExportScreen>
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.error_outline,
-                    color: dangerRed,
-                    size: 20,
-                  ),
+                  const Icon(Icons.error_outline, color: dangerRed, size: 20),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -868,83 +871,15 @@ class _ExportScreenState extends State<ExportScreen>
   // ─── Botón Exportar ───────────────────────────────────────────────────
 
   Widget _buildExportButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          gradient: _isExporting
-              ? null
-              : const LinearGradient(
-                  colors: [primaryBlue, darkBlue],
-                ),
-          color: _isExporting ? const Color(0xFFE2E8F0) : null,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: _isExporting
-              ? []
-              : [
-                  BoxShadow(
-                    color: primaryBlue.withOpacity(0.35),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: _isExporting ? null : _export,
-            borderRadius: BorderRadius.circular(16),
-            child: Center(
-              child: _isExporting
-                  ? const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(textMedium),
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        Text(
-                          'Generando reporte...',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: textMedium,
-                          ),
-                        ),
-                      ],
-                    )
-                  : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.file_download_outlined,
-                          color: Colors.white,
-                          size: 22,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          _format == ExportFormat.csv
-                              ? 'Exportar CSV'
-                              : 'Exportar Excel',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
-          ),
-        ),
-      ),
+    return AppPrimaryButton(
+      label: _isExporting
+          ? 'Generando reporte...'
+          : _format == ExportFormat.csv
+          ? 'Descargar CSV'
+          : 'Descargar Excel',
+      icon: Icons.file_download_outlined,
+      loading: _isExporting,
+      onPressed: _isExporting ? null : _export,
     );
   }
 }

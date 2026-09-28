@@ -6,6 +6,7 @@ import '../services/recurring_expense_service.dart';
 import '../services/account_service.dart';
 import '../utils/format_utils.dart';
 import '../theme/app_colors.dart';
+import '../widgets/common/common.dart';
 
 class AddRecurringExpenseScreen extends StatefulWidget {
   final RecurringExpense? expenseToEdit;
@@ -143,6 +144,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
     return Scaffold(
       backgroundColor: backgroundLight,
       appBar: AppBar(
+        leading: const AppBackButton(light: true),
         title: Text(
           _isEditing ? 'Editar Gasto Recurrente' : 'Nuevo Gasto Recurrente',
           style: const TextStyle(fontWeight: FontWeight.w600),
@@ -255,7 +257,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
               LengthLimitingTextInputFormatter(13),
-              _RecurringAmountInputFormatter(),
+              AmountInputFormatter(),
             ],
             decoration: const InputDecoration(
               labelText: 'Monto',
@@ -978,37 +980,14 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
   }
 
   Widget _buildSaveButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _saveRecurringExpense,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primaryPurple,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        child: _isLoading
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : Text(
-                _isEditing
-                    ? 'Actualizar Gasto Recurrente'
-                    : 'Crear Gasto Recurrente',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-      ),
+    return AppPrimaryButton(
+      label: _isEditing
+          ? 'Actualizar Gasto Recurrente'
+          : 'Crear Gasto Recurrente',
+      icon: _isEditing ? Icons.save_rounded : Icons.add_rounded,
+      loading: _isLoading,
+      gradientColors: const [primaryPurple, darkPurple],
+      onPressed: _isLoading ? null : _saveRecurringExpense,
     );
   }
 
@@ -1082,7 +1061,9 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
   }
 
   Future<void> _selectStartDate() async {
-    final earliestSelectable = DateTime.now().subtract(const Duration(days: 30));
+    final earliestSelectable = DateTime.now().subtract(
+      const Duration(days: 30),
+    );
     final date = await showDatePicker(
       context: context,
       initialDate: _startDate,
@@ -1224,31 +1205,5 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
         });
       }
     }
-  }
-}
-
-class _RecurringAmountInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    // Si está vacío, permitir
-    if (newValue.text.isEmpty) {
-      return newValue;
-    }
-
-    // Validar que solo contenga números y un punto decimal
-    if (!RegExp(r'^\d*\.?\d{0,2}$').hasMatch(newValue.text)) {
-      return oldValue;
-    }
-
-    // Convertir a double para validar rango
-    final double? amount = double.tryParse(newValue.text);
-    if (amount != null && amount > 999999999.99) {
-      return oldValue;
-    }
-
-    return newValue;
   }
 }

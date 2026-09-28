@@ -81,6 +81,15 @@ class BudgetService {
     }
   }
 
+  // Reemplaza TODOS los presupuestos (usado al restaurar una copia de
+  // seguridad). El llamador es responsable de validar los datos antes.
+  Future<void> replaceAllForRestore(List<Budget> budgets) async {
+    _budgets = List.of(budgets)
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    await _saveBudgets();
+    await processAutomaticResets();
+  }
+
   // NUEVO: Procesar reinicios automáticos de presupuestos
   Future<void> processAutomaticResets() async {
     bool hasChanges = false;

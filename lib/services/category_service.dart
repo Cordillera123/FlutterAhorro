@@ -191,6 +191,16 @@ class CategoryService extends ChangeNotifier {
     }
   }
 
+  /// Reemplaza TODAS las categorías personalizadas (usado al restaurar una
+  /// copia de seguridad). El llamador es responsable de validar los datos
+  /// antes.
+  Future<void> replaceAllForRestore(List<CustomCategory> categories) async {
+    _customCategories = List.of(categories)
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    await _saveCategories();
+    notifyListeners();
+  }
+
   /// Agregar nueva categoría personalizada
   Future<CustomCategory> addCategory({
     required String name,

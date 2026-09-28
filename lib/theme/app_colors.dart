@@ -18,6 +18,7 @@ class AppColors {
 
   // Verde
   static const Color lightGreen = Color(0xFF34D399);
+  static const Color emeraldGreen = Color(0xFF10B981);
   static const Color primaryGreen = Color(0xFF059669);
   static const Color darkGreen = Color(0xFF047857);
   static const Color deepGreen = Color(0xFF065F46);
@@ -30,11 +31,18 @@ class AppColors {
   // Amarillo (advertencias)
   static const Color warningYellow = Color(0xFFF59E0B);
   static const Color darkYellow = Color(0xFFD97706);
+  // Tono más oscuro usado en texto/íconos sobre fondo warningYellow tenue
+  // (ej. el banner "hay cosas que conviene revisar").
+  static const Color deepYellow = Color(0xFFB45309);
 
   // Púrpura
   static const Color primaryPurple = Color(0xFF7C3AED);
   static const Color darkPurple = Color(0xFF5B21B6);
   static const Color deepPurple = Color(0xFF4C1D95);
+
+  // Acentos adicionales (usados como color de ícono en tarjetas de acción)
+  static const Color indigoAccent = Color(0xFF6366F1);
+  static const Color cyanAccent = Color(0xFF0891B2);
 
   // Texto
   static const Color textDark = Color(0xFF1E293B);

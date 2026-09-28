@@ -7,6 +7,7 @@ import 'charts_screen.dart';
 import 'monthly_history_screen.dart';
 import 'financial_calendar_screen.dart';
 import '../theme/app_colors.dart';
+import '../widgets/common/common.dart';
 
 class StatsScreen extends StatefulWidget {
   const StatsScreen({super.key});
@@ -15,20 +16,19 @@ class StatsScreen extends StatefulWidget {
   State<StatsScreen> createState() => _StatsScreenState();
 }
 
-class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin {
+class _StatsScreenState extends State<StatsScreen>
+    with TickerProviderStateMixin {
   final StatsService _statsService = StatsService();
   final TransactionService _transactionService = TransactionService();
   late AnimationController _animationController;
   late Animation<double> _fadeInAnimation;
   late Animation<double> _slideAnimation;
-  
+
   bool _isLoading = true;
   FinancialStats? _financialStats;
   List<CategoryStats> _categoryStats = [];
   List<WeeklyStats> _weeklyStats = [];
   OverallStats? _overallStats;
-  
-
 
   // Definición de colores consistentes
   static const Color primaryBlue = AppColors.primaryBlue;
@@ -62,27 +62,25 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
       vsync: this,
     );
 
-    _fadeInAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-    ));
+    _fadeInAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
+    );
 
-    _slideAnimation = Tween<double>(
-      begin: 20.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
-    ));
+    _slideAnimation = Tween<double>(begin: 20.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
+      ),
+    );
   }
 
   Future<void> _loadStats() async {
     try {
       await _transactionService.loadTransactions();
-      
+
       _financialStats = _statsService.getCurrentVsPreviousStats();
       _categoryStats = _statsService.getCategoryStats();
       _weeklyStats = _statsService.getWeeklyStats();
@@ -102,8 +100,6 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
       }
     }
   }
-
-
 
   @override
   void dispose() {
@@ -125,11 +121,7 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                primaryBlue,
-                darkBlue,
-                deepBlue,
-              ],
+              colors: [primaryBlue, darkBlue, deepBlue],
             ),
           ),
           child: SafeArea(
@@ -140,24 +132,13 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
                 children: [
                   Row(
                     children: [
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.arrow_back_ios_new_rounded,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                      ),
+                      const AppBackButton(light: true),
                       const Spacer(),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(20),
@@ -216,7 +197,7 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundLight,
-      body: _isLoading 
+      body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(primaryBlue),
@@ -245,25 +226,25 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
                                   _buildCurrentVsPreviousCard(),
                                   const SizedBox(height: 20),
                                 ],
-                                
+
                                 // Estadísticas generales
                                 if (_overallStats != null) ...[
                                   _buildOverallStatsCard(),
                                   const SizedBox(height: 20),
                                 ],
-                                
+
                                 // NUEVO: Botón para ver gráficos
                                 if (_categoryStats.isNotEmpty) ...[
                                   _buildChartsButton(),
                                   const SizedBox(height: 20),
                                 ],
-                                
+
                                 // Análisis por categorías (solo lista, sin gráfico)
                                 if (_categoryStats.isNotEmpty) ...[
                                   _buildCategoryAnalysisCard(),
                                   const SizedBox(height: 20),
                                 ],
-                                
+
                                 // Acceso al Calendario Financiero
                                 _buildCalendarButton(),
                                 const SizedBox(height: 20),
@@ -271,7 +252,7 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
                                 // Botón historial mensual
                                 _buildMonthlyHistory(),
                                 const SizedBox(height: 20),
-                                
+
                                 // Tendencias semanales
                                 if (_weeklyStats.isNotEmpty) ...[
                                   _buildWeeklyTrendsCard(),
@@ -292,7 +273,7 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
 
   Widget _buildCurrentVsPreviousCard() {
     final stats = _financialStats!;
-    
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -318,7 +299,7 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
             ),
           ),
           const SizedBox(height: 20),
-          
+
           // Ingresos
           _buildComparisonItem(
             'Ingresos',
@@ -328,9 +309,9 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
             stats.previousIncome,
             stats.incomeGrowthPercentage,
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Gastos
           _buildComparisonItem(
             'Gastos',
@@ -340,9 +321,9 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
             stats.previousExpenses,
             stats.expenseGrowthPercentage,
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Balance
           _buildComparisonItem(
             'Balance',
@@ -366,19 +347,16 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
     double change,
   ) {
     final isPositive = change >= 0;
-    final changeColor = title == 'Gastos' ? 
-        (isPositive ? dangerRed : successGreen) : 
-        (isPositive ? successGreen : dangerRed);
-    
+    final changeColor = title == 'Gastos'
+        ? (isPositive ? dangerRed : successGreen)
+        : (isPositive ? successGreen : dangerRed);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: color.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: color.withOpacity(0.1), width: 1),
       ),
       child: Row(
         children: [
@@ -425,7 +403,10 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: changeColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -434,7 +415,9 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        isPositive ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                        isPositive
+                            ? Icons.arrow_upward_rounded
+                            : Icons.arrow_downward_rounded,
                         color: changeColor,
                         size: 14,
                       ),
@@ -471,7 +454,7 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
 
   Widget _buildOverallStatsCard() {
     final stats = _overallStats!;
-    
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -484,10 +467,7 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(
-          color: primaryBlue.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: primaryBlue.withOpacity(0.1), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -520,7 +500,7 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
             ],
           ),
           const SizedBox(height: 24),
-          
+
           LayoutBuilder(
             builder: (context, constraints) {
               final isWide = constraints.maxWidth > 300;
@@ -529,7 +509,9 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
                 runSpacing: 12,
                 children: [
                   SizedBox(
-                    width: isWide ? (constraints.maxWidth - 12) / 2 : constraints.maxWidth,
+                    width: isWide
+                        ? (constraints.maxWidth - 12) / 2
+                        : constraints.maxWidth,
                     child: _buildOverallStatItem(
                       'Transacciones',
                       '${stats.totalTransactions}',
@@ -538,7 +520,9 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
                     ),
                   ),
                   SizedBox(
-                    width: isWide ? (constraints.maxWidth - 12) / 2 : constraints.maxWidth,
+                    width: isWide
+                        ? (constraints.maxWidth - 12) / 2
+                        : constraints.maxWidth,
                     child: _buildOverallStatItem(
                       'Promedio Mensual',
                       FormatUtils.formatMoney(stats.averageMonthlyExpenses),
@@ -547,7 +531,9 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
                     ),
                   ),
                   SizedBox(
-                    width: isWide ? (constraints.maxWidth - 12) / 2 : constraints.maxWidth,
+                    width: isWide
+                        ? (constraints.maxWidth - 12) / 2
+                        : constraints.maxWidth,
                     child: _buildOverallStatItem(
                       'Balance Promedio',
                       FormatUtils.formatMoney(stats.averageMonthlyBalance),
@@ -556,7 +542,9 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
                     ),
                   ),
                   SizedBox(
-                    width: isWide ? (constraints.maxWidth - 12) / 2 : constraints.maxWidth,
+                    width: isWide
+                        ? (constraints.maxWidth - 12) / 2
+                        : constraints.maxWidth,
                     child: _buildOverallStatItem(
                       'Meses Registrados',
                       '${stats.monthsWithData}',
@@ -573,16 +561,18 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildOverallStatItem(String title, String value, Color color, IconData icon) {
+  Widget _buildOverallStatItem(
+    String title,
+    String value,
+    Color color,
+    IconData icon,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: color.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.15),
-          width: 1,
-        ),
+        border: Border.all(color: color.withOpacity(0.15), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -687,7 +677,7 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
               ),
             ),
             const SizedBox(width: 20),
-            
+
             // Texto
             Expanded(
               child: Column(
@@ -714,7 +704,7 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
                 ],
               ),
             ),
-            
+
             // Flecha
             Container(
               padding: const EdgeInsets.all(8),
@@ -747,10 +737,7 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(
-          color: primaryPurple.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: primaryPurple.withOpacity(0.1), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -783,22 +770,27 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
             ],
           ),
           const SizedBox(height: 24),
-          
+
           if (_categoryStats.isNotEmpty) ...[
             // Lista de categorías principales (sin gráfico embebido)
-            ...(_categoryStats.take(5).map((category) => 
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _buildCategoryItem(category),
-              )
-            )),
-            
+            ...(_categoryStats
+                .take(5)
+                .map(
+                  (category) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _buildCategoryItem(category),
+                  ),
+                )),
+
             // Mostrar indicador si hay más categorías
             if (_categoryStats.length > 5) ...[
               const SizedBox(height: 8),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 16,
+                ),
                 decoration: BoxDecoration(
                   color: primaryPurple.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(12),
@@ -861,10 +853,16 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
   }
 
   Widget _buildCategoryItem(CategoryStats category) {
-    final colors = [dangerRed, warningYellow, successGreen, primaryBlue, primaryPurple];
+    final colors = [
+      dangerRed,
+      warningYellow,
+      successGreen,
+      primaryBlue,
+      primaryPurple,
+    ];
     final colorIndex = _categoryStats.indexOf(category);
     final color = colors[colorIndex % colors.length];
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -893,10 +891,7 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
                 const SizedBox(height: 2),
                 Text(
                   '${category.transactionCount} transacciones',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: textMedium,
-                  ),
+                  style: const TextStyle(fontSize: 12, color: textMedium),
                 ),
               ],
             ),
@@ -956,7 +951,7 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
             ),
           ),
           const SizedBox(height: 20),
-          
+
           SizedBox(
             height: 150,
             child: ListView.builder(
@@ -974,9 +969,11 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
   }
 
   Widget _buildWeekBar(WeeklyStats week) {
-    final maxAmount = _weeklyStats.map((w) => w.expenses).reduce((a, b) => a > b ? a : b);
+    final maxAmount = _weeklyStats
+        .map((w) => w.expenses)
+        .reduce((a, b) => a > b ? a : b);
     final height = maxAmount > 0 ? (week.expenses / maxAmount) * 100 : 0.0;
-    
+
     return Container(
       width: 60,
       margin: const EdgeInsets.only(right: 12),
@@ -994,10 +991,7 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
           const SizedBox(height: 8),
           Text(
             week.weekLabel.split(' - ')[0],
-            style: const TextStyle(
-              fontSize: 12,
-              color: textMedium,
-            ),
+            style: const TextStyle(fontSize: 12, color: textMedium),
           ),
         ],
       ),
@@ -1011,9 +1005,7 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
         HapticFeedback.mediumImpact();
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => const MonthlyHistoryScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const MonthlyHistoryScreen()),
         );
       },
       child: Container(
@@ -1063,10 +1055,7 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
                   SizedBox(height: 4),
                   Text(
                     'Ver actividad por mes',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                 ],
               ),
@@ -1147,10 +1136,7 @@ class _StatsScreenState extends State<StatsScreen> with TickerProviderStateMixin
                   SizedBox(height: 4),
                   Text(
                     'Visualiza tu actividad día a día',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                 ],
               ),

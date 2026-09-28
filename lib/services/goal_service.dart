@@ -30,6 +30,9 @@ class GoalService extends ChangeNotifier {
   List<FinancialGoal> get completedGoals => goals.where((g) => g.status == GoalStatus.completed).toList();
   List<GoalContribution> get contributions => _contributions.where((c) => c.accountId == _accountService.activeAccountId).toList();
 
+  // Getter para TODAS las contribuciones (sin filtro de cuenta)
+  List<GoalContribution> get allContributions => List.unmodifiable(_contributions);
+
   // Validar si se pueden crear más metas en la cuenta activa
   // Solo cuentan las metas activas/pausadas (igual que el contador que ve el
   // usuario) — las completadas/canceladas no ocupan cupo.
@@ -163,6 +166,31 @@ class GoalService extends ChangeNotifier {
       print('Error saving contributions: $e');
       throw Exception('No se pudo guardar la contribución');
     }
+  }
+
+  // Reemplaza TODAS las metas y contribuciones (usado al restaurar una
+  // copia de seguridad). El llamador es responsable de validar los datos
+  // antes.
+  Future<void> replaceAllForRestore(
+    List<FinancialGoal> goals,
+    List<GoalContribution> contributions,
+  ) async {
+    _goals = List.of(goals)
+      ..sort((a, b) {
+        if (a.status != b.status) {
+          if (a.status == GoalStatus.active) return -1;
+          if (b.status == GoalStatus.active) return 1;
+        }
+        if (a.priority != b.priority) {
+          return b.priority.index.compareTo(a.priority.index);
+        }
+        return b.createdAt.compareTo(a.createdAt);
+      });
+    _contributions = List.of(contributions);
+
+    await _saveGoals();
+    await _saveContributions();
+    notifyListeners();
   }
 
   // Agregar nueva meta

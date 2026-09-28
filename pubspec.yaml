@@ -35,6 +35,12 @@ dependencies:
   excel: ^4.0.6              # Generación de archivos .xlsx (pure Dart, compatible Dart 3.9)
   share_plus: ^10.1.4        # Compartir archivos vía diálogo nativo del SO
   path_provider: ^2.1.4      # Directorio temporal para guardar archivos antes de compartir
+  file_picker: ^11.0.3       # Selección de archivos para importar copias de seguridad
+
+  # Seguridad: bloqueo de la app con PIN y biometría
+  local_auth: ^3.0.1         # Face ID / huella / Windows Hello
+  flutter_secure_storage: ^10.3.4  # Almacenamiento cifrado del PIN (Keystore/Keychain)
+  crypto: ^3.0.7              # Hash del PIN (nunca se guarda en texto plano)
 
 dev_dependencies:
   flutter_test:

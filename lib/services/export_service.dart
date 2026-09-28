@@ -1,8 +1,5 @@
-import 'dart:io';
-
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../models/budget.dart';
 import '../models/export_config.dart';
@@ -24,8 +21,7 @@ import 'transaction_service.dart';
 /// 2. Aplicar los filtros definidos en [ExportConfig.filters].
 /// 3. Construir [ExportData] (DTO limpio, sin referencias a servicios).
 /// 4. Delegar la generación de bytes al [BaseExporter] correspondiente.
-/// 5. Guardar el archivo en el directorio temporal del dispositivo.
-/// 6. Compartir el archivo vía el diálogo nativo del SO.
+/// 5. Guardar el archivo en el teléfono vía el diálogo nativo "Guardar en…".
 ///
 /// Sigue el patrón Singleton del resto de servicios del proyecto.
 /// No modifica ningún dato existente: es 100% de solo lectura.
@@ -46,15 +42,16 @@ class ExportService {
 
   // ─── Método principal ────────────────────────────────────────────────
 
-  /// Genera el reporte según [config] y abre el diálogo de compartir nativo.
+  /// Genera el reporte según [config] y abre el diálogo nativo "Guardar en…"
+  /// para que el usuario lo guarde en su teléfono (normalmente Descargas).
   ///
-  /// Devuelve la ruta del archivo temporal generado, o `null` si ya había
-  /// una exportación en curso.
+  /// Devuelve la ruta donde se guardó, o `null` si el usuario canceló el
+  /// diálogo o ya había una exportación en curso.
   ///
   /// Lanza excepción si el formato no está implementado, si el rango de
   /// fechas no contiene transacciones, o si falla la escritura en disco.
   /// La UI debe capturar el error y mostrarlo al usuario.
-  Future<String?> generateAndShare(ExportConfig config) async {
+  Future<String?> generateAndSave(ExportConfig config) async {
     if (_isExporting) return null;
     _isExporting = true;
 
@@ -78,19 +75,22 @@ class ExportService {
       // 4. Generar bytes (delegado al isolate del exportador)
       final bytes = await exporter.generateBytes(exportData);
 
-      // 5. Guardar en directorio temporal
-      final filePath = await _saveToTempDir(
-        bytes: bytes,
-        config: config,
-        exporter: exporter,
+      // 5. Guardar en el teléfono (el usuario elige la carpeta)
+      final savedPath = await FilePicker.saveFile(
+        dialogTitle: 'Guardar reporte',
+        fileName: _buildFileName(
+          prefix: 'AhorroApp_Reporte',
+          dateFrom: config.filters.dateFrom,
+          dateTo: config.filters.dateTo,
+          extension: exporter.fileExtension,
+        ),
+        bytes: Uint8List.fromList(bytes),
       );
+      if (savedPath != null) debugPrint('✅ Reporte guardado en: $savedPath');
 
-      // 6. Compartir vía SO
-      await _shareFile(filePath: filePath, config: config, exporter: exporter);
-
-      return filePath;
+      return savedPath;
     } catch (e) {
-      debugPrint('❌ ExportService.generateAndShare error: $e');
+      debugPrint('❌ ExportService.generateAndSave error: $e');
       rethrow;
     } finally {
       _isExporting = false;
@@ -149,18 +149,24 @@ class ExportService {
         return false;
       }
 
-      // Filtro de categoría
+      // Filtro de categoría (las transferencias no tienen categoría: si hay
+      // un filtro de categoría activo, quedan fuera)
       if (f.hasCategoryFilter) {
-        if (t.type == TransactionType.expense) {
-          final matchesCustom = f.customCategoryIds.isNotEmpty &&
+        if (t.type == TransactionType.transfer) {
+          return false;
+        } else if (t.type == TransactionType.expense) {
+          final matchesCustom =
+              f.customCategoryIds.isNotEmpty &&
               t.customCategoryId != null &&
               f.customCategoryIds.contains(t.customCategoryId);
-          final matchesSystem = f.expenseCategories.isNotEmpty &&
+          final matchesSystem =
+              f.expenseCategories.isNotEmpty &&
               t.expenseCategory != null &&
               f.expenseCategories.contains(t.expenseCategory);
           if (!matchesCustom && !matchesSystem) return false;
         } else {
-          final matchesIncome = f.incomeCategories.isNotEmpty &&
+          final matchesIncome =
+              f.incomeCategories.isNotEmpty &&
               t.incomeCategory != null &&
               f.incomeCategories.contains(t.incomeCategory);
           if (f.incomeCategories.isNotEmpty && !matchesIncome) return false;
@@ -171,10 +177,7 @@ class ExportService {
     }).toList();
   }
 
-  List<Budget> _filterBudgets(
-    List<Budget> source,
-    ExportConfig config,
-  ) {
+  List<Budget> _filterBudgets(List<Budget> source, ExportConfig config) {
     final f = config.filters;
     if (!f.hasAccountFilter) return List.of(source);
     return source.where((b) => f.accountIds.contains(b.accountId)).toList();
@@ -205,25 +208,7 @@ class ExportService {
     }
   }
 
-  // ─── Guardado y compartición ──────────────────────────────────────────
-
-  Future<String> _saveToTempDir({
-    required List<int> bytes,
-    required ExportConfig config,
-    required BaseExporter exporter,
-  }) async {
-    final dir = await getTemporaryDirectory();
-    final fileName = _buildFileName(
-      prefix: 'AhorroApp_Reporte',
-      dateFrom: config.filters.dateFrom,
-      dateTo: config.filters.dateTo,
-      extension: exporter.fileExtension,
-    );
-    final file = File('${dir.path}/$fileName');
-    await file.writeAsBytes(bytes, flush: true);
-    debugPrint('✅ Reporte guardado en: ${file.path}');
-    return file.path;
-  }
+  // ─── Nombre de archivo ────────────────────────────────────────────────
 
   static String _buildFileName({
     required String prefix,
@@ -240,21 +225,6 @@ class ExportService {
         '${dateTo.month.toString().padLeft(2, '0')}'
         '${dateTo.day.toString().padLeft(2, '0')}';
     return '${prefix}_${from}_$to.$extension';
-  }
-
-  Future<void> _shareFile({
-    required String filePath,
-    required ExportConfig config,
-    required BaseExporter exporter,
-  }) async {
-    await Share.shareXFiles(
-      [XFile(filePath, mimeType: exporter.mimeType)],
-      subject: 'Reporte Financiero — ${config.dateRangeLabel}',
-      text:
-          'Reporte financiero generado con AhorroApp\n'
-          'Período: ${config.dateRangeLabel}\n'
-          'Tipo: ${config.reportTypeLabel}',
-    );
   }
 }
 

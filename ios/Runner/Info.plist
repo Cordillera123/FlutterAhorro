@@ -45,5 +45,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Usa Face ID para desbloquear AhorroApp rápidamente en lugar de tu PIN.</string>
 </dict>
 </plist>

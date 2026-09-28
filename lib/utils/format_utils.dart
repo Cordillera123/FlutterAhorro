@@ -1,12 +1,15 @@
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import '../models/region.dart';
+import '../services/region_service.dart';
 
 class FormatUtils {
-  // Formatear dinero en pesos colombianos con decimales
+  // Formatear dinero según la región activa (locale y símbolo de moneda)
   static String formatMoney(double amount) {
+    final region = RegionService().current;
     final formatter = NumberFormat.currency(
-      locale: 'es_CO',
-      symbol: '\$',
+      locale: region.localeCode,
+      symbol: region.currencySymbol,
       decimalDigits: 2, // CAMBIADO: de 0 a 2 para mostrar decimales
     );
     return formatter.format(amount);

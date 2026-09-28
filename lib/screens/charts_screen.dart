@@ -3,6 +3,7 @@ import '../services/stats_service.dart';
 import '../widgets/pie_chart_widget.dart';
 import '../utils/format_utils.dart';
 import '../theme/app_colors.dart';
+import '../widgets/common/common.dart';
 
 class ChartsScreen extends StatefulWidget {
   final List<CategoryStats> categoryStats;
@@ -136,24 +137,7 @@ class _ChartsScreenState extends State<ChartsScreen>
       pinned: true,
       backgroundColor: Colors.white,
       elevation: 0,
-      leading: Padding(
-        padding: const EdgeInsets.only(left: 8),
-        child: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            margin: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.arrow_back_ios_new_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
-          ),
-        ),
-      ),
+      leading: const AppBackButton(light: true),
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: const BoxDecoration(

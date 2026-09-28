@@ -80,6 +80,14 @@ class RecurringExpenseService {
     }
   }
 
+  // Reemplaza TODOS los gastos recurrentes (usado al restaurar una copia de
+  // seguridad). El llamador es responsable de validar los datos antes.
+  Future<void> replaceAllForRestore(List<RecurringExpense> expenses) async {
+    _recurringExpenses = List.of(expenses)
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    await _saveRecurringExpenses();
+  }
+
   // Agregar un nuevo gasto recurrente
   Future<void> addRecurringExpense(RecurringExpense expense) async {
     // Asignar cuenta activa si no tiene

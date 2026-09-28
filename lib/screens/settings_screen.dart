@@ -3,8 +3,15 @@ import 'package:flutter/services.dart';
 import 'manage_categories_screen.dart';
 import 'manage_accounts_screen.dart';
 import 'export_screen.dart';
+import 'backup_screen.dart';
+import 'onboarding_screen.dart';
+import 'security_screen.dart';
+import 'region_settings_screen.dart';
 import '../models/export_config.dart';
+import '../models/region.dart';
+import '../services/region_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/common/common.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -17,11 +24,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeInAnimation;
-
-  // Colores consistentes
-  static const Color primaryBlue = AppColors.primaryBlue;
-  static const Color secondaryGray = AppColors.textMedium;
-  static const Color backgroundGray = AppColors.backgroundCard;
 
   @override
   void initState() {
@@ -53,8 +55,10 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final region = RegionService().current;
+
     return Scaffold(
-      backgroundColor: backgroundGray,
+      backgroundColor: AppColors.backgroundCard,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -67,45 +71,91 @@ class _SettingsScreenState extends State<SettingsScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildSectionTitle('Personalización'),
+                    const SectionHeader('Personalización'),
                     const SizedBox(height: 12),
-                    _buildSettingsCard([
-                      _buildSettingsTile(
-                        icon: Icons.account_balance_outlined,
-                        iconColor: const Color(0xFF059669),
-                        title: 'Mis Cuentas',
-                        subtitle: 'Gestiona tus cuentas financieras',
-                        onTap: () => _navigateToAccounts(),
+                    AppCard(
+                      child: Column(
+                        children: [
+                          AppListTile(
+                            icon: Icons.account_balance_outlined,
+                            iconColor: AppColors.primaryGreen,
+                            title: 'Mis Cuentas',
+                            subtitle: 'Gestiona tus cuentas financieras',
+                            onTap: _navigateToAccounts,
+                            showDivider: true,
+                          ),
+                          AppListTile(
+                            icon: Icons.category_outlined,
+                            iconColor: AppColors.primaryBlue,
+                            title: 'Categorías de gastos',
+                            subtitle: 'Gestiona tus categorías personalizadas',
+                            onTap: _navigateToCategories,
+                            showDivider: true,
+                          ),
+                          AppListTile(
+                            icon: Icons.file_download_outlined,
+                            iconColor: AppColors.primaryBlue,
+                            title: 'Exportar datos',
+                            subtitle: 'Genera reportes en Excel',
+                            onTap: _navigateToExport,
+                            showDivider: true,
+                          ),
+                          AppListTile(
+                            icon: Icons.backup_outlined,
+                            iconColor: AppColors.primaryBlue,
+                            title: 'Copia de seguridad',
+                            subtitle:
+                                'Crea o restaura un respaldo de tus datos',
+                            onTap: _navigateToBackup,
+                            showDivider: true,
+                          ),
+                          AppListTile(
+                            icon: Icons.public_outlined,
+                            iconColor: AppColors.primaryBlue,
+                            title: 'Región y moneda',
+                            subtitle:
+                                '${region.flagEmoji} ${region.displayName} · ${region.currencyCode}',
+                            onTap: _navigateToRegion,
+                          ),
+                        ],
                       ),
-                      const Divider(height: 1),
-                      _buildSettingsTile(
-                        icon: Icons.category_outlined,
-                        iconColor: primaryBlue,
-                        title: 'Categorías de gastos',
-                        subtitle: 'Gestiona tus categorías personalizadas',
-                        onTap: () => _navigateToCategories(),
-                        showDivider: true,
-                      ),
-                      _buildSettingsTile(
-                        icon: Icons.file_download_outlined,
-                        iconColor: primaryBlue,
-                        title: 'Exportar datos',
-                        subtitle: 'Genera reportes en Excel',
-                        onTap: () => _navigateToExport(),
-                      ),
-                    ]),
+                    ),
                     const SizedBox(height: 24),
-                    _buildSectionTitle('Información'),
+                    const SectionHeader('Privacidad y seguridad'),
                     const SizedBox(height: 12),
-                    _buildSettingsCard([
-                      _buildSettingsTile(
-                        icon: Icons.info_outline,
-                        iconColor: secondaryGray,
-                        title: 'Acerca de',
-                        subtitle: 'Versión 1.0.0',
-                        onTap: () => _showAboutDialog(),
+                    AppCard(
+                      child: AppListTile(
+                        icon: Icons.lock_outline,
+                        iconColor: AppColors.primaryPurple,
+                        title: 'Seguridad',
+                        subtitle: 'PIN, biometría y saldos ocultos',
+                        onTap: _navigateToSecurity,
                       ),
-                    ]),
+                    ),
+                    const SizedBox(height: 24),
+                    const SectionHeader('Información'),
+                    const SizedBox(height: 12),
+                    AppCard(
+                      child: Column(
+                        children: [
+                          AppListTile(
+                            icon: Icons.school_outlined,
+                            iconColor: AppColors.primaryGreen,
+                            title: 'Ver tutorial',
+                            subtitle: 'Repasa cómo usar la app',
+                            onTap: _openTutorial,
+                            showDivider: true,
+                          ),
+                          AppListTile(
+                            icon: Icons.info_outline,
+                            iconColor: AppColors.textMedium,
+                            title: 'Acerca de',
+                            subtitle: 'Versión 1.0.0',
+                            onTap: _showAboutDialog,
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -124,27 +174,13 @@ class _SettingsScreenState extends State<SettingsScreen>
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
-      leading: IconButton(
-        icon: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(
-            Icons.arrow_back_ios_new,
-            size: 18,
-            color: Color(0xFF1E293B),
-          ),
-        ),
-        onPressed: () => Navigator.pop(context),
-      ),
+      leading: const AppBackButton(),
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
         title: const Text(
           'Configuración',
           style: TextStyle(
-            color: Color(0xFF1E293B),
+            color: AppColors.textDark,
             fontWeight: FontWeight.w700,
             fontSize: 24,
           ),
@@ -154,7 +190,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Colors.white, Color(0xFFF8FAFC)],
+              colors: [Colors.white, AppColors.backgroundCard],
             ),
           ),
         ),
@@ -166,123 +202,10 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: secondaryGray,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSettingsCard(List<Widget> children) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: children,
-      ),
-    );
-  }
-
-  Widget _buildSettingsTile({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-    bool showDivider = false,
-  }) {
-    return Column(
-      children: [
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: showDivider
-                ? null
-                : BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: iconColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      icon,
-                      color: iconColor,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1E293B),
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          subtitle,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(
-                    Icons.chevron_right,
-                    color: Colors.grey.shade400,
-                    size: 24,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        if (showDivider)
-          Divider(
-            height: 1,
-            indent: 68,
-            color: Colors.grey.shade200,
-          ),
-      ],
-    );
-  }
-
   void _navigateToAccounts() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const ManageAccountsScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const ManageAccountsScreen()),
     );
   }
 
@@ -290,18 +213,50 @@ class _SettingsScreenState extends State<SettingsScreen>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ExportScreen(
-          initialConfig: ExportConfig.currentMonth(),
-        ),
+        builder: (context) =>
+            ExportScreen(initialConfig: ExportConfig.currentMonth()),
       ),
     );
+  }
+
+  void _navigateToSecurity() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SecurityScreen()),
+    );
+  }
+
+  void _navigateToBackup() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const BackupScreen()),
+    );
+  }
+
+  Future<void> _navigateToRegion() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const RegionSettingsScreen()),
+    );
+    // La región pudo haber cambiado — refrescar el subtítulo.
+    if (mounted) setState(() {});
   }
 
   void _navigateToCategories() {
     Navigator.push(
       context,
+      MaterialPageRoute(builder: (context) => const ManageCategoriesScreen()),
+    );
+  }
+
+  void _openTutorial() {
+    Navigator.push(
+      context,
       MaterialPageRoute(
-        builder: (context) => const ManageCategoriesScreen(),
+        fullscreenDialog: true,
+        builder: (routeContext) => OnboardingScreen(
+          onFinished: () => Navigator.of(routeContext).pop(),
+        ),
       ),
     );
   }
@@ -310,30 +265,25 @@ class _SettingsScreenState extends State<SettingsScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: primaryBlue.withOpacity(0.1),
+                color: AppColors.primaryBlue.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
                 Icons.savings_outlined,
-                color: primaryBlue,
+                color: AppColors.primaryBlue,
                 size: 28,
               ),
             ),
             const SizedBox(width: 12),
             const Text(
               'Mi App de Ahorro',
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 18,
-              ),
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
             ),
           ],
         ),
@@ -343,18 +293,12 @@ class _SettingsScreenState extends State<SettingsScreen>
           children: [
             Text(
               'Versión 1.0.0',
-              style: TextStyle(
-                fontSize: 14,
-                color: secondaryGray,
-              ),
+              style: TextStyle(fontSize: 14, color: AppColors.textMedium),
             ),
             SizedBox(height: 12),
             Text(
               'App para control de gastos, presupuestos y metas de ahorro.',
-              style: TextStyle(
-                fontSize: 14,
-                color: Color(0xFF1E293B),
-              ),
+              style: TextStyle(fontSize: 14, color: AppColors.textDark),
             ),
           ],
         ),
@@ -364,7 +308,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             child: const Text(
               'Cerrar',
               style: TextStyle(
-                color: primaryBlue,
+                color: AppColors.primaryBlue,
                 fontWeight: FontWeight.w600,
               ),
             ),

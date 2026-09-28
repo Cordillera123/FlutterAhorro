@@ -48,6 +48,12 @@ class ExportData {
 
   double get netBalance => totalIncome - totalExpense;
 
+  /// Efecto neto de las transferencias sobre las cuentas incluidas en el
+  /// reporte (no es ingreso ni gasto, pero sí mueve saldo real).
+  double get transferNetDelta => transactions
+      .where((t) => t.type == TransactionType.transfer)
+      .fold(0.0, (sum, t) => sum + ((t.isTransferOut ?? true) ? -t.amount : t.amount));
+
   /// Suma de [Account.initialBalance] de las cuentas relevantes según filtros.
   double get totalInitialBalance {
     final relevant = config.filters.hasAccountFilter
@@ -56,8 +62,9 @@ class ExportData {
     return relevant.fold(0.0, (sum, a) => sum + a.initialBalance);
   }
 
-  /// Balance real = saldo inicial + transacciones netas del período filtrado.
-  double get totalBalance => totalInitialBalance + netBalance;
+  /// Balance real = saldo inicial + transacciones netas del período filtrado
+  /// (incluyendo el efecto de las transferencias entre cuentas).
+  double get totalBalance => totalInitialBalance + netBalance + transferNetDelta;
 
   int get transactionCount => transactions.length;
   int get budgetCount => budgets.length;

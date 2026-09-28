@@ -74,11 +74,26 @@ class CsvService implements BaseExporter {
     final dateFmt = DateFormat('dd/MM/yyyy', 'es');
 
     for (final t in data.transactions) {
-      final sign = t.type == TransactionType.expense ? '-' : '';
+      String sign;
+      String typeLabel;
+      switch (t.type) {
+        case TransactionType.income:
+          sign = '';
+          typeLabel = 'Ingreso';
+          break;
+        case TransactionType.expense:
+          sign = '-';
+          typeLabel = 'Gasto';
+          break;
+        case TransactionType.transfer:
+          sign = (t.isTransferOut ?? true) ? '-' : '';
+          typeLabel = 'Transferencia';
+          break;
+      }
       buf.writeln(_row([
         dateFmt.format(t.date),
         data.accountNameById(t.accountId),
-        t.type == TransactionType.income ? 'Ingreso' : 'Gasto',
+        typeLabel,
         t.categoryName,
         '$sign${moneyFmt.format(t.amount)}',
         t.description,

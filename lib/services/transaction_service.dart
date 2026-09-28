@@ -88,6 +88,15 @@ class TransactionService extends ChangeNotifier {
     }
   }
 
+  // Reemplaza TODAS las transacciones (usado al restaurar una copia de
+  // seguridad). El llamador es responsable de validar los datos antes.
+  Future<void> replaceAllForRestore(List<Transaction> transactions) async {
+    _transactions = List.of(transactions)
+      ..sort((a, b) => b.date.compareTo(a.date));
+    await _saveTransactions();
+    notifyListeners();
+  }
+
   // Agregar una nueva transacción (asigna cuenta activa si no tiene)
   Future<void> addTransaction(Transaction transaction) async {
     final transactionWithAccount = transaction.copyWith(
@@ -102,9 +111,82 @@ class TransactionService extends ChangeNotifier {
     await _saveTransactions();
     notifyListeners();
   }
-  // Eliminar una transacción
+
+  /// Crea una transferencia contable entre dos cuentas propias: resta
+  /// [amount] de [fromAccountId] y suma [amount] a [toAccountId]. NO es un
+  /// ingreso ni un gasto — no se contabiliza en presupuestos ni estadísticas.
+  ///
+  /// Internamente crea DOS [Transaction] (una por cuenta) enlazadas por el
+  /// mismo `transferId`; [deleteTransaction] las borra siempre juntas.
+  Future<void> createTransfer({
+    required String fromAccountId,
+    required String toAccountId,
+    required double amount,
+    required DateTime date,
+    String? note,
+  }) async {
+    if (fromAccountId == toAccountId) {
+      throw Exception('La cuenta de origen y destino no pueden ser la misma.');
+    }
+    if (amount <= 0) {
+      throw Exception('El monto de la transferencia debe ser mayor a cero.');
+    }
+    if (_accountService.getAccountById(fromAccountId) == null ||
+        _accountService.getAccountById(toAccountId) == null) {
+      throw Exception('Una de las cuentas seleccionadas ya no existe.');
+    }
+
+    final transferId = 'transfer_${DateTime.now().millisecondsSinceEpoch}';
+    final description = (note != null && note.trim().isNotEmpty)
+        ? note.trim()
+        : 'Transferencia entre cuentas';
+
+    final outgoing = Transaction(
+      id: '${transferId}_out',
+      amount: amount,
+      type: TransactionType.transfer,
+      description: description,
+      date: date,
+      accountId: fromAccountId,
+      transferId: transferId,
+      relatedAccountId: toAccountId,
+      isTransferOut: true,
+    );
+
+    final incoming = Transaction(
+      id: '${transferId}_in',
+      amount: amount,
+      type: TransactionType.transfer,
+      description: description,
+      date: date,
+      accountId: toAccountId,
+      transferId: transferId,
+      relatedAccountId: fromAccountId,
+      isTransferOut: false,
+    );
+
+    _transactions.addAll([outgoing, incoming]);
+    _transactions.sort((a, b) => b.date.compareTo(a.date));
+    await _saveTransactions();
+    notifyListeners();
+  }
+
+  // Eliminar una transacción. Si es una pata de una transferencia, se borra
+  // también su pareja (no puede quedar una transferencia a medias).
   Future<void> deleteTransaction(String id) async {
-    _transactions.removeWhere((transaction) => transaction.id == id);
+    Transaction? target;
+    for (final t in _transactions) {
+      if (t.id == id) {
+        target = t;
+        break;
+      }
+    }
+
+    if (target != null && target.transferId != null) {
+      _transactions.removeWhere((t) => t.transferId == target!.transferId);
+    } else {
+      _transactions.removeWhere((transaction) => transaction.id == id);
+    }
     await _saveTransactions();
     notifyListeners();
   }
@@ -133,15 +215,16 @@ class TransactionService extends ChangeNotifier {
       notifyListeners();
     }
   }
-  // Balance total de la cuenta activa (balance inicial + transacciones)
-  double get totalBalance {
-    double balance = _accountService.activeAccount.initialBalance;
-    for (var transaction in transactions) {
-      if (transaction.type == TransactionType.income) {
-        balance += transaction.amount;
-      } else {
-        balance -= transaction.amount;
-      }
+  // Balance total de la cuenta activa (balance inicial + transacciones,
+  // incluyendo el efecto de las transferencias entrantes/salientes)
+  double get totalBalance => balanceForAccount(_accountService.activeAccountId);
+
+  // Balance de cualquier cuenta (no solo la activa) — usado por la pantalla
+  // de transferencias para mostrar el saldo disponible de origen/destino.
+  double balanceForAccount(String accountId) {
+    double balance = _accountService.getAccountById(accountId)?.initialBalance ?? 0.0;
+    for (var transaction in transactionsForAccount(accountId)) {
+      balance = transaction.applyToBalance(balance);
     }
     return balance;
   }

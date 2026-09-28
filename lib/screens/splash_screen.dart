@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../services/onboarding_service.dart';
+import '../services/security_service.dart';
+import '../theme/app_colors.dart';
 import '../widgets/app_logo.dart';
+import 'lock_screen.dart';
 import 'main_navigation_screen.dart';
+import 'onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -38,18 +43,11 @@ class _SplashScreenState extends State<SplashScreen>
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeOut,
-    ));
+    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
 
-    _logoAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _logoController,
-      curve: Curves.elasticOut,
-    ));
+    _logoAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _logoController, curve: Curves.elasticOut),
+    );
 
     // Iniciar animaciones de forma segura
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -66,25 +64,36 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _navigateToHome() async {
     await Future.delayed(const Duration(milliseconds: 2800));
-    
+
     if (mounted) {
       // Agregar haptic feedback
       HapticFeedback.lightImpact();
-      
+
+      final locked = SecurityService().isLockEnabled;
+      // En una instalación nueva nunca hay PIN activo, así que el tutorial
+      // y la pantalla de bloqueo no compiten entre sí.
+      final showOnboarding = OnboardingService().shouldShow;
+
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              const MainNavigationScreen(),
+          pageBuilder: (context, animation, secondaryAnimation) => locked
+              ? LockScreen(onUnlocked: () => _goToMainNavigation(context))
+              : showOnboarding
+              ? OnboardingScreen(onFinished: () => _goToMainNavigation(context))
+              : const MainNavigationScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(
-              opacity: animation,
-              child: child,
-            );
+            return FadeTransition(opacity: animation, child: child);
           },
           transitionDuration: const Duration(milliseconds: 500),
         ),
       );
     }
+  }
+
+  void _goToMainNavigation(BuildContext context) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+    );
   }
 
   @override
@@ -103,9 +112,9 @@ class _SplashScreenState extends State<SplashScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF10B981),
-              Color(0xFF059669),
-              Color(0xFF047857),
+              AppColors.emeraldGreen,
+              AppColors.primaryGreen,
+              AppColors.darkGreen,
             ],
           ),
         ),
@@ -115,7 +124,7 @@ class _SplashScreenState extends State<SplashScreen>
             builder: (context, child) {
               final fadeValue = _fadeAnimation.value.clamp(0.0, 1.0);
               final scaleValue = _logoAnimation.value.clamp(0.5, 1.2);
-              
+
               return Opacity(
                 opacity: fadeValue,
                 child: Center(

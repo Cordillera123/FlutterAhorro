@@ -14,6 +14,7 @@ class ExcelFormatter {
   static final ExcelColor _colorSubHeader    = ExcelColor.fromHexString('FF6B7280');
   static final ExcelColor _colorIncome       = ExcelColor.fromHexString('FF059669');
   static final ExcelColor _colorExpense      = ExcelColor.fromHexString('FFDC2626');
+  static final ExcelColor _colorTransfer     = ExcelColor.fromHexString('FF3B82F6');
   static final ExcelColor _colorWarning      = ExcelColor.fromHexString('FFD97706');
   static final ExcelColor _colorAltRow       = ExcelColor.fromHexString('FFF9FAFB');
   static final ExcelColor _colorWhite        = ExcelColor.fromHexString('FFFFFFFF');
@@ -117,14 +118,24 @@ class ExcelFormatter {
 
   // ─── Estilos dinámicos ────────────────────────────────────────────────
 
-  /// Monto con color semántico (verde/rojo) y soporte de fila alterna.
+  /// Monto con color semántico (verde/rojo/azul) y soporte de fila alterna.
+  /// [isTransfer] tiene prioridad sobre [isIncome] cuando ambos aplicarían.
   static CellStyle amountStyle({
     required bool isIncome,
     required bool isAltRow,
+    bool isTransfer = false,
   }) {
+    final ExcelColor color;
+    if (isTransfer) {
+      color = _colorTransfer;
+    } else if (isIncome) {
+      color = _colorIncome;
+    } else {
+      color = _colorExpense;
+    }
     return CellStyle(
       fontSize: 10,
-      fontColorHex: isIncome ? _colorIncome : _colorExpense,
+      fontColorHex: color,
       backgroundColorHex: isAltRow ? _colorAltRow : _colorWhite,
       horizontalAlign: HorizontalAlign.Right,
     );

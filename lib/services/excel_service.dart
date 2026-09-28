@@ -315,6 +315,10 @@ class ExcelService implements BaseExporter {
       final t = transactions[i];
       final isAlt = i % 2 == 1;
       final isIncome = t.type == TransactionType.income;
+      final isTransfer = t.type == TransactionType.transfer;
+      final typeLabel = isTransfer
+          ? 'Transferencia'
+          : (isIncome ? 'Ingreso' : 'Gasto');
       final baseStyle =
           isAlt ? ExcelFormatter.altRowStyle : ExcelFormatter.valueStyle;
 
@@ -325,7 +329,7 @@ class ExcelService implements BaseExporter {
       );
       _writeCell(
         sheet, row, 2,
-        TextCellValue(isIncome ? 'Ingreso' : 'Gasto'), baseStyle,
+        TextCellValue(typeLabel), baseStyle,
       );
       _writeCell(sheet, row, 3, TextCellValue(t.description), baseStyle);
       _writeCell(sheet, row, 4, TextCellValue(t.categoryName), baseStyle);
@@ -336,7 +340,11 @@ class ExcelService implements BaseExporter {
       _writeCell(
         sheet, row, 6,
         TextCellValue(ExcelFormatter.formatMoney(t.amount)),
-        ExcelFormatter.amountStyle(isIncome: isIncome, isAltRow: isAlt),
+        ExcelFormatter.amountStyle(
+          isIncome: isIncome,
+          isAltRow: isAlt,
+          isTransfer: isTransfer,
+        ),
       );
       row++;
     }
@@ -765,17 +773,25 @@ class ExcelService implements BaseExporter {
         final t = accTx[i];
         final isAlt = i % 2 == 1;
         final isIncome = t.type == TransactionType.income;
+        final isTransfer = t.type == TransactionType.transfer;
+        final typeLabel = isTransfer
+            ? 'Transferencia'
+            : (isIncome ? 'Ingreso' : 'Gasto');
         final style = isAlt ? ExcelFormatter.altRowStyle : ExcelFormatter.valueStyle;
 
         _writeCell(sheet, row, 0, IntCellValue(i + 1), style);
         _writeCell(sheet, row, 1, TextCellValue(ExcelFormatter.formatDate(t.date)), style);
-        _writeCell(sheet, row, 2, TextCellValue(isIncome ? 'Ingreso' : 'Gasto'), style);
+        _writeCell(sheet, row, 2, TextCellValue(typeLabel), style);
         _writeCell(sheet, row, 3, TextCellValue(t.description), style);
         _writeCell(sheet, row, 4, TextCellValue(t.categoryName), style);
         _writeCell(
           sheet, row, 5,
           TextCellValue(ExcelFormatter.formatMoney(t.amount)),
-          ExcelFormatter.amountStyle(isIncome: isIncome, isAltRow: isAlt),
+          ExcelFormatter.amountStyle(
+            isIncome: isIncome,
+            isAltRow: isAlt,
+            isTransfer: isTransfer,
+          ),
         );
         row++;
       }

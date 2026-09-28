@@ -12,6 +12,7 @@ import '../widgets/dashboard/financial_health_section.dart';
 import '../widgets/dashboard/forecasts_section.dart';
 import '../widgets/dashboard/observations_section.dart';
 import '../widgets/dashboard/opportunities_section.dart';
+import '../widgets/common/common.dart';
 import 'achievements_screen.dart';
 
 /// Análisis financiero completo. Vive fuera de Inicio a propósito: aquí el
@@ -59,15 +60,13 @@ class _FinancialInsightsScreenState extends State<FinancialInsightsScreen>
       parent: _animationController,
       curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.04),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
-      ),
-    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.04), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
+          ),
+        );
   }
 
   @override
@@ -133,6 +132,7 @@ class _FinancialInsightsScreenState extends State<FinancialInsightsScreen>
       pinned: true,
       backgroundColor: DashboardTheme.primaryBlue,
       foregroundColor: Colors.white,
+      leading: const AppBackButton(light: true),
       systemOverlayStyle: SystemUiOverlayStyle.light,
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.only(left: 56, bottom: 16, right: 16),

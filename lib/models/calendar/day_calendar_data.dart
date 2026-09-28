@@ -49,6 +49,10 @@ class DayCalendarData {
   bool get hasExpense =>
       movements.any((m) => m.type == TransactionType.expense);
 
+  /// Indica si el día contiene al menos una transferencia.
+  bool get hasTransfer =>
+      movements.any((m) => m.type == TransactionType.transfer);
+
   /// Conteo de movimientos por tipo de calendario.
   ///
   /// Diseñado para escalar: al agregar `transfer` a [CalendarMovementType],

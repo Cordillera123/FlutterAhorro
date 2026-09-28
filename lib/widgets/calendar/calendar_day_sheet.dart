@@ -222,10 +222,22 @@ class CalendarDaySheet extends StatelessWidget {
   }
 
   Widget _buildMovementTile(BuildContext context, Transaction movement) {
-    final isIncome = movement.type == TransactionType.income;
-    final color =
-        isIncome ? CalendarTheme.incomeGreen : CalendarTheme.expenseRed;
-    final sign = isIncome ? '+' : '-';
+    final Color color;
+    final String sign;
+    switch (movement.type) {
+      case TransactionType.income:
+        color = CalendarTheme.incomeGreen;
+        sign = '+';
+        break;
+      case TransactionType.expense:
+        color = CalendarTheme.expenseRed;
+        sign = '-';
+        break;
+      case TransactionType.transfer:
+        color = CalendarTheme.primaryBlue;
+        sign = (movement.isTransferOut ?? true) ? '-' : '+';
+        break;
+    }
     final accountName = _accountName(movement.accountId);
 
     return GestureDetector(

@@ -7,6 +7,7 @@ import '../services/account_service.dart';
 import '../utils/format_utils.dart';
 import 'add_recurring_expense_screen.dart';
 import '../theme/app_colors.dart';
+import '../widgets/common/common.dart';
 
 class RecurringExpensesScreen extends StatefulWidget {
   const RecurringExpensesScreen({super.key});
@@ -701,88 +702,33 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen>
           Row(
             children: [
               Expanded(
-                child: _buildQuickActionCard(
-                  'Transporte Diario',
-                  'Bus, taxi, gasolina',
-                  Icons.directions_bus_rounded,
-                  const LinearGradient(colors: [infoBlue, darkBlue]),
-                  _createTransportExpense,
+                child: QuickActionCard(
+                  title: 'Transporte Diario',
+                  subtitle: 'Bus, taxi, gasolina',
+                  icon: Icons.directions_bus_rounded,
+                  gradientColors: const [infoBlue, darkBlue],
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    _createTransportExpense();
+                  },
                 ),
               ),
               const SizedBox(width: 12), // Cambiado de 16 a 12
               Expanded(
-                child: _buildQuickActionCard(
-                  'Suscripciones',
-                  'Netflix, Spotify, etc',
-                  Icons.subscriptions_rounded,
-                  const LinearGradient(colors: [warningYellow, darkYellow]),
-                  _createSubscriptionExpense,
+                child: QuickActionCard(
+                  title: 'Suscripciones',
+                  subtitle: 'Netflix, Spotify, etc',
+                  icon: Icons.subscriptions_rounded,
+                  gradientColors: const [warningYellow, darkYellow],
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    _createSubscriptionExpense();
+                  },
                 ),
               ),
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActionCard(
-    String title,
-    String subtitle,
-    IconData icon,
-    Gradient gradient,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onTap();
-      },
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: gradient,
-          boxShadow: [
-            BoxShadow(
-              color: gradient.colors.first.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: Colors.white, size: 22),
-            const SizedBox(height: 10),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
-                maxLines: 1,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -1532,130 +1478,31 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen>
 
   // Método para eliminar un gasto recurrente
   Future<void> _deleteExpense(RecurringExpense expense) async {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  color: dangerRed.withOpacity(0.1),
-                  border: Border.all(
-                    color: dangerRed.withOpacity(0.3),
-                    width: 2,
-                  ),
-                ),
-                child: const Icon(
-                  Icons.delete_rounded,
-                  color: dangerRed,
-                  size: 30,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                '¿Eliminar gasto automático?',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: dangerRed,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Esta acción no se puede deshacer. El gasto "${expense.name}" será eliminado permanentemente.',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: textMedium,
-                  height: 1.4,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: borderLight,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          'Cancelar',
-                          style: TextStyle(
-                            color: textMedium,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () async {
-                        Navigator.pop(context);
-
-                        try {
-                          await _recurringExpenseService.deleteRecurringExpense(
-                            expense.id!,
-                          );
-
-                          _showProcessMessage(
-                            'Gasto eliminado',
-                            'El gasto "${expense.name}" ha sido eliminado correctamente.',
-                            dangerRed,
-                            Icons.delete_rounded,
-                          );
-
-                          _loadData();
-                        } catch (e) {
-                          _showProcessMessage(
-                            'Error',
-                            'No se pudo eliminar el gasto. Inténtalo de nuevo.',
-                            dangerRed,
-                            Icons.error_rounded,
-                          );
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: dangerRed,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          'Eliminar',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
+    final confirmed = await showAppConfirmDialog(
+      context,
+      title: '¿Eliminar gasto automático?',
+      message:
+          'Esta acción no se puede deshacer. El gasto '
+          '"${expense.name}" será eliminado permanentemente.',
     );
+    if (confirmed != true) return;
+
+    try {
+      await _recurringExpenseService.deleteRecurringExpense(expense.id!);
+      _showProcessMessage(
+        'Gasto eliminado',
+        'El gasto "${expense.name}" ha sido eliminado correctamente.',
+        dangerRed,
+        Icons.delete_rounded,
+      );
+      _loadData();
+    } catch (e) {
+      _showProcessMessage(
+        'Error',
+        'No se pudo eliminar el gasto. Inténtalo de nuevo.',
+        dangerRed,
+        Icons.error_rounded,
+      );
+    }
   }
 }

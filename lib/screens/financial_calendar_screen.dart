@@ -12,6 +12,7 @@ import '../widgets/calendar/calendar_month_navigator.dart';
 import '../widgets/calendar/calendar_month_grid.dart';
 import '../widgets/calendar/calendar_legend.dart';
 import '../widgets/calendar/calendar_day_sheet.dart';
+import '../widgets/common/common.dart';
 import 'add_transaction_screen.dart';
 
 /// Pantalla "Calendario Financiero".
@@ -173,11 +174,7 @@ class _FinancialCalendarScreenState extends State<FinancialCalendarScreen>
         backgroundColor: Colors.white,
         elevation: 0,
         surfaceTintColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded,
-              color: CalendarTheme.textDark),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        leading: const AppBackButton(),
         title: const Text(
           'Calendario Financiero',
           style: TextStyle(
@@ -192,8 +189,9 @@ class _FinancialCalendarScreenState extends State<FinancialCalendarScreen>
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(
-                valueColor:
-                    AlwaysStoppedAnimation<Color>(CalendarTheme.primaryBlue),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  CalendarTheme.primaryBlue,
+                ),
               ),
             )
           : _buildContent(),

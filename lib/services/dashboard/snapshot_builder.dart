@@ -64,30 +64,20 @@ class SnapshotBuilder {
     final cutoffHistory = DateTime(now.year, now.month - historyMonths, 1);
 
     for (final transaction in transactions) {
-      final record = MovementRecord.fromTransaction(transaction);
       final date = DateTime(
-        record.date.year,
-        record.date.month,
-        record.date.day,
+        transaction.date.year,
+        transaction.date.month,
+        transaction.date.day,
       );
       final mKey = monthKey(date);
 
-      if (record.isIncome) {
-        totalBalance += record.amount;
-      } else {
-        totalBalance -= record.amount;
-      }
+      // El balance real y la actividad ("¿usé la app hoy?") SÍ consideran
+      // transferencias — mueven dinero de verdad y son una acción del
+      // usuario, aunque no sean ingreso ni gasto.
+      totalBalance = transaction.applyToBalance(totalBalance);
 
       if (lastTransactionDate == null || date.isAfter(lastTransactionDate)) {
         lastTransactionDate = date;
-      }
-
-      if (!date.isBefore(weekStartDate) && !date.isAfter(now)) {
-        if (record.isIncome) {
-          incomeThisWeek += record.amount;
-        } else {
-          expensesThisWeek += record.amount;
-        }
       }
 
       final dayKey =
@@ -95,6 +85,20 @@ class SnapshotBuilder {
       daysWithAnyTx.add(dayKey);
       if (!date.isBefore(cutoff30)) {
         daysWithTxLast30.add(dayKey);
+      }
+
+      // Las transferencias no son ingreso ni gasto: no deben distorsionar
+      // ningún análisis de patrones de ingreso/gasto de aquí en adelante.
+      if (transaction.type == TransactionType.transfer) continue;
+
+      final record = MovementRecord.fromTransaction(transaction);
+
+      if (!date.isBefore(weekStartDate) && !date.isAfter(now)) {
+        if (record.isIncome) {
+          incomeThisWeek += record.amount;
+        } else {
+          expensesThisWeek += record.amount;
+        }
       }
 
       if (date.isBefore(cutoffHistory)) continue;

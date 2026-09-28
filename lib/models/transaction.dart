@@ -6,7 +6,8 @@ part 'transaction.g.dart';
 // Enum para los tipos de transacción
 enum TransactionType {
   income,   // Ingreso
-  expense   // Gasto
+  expense,  // Gasto
+  transfer  // Transferencia contable entre cuentas propias (no es ingreso ni gasto)
 }
 
 // Enum para las categorías de gastos del sistema (no modificables)
@@ -54,6 +55,13 @@ class Transaction {
   final String? customCategoryEmoji; // Emoji de categoría personalizada (para historial)
   final String accountId; // ID de la cuenta a la que pertenece
 
+  // Campos exclusivos de transferencias (type == TransactionType.transfer).
+  // Una transferencia se representa con DOS registros de Transaction (uno
+  // por cuenta), ambos comparten el mismo [transferId] y se borran juntos.
+  final String? transferId; // Enlaza las dos patas de la misma transferencia
+  final String? relatedAccountId; // La otra cuenta involucrada
+  final bool? isTransferOut; // true = esta pata resta (origen), false = suma (destino)
+
   Transaction({
     required this.id,
     required this.amount,
@@ -66,10 +74,30 @@ class Transaction {
     this.customCategoryName,
     this.customCategoryEmoji,
     required this.accountId,
+    this.transferId,
+    this.relatedAccountId,
+    this.isTransferOut,
   });
 
   /// Verifica si usa categoría personalizada
   bool get hasCustomCategory => customCategoryId != null && customCategoryId!.startsWith('custom_');
+
+  /// Verifica si es una transferencia entre cuentas propias
+  bool get isTransfer => type == TransactionType.transfer;
+
+  /// Aplica el efecto de esta transacción sobre un balance de cuenta.
+  /// Único punto de verdad para esta regla — evita duplicar (y desincronizar)
+  /// la misma lógica en TransactionService, el dashboard, etc.
+  double applyToBalance(double balance) {
+    switch (type) {
+      case TransactionType.income:
+        return balance + amount;
+      case TransactionType.expense:
+        return balance - amount;
+      case TransactionType.transfer:
+        return (isTransferOut ?? true) ? balance - amount : balance + amount;
+    }
+  }
 
   // Métodos para convertir de/hacia JSON (manual para soportar campos nuevos)
   factory Transaction.fromJson(Map<String, dynamic> json) {
@@ -98,6 +126,9 @@ class Transaction {
       customCategoryName: json['customCategoryName'] as String?,
       customCategoryEmoji: json['customCategoryEmoji'] as String?,
       accountId: json['accountId'] as String? ?? 'account_default',
+      transferId: json['transferId'] as String?,
+      relatedAccountId: json['relatedAccountId'] as String?,
+      isTransferOut: json['isTransferOut'] as bool?,
     );
   }
 
@@ -114,6 +145,9 @@ class Transaction {
       'customCategoryName': customCategoryName,
       'customCategoryEmoji': customCategoryEmoji,
       'accountId': accountId,
+      'transferId': transferId,
+      'relatedAccountId': relatedAccountId,
+      'isTransferOut': isTransferOut,
     };
   }
 
@@ -131,6 +165,9 @@ class Transaction {
       customCategoryName: null,
       customCategoryEmoji: null,
       accountId: accountId,
+      transferId: transferId,
+      relatedAccountId: relatedAccountId,
+      isTransferOut: isTransferOut,
     );
   }
 
@@ -147,6 +184,9 @@ class Transaction {
     String? customCategoryName,
     String? customCategoryEmoji,
     String? accountId,
+    String? transferId,
+    String? relatedAccountId,
+    bool? isTransferOut,
   }) {
     return Transaction(
       id: id ?? this.id,
@@ -160,6 +200,9 @@ class Transaction {
       customCategoryName: customCategoryName ?? this.customCategoryName,
       customCategoryEmoji: customCategoryEmoji ?? this.customCategoryEmoji,
       accountId: accountId ?? this.accountId,
+      transferId: transferId ?? this.transferId,
+      relatedAccountId: relatedAccountId ?? this.relatedAccountId,
+      isTransferOut: isTransferOut ?? this.isTransferOut,
     );
   }
 
@@ -168,6 +211,10 @@ class Transaction {
     // Si tiene categoría personalizada, usar el nombre guardado
     if (hasCustomCategory) {
       return customCategoryName ?? 'Otros';
+    }
+
+    if (type == TransactionType.transfer) {
+      return 'Transferencia';
     }
 
     if (type == TransactionType.income) {
@@ -234,6 +281,10 @@ class Transaction {
     // Si tiene categoría personalizada, usar el emoji guardado
     if (hasCustomCategory) {
       return customCategoryEmoji ?? '📦';
+    }
+
+    if (type == TransactionType.transfer) {
+      return '🔄';
     }
 
     if (type == TransactionType.income) {
