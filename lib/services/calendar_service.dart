@@ -65,8 +65,9 @@ class CalendarService {
 
   MonthCalendarData _buildMonthData(DateTime month) {
     // `transactions` ya viene filtrado por la cuenta activa desde el service.
-    final monthTransactions = _transactionService.transactions.where((t) =>
-        t.date.year == month.year && t.date.month == month.month);
+    final monthTransactions = _transactionService.transactions.where(
+      (t) => t.date.year == month.year && t.date.month == month.month,
+    );
 
     // Un solo pase: agrupamos por día y acumulamos totales a la vez.
     final Map<int, List<Transaction>> movementsByDay = {};

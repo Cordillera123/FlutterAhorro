@@ -32,7 +32,11 @@ class ExecutiveSummaryBanner extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.auto_awesome_rounded, color: Colors.white.withValues(alpha: 0.9), size: 22),
+              Icon(
+                Icons.auto_awesome_rounded,
+                color: Colors.white.withValues(alpha: 0.9),
+                size: 22,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Resumen',

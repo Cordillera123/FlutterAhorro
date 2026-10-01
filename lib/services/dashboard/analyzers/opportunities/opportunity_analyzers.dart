@@ -36,7 +36,8 @@ class ReduceCategoryOpportunityAnalyzer
       impactAmount: monthlySavings,
       relatedCategoryKey: top.key,
       trace: MessageTrace(
-        reason: 'Simulación de reducción fija sobre la categoría de mayor gasto',
+        reason:
+            'Simulación de reducción fija sobre la categoría de mayor gasto',
         inputs: [
           DataPoint(label: 'Categoría', value: top.displayName),
           DataPoint(
@@ -120,10 +121,11 @@ class BudgetTrimOpportunityAnalyzer
 
   @override
   DashboardOpportunity? analyze(DashboardAnalysisContext context) {
-    final underused = context.snapshot.budgetProgress
-        .where((p) => p.status == BudgetStatus.safe && p.percentage < 0.5)
-        .toList()
-      ..sort((a, b) => a.percentage.compareTo(b.percentage));
+    final underused =
+        context.snapshot.budgetProgress
+            .where((p) => p.status == BudgetStatus.safe && p.percentage < 0.5)
+            .toList()
+          ..sort((a, b) => a.percentage.compareTo(b.percentage));
 
     if (underused.isEmpty) return null;
     final p = underused.first;
@@ -181,7 +183,10 @@ class RecordIncomeOpportunityAnalyzer
       trace: MessageTrace(
         reason: 'Hay gastos pero no ingresos en la semana actual',
         inputs: [
-          DataPoint(label: 'Ingresos semana', value: FormatUtils.formatMoney(0)),
+          DataPoint(
+            label: 'Ingresos semana',
+            value: FormatUtils.formatMoney(0),
+          ),
         ],
         formula: 'ingresos(semana) = 0',
         impactDescription: 'Mejor precisión en tasa de ahorro y proyecciones',
@@ -199,21 +204,21 @@ class BudgetAlertOpportunityAnalyzer
   bool canAnalyze(DashboardAnalysisContext context) {
     return context.snapshot.budgetProgress.any(
       (p) =>
-          p.status == BudgetStatus.warning ||
-          p.status == BudgetStatus.danger,
+          p.status == BudgetStatus.warning || p.status == BudgetStatus.danger,
     );
   }
 
   @override
   DashboardOpportunity? analyze(DashboardAnalysisContext context) {
-    final pressured = context.snapshot.budgetProgress
-        .where(
-          (p) =>
-              p.status == BudgetStatus.warning ||
-              p.status == BudgetStatus.danger,
-        )
-        .toList()
-      ..sort((a, b) => b.percentage.compareTo(a.percentage));
+    final pressured =
+        context.snapshot.budgetProgress
+            .where(
+              (p) =>
+                  p.status == BudgetStatus.warning ||
+                  p.status == BudgetStatus.danger,
+            )
+            .toList()
+          ..sort((a, b) => b.percentage.compareTo(a.percentage));
 
     if (pressured.isEmpty) return null;
     final p = pressured.first;

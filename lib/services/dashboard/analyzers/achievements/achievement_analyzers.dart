@@ -49,43 +49,43 @@ class MovementsAchievementAnalyzer extends TieredAchievementAnalyzer {
 
   @override
   List<AchievementTier> get tiers => const [
-        AchievementTier(
-          threshold: 1,
-          title: 'Primer movimiento',
-          goal: '1 movimiento registrado',
-          celebration: 'Registraste tu primer movimiento. ¡Así empieza todo!',
-        ),
-        AchievementTier(
-          threshold: 10,
-          title: 'Tomando ritmo',
-          goal: '10 movimientos registrados',
-          celebration: 'Ya llevas {v} movimientos registrados',
-        ),
-        AchievementTier(
-          threshold: 50,
-          title: 'Registrador constante',
-          goal: '50 movimientos registrados',
-          celebration: '{v} movimientos registrados: tienes el hábito',
-        ),
-        AchievementTier(
-          threshold: 100,
-          title: 'Centenario',
-          goal: '100 movimientos registrados',
-          celebration: 'Superaste los 100 movimientos registrados',
-        ),
-        AchievementTier(
-          threshold: 250,
-          title: 'Maestro del registro',
-          goal: '250 movimientos registrados',
-          celebration: '{v} movimientos: tu historial es muy sólido',
-        ),
-        AchievementTier(
-          threshold: 500,
-          title: 'Leyenda del registro',
-          goal: '500 movimientos registrados',
-          celebration: '{v} movimientos registrados. Impresionante',
-        ),
-      ];
+    AchievementTier(
+      threshold: 1,
+      title: 'Primer movimiento',
+      goal: '1 movimiento registrado',
+      celebration: 'Registraste tu primer movimiento. ¡Así empieza todo!',
+    ),
+    AchievementTier(
+      threshold: 10,
+      title: 'Tomando ritmo',
+      goal: '10 movimientos registrados',
+      celebration: 'Ya llevas {v} movimientos registrados',
+    ),
+    AchievementTier(
+      threshold: 50,
+      title: 'Registrador constante',
+      goal: '50 movimientos registrados',
+      celebration: '{v} movimientos registrados: tienes el hábito',
+    ),
+    AchievementTier(
+      threshold: 100,
+      title: 'Centenario',
+      goal: '100 movimientos registrados',
+      celebration: 'Superaste los 100 movimientos registrados',
+    ),
+    AchievementTier(
+      threshold: 250,
+      title: 'Maestro del registro',
+      goal: '250 movimientos registrados',
+      celebration: '{v} movimientos: tu historial es muy sólido',
+    ),
+    AchievementTier(
+      threshold: 500,
+      title: 'Leyenda del registro',
+      goal: '500 movimientos registrados',
+      celebration: '{v} movimientos registrados. Impresionante',
+    ),
+  ];
 }
 
 class FirstIncomeAchievementAnalyzer extends SingleAchievementAnalyzer {
@@ -210,43 +210,43 @@ class RegistrationStreakAchievementAnalyzer extends TieredAchievementAnalyzer {
 
   @override
   List<AchievementTier> get tiers => const [
-        AchievementTier(
-          threshold: 3,
-          title: 'Racha encendida',
-          goal: '3 días seguidos',
-          celebration: '{v} días seguidos registrando. La constancia empieza aquí',
-        ),
-        AchievementTier(
-          threshold: 7,
-          title: 'Una semana seguida',
-          goal: '7 días seguidos',
-          celebration: 'Llevas {v} días seguidos sin fallar',
-        ),
-        AchievementTier(
-          threshold: 15,
-          title: 'Quincena imparable',
-          goal: '15 días seguidos',
-          celebration: '{v} días consecutivos registrando movimientos',
-        ),
-        AchievementTier(
-          threshold: 30,
-          title: 'Un mes sin fallar',
-          goal: '30 días seguidos',
-          celebration: '{v} días seguidos. Esto ya es un hábito',
-        ),
-        AchievementTier(
-          threshold: 60,
-          title: 'Dos meses de racha',
-          goal: '60 días seguidos',
-          celebration: '{v} días consecutivos. Muy pocos llegan aquí',
-        ),
-        AchievementTier(
-          threshold: 100,
-          title: '100 días de racha',
-          goal: '100 días seguidos',
-          celebration: '{v} días seguidos registrando. Eres imparable',
-        ),
-      ];
+    AchievementTier(
+      threshold: 3,
+      title: 'Racha encendida',
+      goal: '3 días seguidos',
+      celebration: '{v} días seguidos registrando. La constancia empieza aquí',
+    ),
+    AchievementTier(
+      threshold: 7,
+      title: 'Una semana seguida',
+      goal: '7 días seguidos',
+      celebration: 'Llevas {v} días seguidos sin fallar',
+    ),
+    AchievementTier(
+      threshold: 15,
+      title: 'Quincena imparable',
+      goal: '15 días seguidos',
+      celebration: '{v} días consecutivos registrando movimientos',
+    ),
+    AchievementTier(
+      threshold: 30,
+      title: 'Un mes sin fallar',
+      goal: '30 días seguidos',
+      celebration: '{v} días seguidos. Esto ya es un hábito',
+    ),
+    AchievementTier(
+      threshold: 60,
+      title: 'Dos meses de racha',
+      goal: '60 días seguidos',
+      celebration: '{v} días consecutivos. Muy pocos llegan aquí',
+    ),
+    AchievementTier(
+      threshold: 100,
+      title: '100 días de racha',
+      goal: '100 días seguidos',
+      celebration: '{v} días seguidos registrando. Eres imparable',
+    ),
+  ];
 }
 
 class ActiveMonthAchievementAnalyzer extends TieredAchievementAnalyzer {
@@ -277,25 +277,25 @@ class ActiveMonthAchievementAnalyzer extends TieredAchievementAnalyzer {
 
   @override
   List<AchievementTier> get tiers => const [
-        AchievementTier(
-          threshold: 10,
-          title: 'Mes activo',
-          goal: '10 movimientos en el mes',
-          celebration: 'Registraste {v} movimientos este mes',
-        ),
-        AchievementTier(
-          threshold: 25,
-          title: 'Mes muy activo',
-          goal: '25 movimientos en el mes',
-          celebration: '{v} movimientos este mes. Control total',
-        ),
-        AchievementTier(
-          threshold: 50,
-          title: 'Mes imparable',
-          goal: '50 movimientos en el mes',
-          celebration: '{v} movimientos en un solo mes',
-        ),
-      ];
+    AchievementTier(
+      threshold: 10,
+      title: 'Mes activo',
+      goal: '10 movimientos en el mes',
+      celebration: 'Registraste {v} movimientos este mes',
+    ),
+    AchievementTier(
+      threshold: 25,
+      title: 'Mes muy activo',
+      goal: '25 movimientos en el mes',
+      celebration: '{v} movimientos este mes. Control total',
+    ),
+    AchievementTier(
+      threshold: 50,
+      title: 'Mes imparable',
+      goal: '50 movimientos en el mes',
+      celebration: '{v} movimientos en un solo mes',
+    ),
+  ];
 }
 
 class MonthsUsingAchievementAnalyzer extends TieredAchievementAnalyzer {
@@ -319,38 +319,40 @@ class MonthsUsingAchievementAnalyzer extends TieredAchievementAnalyzer {
 
   @override
   double currentValue(DashboardAnalysisContext context) => context
-      .snapshot.monthlyHistory.values
+      .snapshot
+      .monthlyHistory
+      .values
       .where((m) => m.transactionCount > 0)
       .length
       .toDouble();
 
   @override
   List<AchievementTier> get tiers => const [
-        AchievementTier(
-          threshold: 1,
-          title: 'Tu primer mes',
-          goal: '1 mes con movimientos',
-          celebration: 'Completaste tu primer mes llevando tus finanzas',
-        ),
-        AchievementTier(
-          threshold: 3,
-          title: 'Tres meses contigo',
-          goal: '3 meses con movimientos',
-          celebration: 'Llevas {v} meses registrando tus finanzas',
-        ),
-        AchievementTier(
-          threshold: 6,
-          title: 'Medio año',
-          goal: '6 meses con movimientos',
-          celebration: '{v} meses cuidando tu dinero',
-        ),
-        AchievementTier(
-          threshold: 12,
-          title: 'Un año completo',
-          goal: '12 meses con movimientos',
-          celebration: 'Un año entero de historial financiero',
-        ),
-      ];
+    AchievementTier(
+      threshold: 1,
+      title: 'Tu primer mes',
+      goal: '1 mes con movimientos',
+      celebration: 'Completaste tu primer mes llevando tus finanzas',
+    ),
+    AchievementTier(
+      threshold: 3,
+      title: 'Tres meses contigo',
+      goal: '3 meses con movimientos',
+      celebration: 'Llevas {v} meses registrando tus finanzas',
+    ),
+    AchievementTier(
+      threshold: 6,
+      title: 'Medio año',
+      goal: '6 meses con movimientos',
+      celebration: '{v} meses cuidando tu dinero',
+    ),
+    AchievementTier(
+      threshold: 12,
+      title: 'Un año completo',
+      goal: '12 meses con movimientos',
+      celebration: 'Un año entero de historial financiero',
+    ),
+  ];
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -387,31 +389,31 @@ class MonthlySavingsAchievementAnalyzer extends TieredAchievementAnalyzer {
 
   @override
   List<AchievementTier> get tiers => const [
-        AchievementTier(
-          threshold: 100,
-          title: 'Primer ahorro de \$100',
-          goal: '\$100 ahorrados en un mes',
-          celebration: 'Tu mejor mes cerró con {v} ahorrados',
-        ),
-        AchievementTier(
-          threshold: 500,
-          title: 'Ahorrador consolidado',
-          goal: '\$500 ahorrados en un mes',
-          celebration: 'Llegaste a {v} de ahorro en un solo mes',
-        ),
-        AchievementTier(
-          threshold: 1000,
-          title: 'Mil en un mes',
-          goal: '\$1.000 ahorrados en un mes',
-          celebration: 'Ahorraste {v} en un mes. Excelente',
-        ),
-        AchievementTier(
-          threshold: 5000,
-          title: 'Gran ahorrador',
-          goal: '\$5.000 ahorrados en un mes',
-          celebration: '{v} de ahorro en un solo mes',
-        ),
-      ];
+    AchievementTier(
+      threshold: 100,
+      title: 'Primer ahorro de \$100',
+      goal: '\$100 ahorrados en un mes',
+      celebration: 'Tu mejor mes cerró con {v} ahorrados',
+    ),
+    AchievementTier(
+      threshold: 500,
+      title: 'Ahorrador consolidado',
+      goal: '\$500 ahorrados en un mes',
+      celebration: 'Llegaste a {v} de ahorro en un solo mes',
+    ),
+    AchievementTier(
+      threshold: 1000,
+      title: 'Mil en un mes',
+      goal: '\$1.000 ahorrados en un mes',
+      celebration: 'Ahorraste {v} en un mes. Excelente',
+    ),
+    AchievementTier(
+      threshold: 5000,
+      title: 'Gran ahorrador',
+      goal: '\$5.000 ahorrados en un mes',
+      celebration: '{v} de ahorro en un solo mes',
+    ),
+  ];
 }
 
 class TotalSavingsAchievementAnalyzer extends TieredAchievementAnalyzer {
@@ -444,31 +446,31 @@ class TotalSavingsAchievementAnalyzer extends TieredAchievementAnalyzer {
 
   @override
   List<AchievementTier> get tiers => const [
-        AchievementTier(
-          threshold: 100,
-          title: 'Primeros \$100 acumulados',
-          goal: '\$100 de ahorro acumulado',
-          celebration: 'Acumulaste {v} de ahorro',
-        ),
-        AchievementTier(
-          threshold: 500,
-          title: 'Colchón en marcha',
-          goal: '\$500 de ahorro acumulado',
-          celebration: 'Ya llevas {v} ahorrados en total',
-        ),
-        AchievementTier(
-          threshold: 2000,
-          title: 'Colchón sólido',
-          goal: '\$2.000 de ahorro acumulado',
-          celebration: '{v} de ahorro acumulado',
-        ),
-        AchievementTier(
-          threshold: 10000,
-          title: 'Patrimonio en construcción',
-          goal: '\$10.000 de ahorro acumulado',
-          celebration: 'Acumulaste {v}. Un logro enorme',
-        ),
-      ];
+    AchievementTier(
+      threshold: 100,
+      title: 'Primeros \$100 acumulados',
+      goal: '\$100 de ahorro acumulado',
+      celebration: 'Acumulaste {v} de ahorro',
+    ),
+    AchievementTier(
+      threshold: 500,
+      title: 'Colchón en marcha',
+      goal: '\$500 de ahorro acumulado',
+      celebration: 'Ya llevas {v} ahorrados en total',
+    ),
+    AchievementTier(
+      threshold: 2000,
+      title: 'Colchón sólido',
+      goal: '\$2.000 de ahorro acumulado',
+      celebration: '{v} de ahorro acumulado',
+    ),
+    AchievementTier(
+      threshold: 10000,
+      title: 'Patrimonio en construcción',
+      goal: '\$10.000 de ahorro acumulado',
+      celebration: 'Acumulaste {v}. Un logro enorme',
+    ),
+  ];
 }
 
 class SavingsRateAchievementAnalyzer extends TieredAchievementAnalyzer {
@@ -499,31 +501,31 @@ class SavingsRateAchievementAnalyzer extends TieredAchievementAnalyzer {
 
   @override
   List<AchievementTier> get tiers => const [
-        AchievementTier(
-          threshold: 10,
-          title: 'Ahorras el 10%',
-          goal: '10% de tasa de ahorro',
-          celebration: 'Estás ahorrando el {v} de tus ingresos',
-        ),
-        AchievementTier(
-          threshold: 20,
-          title: 'Ahorras el 20%',
-          goal: '20% de tasa de ahorro',
-          celebration: 'Ahorras el {v} de lo que ingresas. Muy saludable',
-        ),
-        AchievementTier(
-          threshold: 30,
-          title: 'Ahorras el 30%',
-          goal: '30% de tasa de ahorro',
-          celebration: '{v} de tus ingresos van al ahorro',
-        ),
-        AchievementTier(
-          threshold: 50,
-          title: 'Ahorras la mitad',
-          goal: '50% de tasa de ahorro',
-          celebration: 'Ahorras el {v} de tus ingresos. Nivel experto',
-        ),
-      ];
+    AchievementTier(
+      threshold: 10,
+      title: 'Ahorras el 10%',
+      goal: '10% de tasa de ahorro',
+      celebration: 'Estás ahorrando el {v} de tus ingresos',
+    ),
+    AchievementTier(
+      threshold: 20,
+      title: 'Ahorras el 20%',
+      goal: '20% de tasa de ahorro',
+      celebration: 'Ahorras el {v} de lo que ingresas. Muy saludable',
+    ),
+    AchievementTier(
+      threshold: 30,
+      title: 'Ahorras el 30%',
+      goal: '30% de tasa de ahorro',
+      celebration: '{v} de tus ingresos van al ahorro',
+    ),
+    AchievementTier(
+      threshold: 50,
+      title: 'Ahorras la mitad',
+      goal: '50% de tasa de ahorro',
+      celebration: 'Ahorras el {v} de tus ingresos. Nivel experto',
+    ),
+  ];
 }
 
 class PositiveMonthsAchievementAnalyzer extends TieredAchievementAnalyzer {
@@ -547,38 +549,40 @@ class PositiveMonthsAchievementAnalyzer extends TieredAchievementAnalyzer {
 
   @override
   double currentValue(DashboardAnalysisContext context) => context
-      .snapshot.monthlyHistory.values
+      .snapshot
+      .monthlyHistory
+      .values
       .where((m) => m.transactionCount > 0 && m.savings > 0)
       .length
       .toDouble();
 
   @override
   List<AchievementTier> get tiers => const [
-        AchievementTier(
-          threshold: 1,
-          title: 'Primer mes en verde',
-          goal: '1 mes con ahorro',
-          celebration: 'Cerraste un mes gastando menos de lo que ingresaste',
-        ),
-        AchievementTier(
-          threshold: 3,
-          title: 'Tres meses en verde',
-          goal: '3 meses con ahorro',
-          celebration: '{v} meses cerrados con ahorro positivo',
-        ),
-        AchievementTier(
-          threshold: 6,
-          title: 'Medio año en verde',
-          goal: '6 meses con ahorro',
-          celebration: '{v} meses ahorrando. Vas muy bien',
-        ),
-        AchievementTier(
-          threshold: 12,
-          title: 'Un año en verde',
-          goal: '12 meses con ahorro',
-          celebration: '{v} meses en positivo. Dominas tus finanzas',
-        ),
-      ];
+    AchievementTier(
+      threshold: 1,
+      title: 'Primer mes en verde',
+      goal: '1 mes con ahorro',
+      celebration: 'Cerraste un mes gastando menos de lo que ingresaste',
+    ),
+    AchievementTier(
+      threshold: 3,
+      title: 'Tres meses en verde',
+      goal: '3 meses con ahorro',
+      celebration: '{v} meses cerrados con ahorro positivo',
+    ),
+    AchievementTier(
+      threshold: 6,
+      title: 'Medio año en verde',
+      goal: '6 meses con ahorro',
+      celebration: '{v} meses ahorrando. Vas muy bien',
+    ),
+    AchievementTier(
+      threshold: 12,
+      title: 'Un año en verde',
+      goal: '12 meses con ahorro',
+      celebration: '{v} meses en positivo. Dominas tus finanzas',
+    ),
+  ];
 }
 
 class SavingsRecordAchievementAnalyzer extends SingleAchievementAnalyzer {
@@ -619,11 +623,11 @@ class SavingsRecordAchievementAnalyzer extends SingleAchievementAnalyzer {
 
   @override
   List<DataPoint> traceInputs(DashboardAnalysisContext context) => [
-        DataPoint(
-          label: 'Ahorro del mes',
-          value: FormatUtils.formatMoney(context.snapshot.currentMonthSavings),
-        ),
-      ];
+    DataPoint(
+      label: 'Ahorro del mes',
+      value: FormatUtils.formatMoney(context.snapshot.currentMonthSavings),
+    ),
+  ];
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -664,8 +668,10 @@ class BudgetStreakAchievementAnalyzer extends TieredAchievementAnalyzer {
     for (var i = months.length - 1; i >= 0; i--) {
       final key = months[i].monthKey;
       final allSafe = monthlyBudgets.every((p) {
-        final spent = context.snapshot
-            .categoryExpensesForMonth(key, _budgetCategoryKey(p.budget));
+        final spent = context.snapshot.categoryExpensesForMonth(
+          key,
+          _budgetCategoryKey(p.budget),
+        );
         return spent <= p.budget.amount;
       });
       if (!allSafe) break;
@@ -681,31 +687,31 @@ class BudgetStreakAchievementAnalyzer extends TieredAchievementAnalyzer {
 
   @override
   List<AchievementTier> get tiers => const [
-        AchievementTier(
-          threshold: 1,
-          title: 'Presupuesto cumplido',
-          goal: '1 mes respetando tus presupuestos',
-          celebration: 'Cerraste un mes sin pasarte de ningún presupuesto',
-        ),
-        AchievementTier(
-          threshold: 3,
-          title: 'Racha de presupuestos',
-          goal: '3 meses respetando tus presupuestos',
-          celebration: '{v} meses seguidos cumpliendo tus presupuestos',
-        ),
-        AchievementTier(
-          threshold: 6,
-          title: 'Disciplina de acero',
-          goal: '6 meses respetando tus presupuestos',
-          celebration: '{v} meses consecutivos sin excederte',
-        ),
-        AchievementTier(
-          threshold: 12,
-          title: 'Un año bajo control',
-          goal: '12 meses respetando tus presupuestos',
-          celebration: '{v} meses seguidos dentro del presupuesto',
-        ),
-      ];
+    AchievementTier(
+      threshold: 1,
+      title: 'Presupuesto cumplido',
+      goal: '1 mes respetando tus presupuestos',
+      celebration: 'Cerraste un mes sin pasarte de ningún presupuesto',
+    ),
+    AchievementTier(
+      threshold: 3,
+      title: 'Racha de presupuestos',
+      goal: '3 meses respetando tus presupuestos',
+      celebration: '{v} meses seguidos cumpliendo tus presupuestos',
+    ),
+    AchievementTier(
+      threshold: 6,
+      title: 'Disciplina de acero',
+      goal: '6 meses respetando tus presupuestos',
+      celebration: '{v} meses consecutivos sin excederte',
+    ),
+    AchievementTier(
+      threshold: 12,
+      title: 'Un año bajo control',
+      goal: '12 meses respetando tus presupuestos',
+      celebration: '{v} meses seguidos dentro del presupuesto',
+    ),
+  ];
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -740,31 +746,31 @@ class GoalsCompletedAchievementAnalyzer extends TieredAchievementAnalyzer {
 
   @override
   List<AchievementTier> get tiers => const [
-        AchievementTier(
-          threshold: 1,
-          title: 'Primera meta completada',
-          goal: '1 meta completada',
-          celebration: 'Completaste tu primera meta de ahorro',
-        ),
-        AchievementTier(
-          threshold: 3,
-          title: 'Cazador de metas',
-          goal: '3 metas completadas',
-          celebration: 'Ya completaste {v} metas',
-        ),
-        AchievementTier(
-          threshold: 5,
-          title: 'Coleccionista de metas',
-          goal: '5 metas completadas',
-          celebration: '{v} metas cumplidas. Sabes terminar lo que empiezas',
-        ),
-        AchievementTier(
-          threshold: 10,
-          title: 'Imparable',
-          goal: '10 metas completadas',
-          celebration: '{v} metas completadas. Increíble',
-        ),
-      ];
+    AchievementTier(
+      threshold: 1,
+      title: 'Primera meta completada',
+      goal: '1 meta completada',
+      celebration: 'Completaste tu primera meta de ahorro',
+    ),
+    AchievementTier(
+      threshold: 3,
+      title: 'Cazador de metas',
+      goal: '3 metas completadas',
+      celebration: 'Ya completaste {v} metas',
+    ),
+    AchievementTier(
+      threshold: 5,
+      title: 'Coleccionista de metas',
+      goal: '5 metas completadas',
+      celebration: '{v} metas cumplidas. Sabes terminar lo que empiezas',
+    ),
+    AchievementTier(
+      threshold: 10,
+      title: 'Imparable',
+      goal: '10 metas completadas',
+      celebration: '{v} metas completadas. Increíble',
+    ),
+  ];
 }
 
 class GoalNearAchievementAnalyzer extends SingleAchievementAnalyzer {
@@ -790,10 +796,11 @@ class GoalNearAchievementAnalyzer extends SingleAchievementAnalyzer {
   String get traceFormula => 'progreso(meta) ≥ 75%';
 
   FinancialGoal? _closest(DashboardAnalysisContext context) {
-    final candidates = context.activeGoals
-        .where((g) => g.progressPercentage >= 0.75)
-        .toList()
-      ..sort((a, b) => b.progressPercentage.compareTo(a.progressPercentage));
+    final candidates =
+        context.activeGoals.where((g) => g.progressPercentage >= 0.75).toList()
+          ..sort(
+            (a, b) => b.progressPercentage.compareTo(a.progressPercentage),
+          );
     return candidates.isEmpty ? null : candidates.first;
   }
 
@@ -859,25 +866,25 @@ class SavingsUpStreakAchievementAnalyzer
 
   @override
   List<AchievementTier> get tiers => const [
-        AchievementTier(
-          threshold: 2,
-          title: 'Ahorro en ascenso',
-          goal: '2 meses aumentando el ahorro',
-          celebration: '{v} meses seguidos ahorrando más que el anterior',
-        ),
-        AchievementTier(
-          threshold: 3,
-          title: 'Tendencia al alza',
-          goal: '3 meses aumentando el ahorro',
-          celebration: '{v} meses consecutivos mejorando tu ahorro',
-        ),
-        AchievementTier(
-          threshold: 6,
-          title: 'Escalada de ahorro',
-          goal: '6 meses aumentando el ahorro',
-          celebration: '{v} meses seguidos subiendo tu ahorro',
-        ),
-      ];
+    AchievementTier(
+      threshold: 2,
+      title: 'Ahorro en ascenso',
+      goal: '2 meses aumentando el ahorro',
+      celebration: '{v} meses seguidos ahorrando más que el anterior',
+    ),
+    AchievementTier(
+      threshold: 3,
+      title: 'Tendencia al alza',
+      goal: '3 meses aumentando el ahorro',
+      celebration: '{v} meses consecutivos mejorando tu ahorro',
+    ),
+    AchievementTier(
+      threshold: 6,
+      title: 'Escalada de ahorro',
+      goal: '6 meses aumentando el ahorro',
+      celebration: '{v} meses seguidos subiendo tu ahorro',
+    ),
+  ];
 }
 
 class ExpenseDownStreakAchievementAnalyzer
@@ -906,25 +913,25 @@ class ExpenseDownStreakAchievementAnalyzer
 
   @override
   List<AchievementTier> get tiers => const [
-        AchievementTier(
-          threshold: 1,
-          title: 'Recorte inteligente',
-          goal: '1 mes gastando menos',
-          celebration: 'Cerraste un mes gastando menos que el anterior',
-        ),
-        AchievementTier(
-          threshold: 3,
-          title: 'Gastos a la baja',
-          goal: '3 meses gastando menos',
-          celebration: '{v} meses seguidos reduciendo tus gastos',
-        ),
-        AchievementTier(
-          threshold: 6,
-          title: 'Maestro del recorte',
-          goal: '6 meses gastando menos',
-          celebration: '{v} meses consecutivos bajando tus gastos',
-        ),
-      ];
+    AchievementTier(
+      threshold: 1,
+      title: 'Recorte inteligente',
+      goal: '1 mes gastando menos',
+      celebration: 'Cerraste un mes gastando menos que el anterior',
+    ),
+    AchievementTier(
+      threshold: 3,
+      title: 'Gastos a la baja',
+      goal: '3 meses gastando menos',
+      celebration: '{v} meses seguidos reduciendo tus gastos',
+    ),
+    AchievementTier(
+      threshold: 6,
+      title: 'Maestro del recorte',
+      goal: '6 meses gastando menos',
+      celebration: '{v} meses consecutivos bajando tus gastos',
+    ),
+  ];
 }
 
 class IncomeUpStreakAchievementAnalyzer
@@ -954,25 +961,25 @@ class IncomeUpStreakAchievementAnalyzer
 
   @override
   List<AchievementTier> get tiers => const [
-        AchievementTier(
-          threshold: 2,
-          title: 'Ingresos al alza',
-          goal: '2 meses aumentando ingresos',
-          celebration: '{v} meses seguidos aumentando tus ingresos',
-        ),
-        AchievementTier(
-          threshold: 3,
-          title: 'Crecimiento sostenido',
-          goal: '3 meses aumentando ingresos',
-          celebration: '{v} meses consecutivos ganando más',
-        ),
-        AchievementTier(
-          threshold: 6,
-          title: 'Despegue',
-          goal: '6 meses aumentando ingresos',
-          celebration: '{v} meses seguidos creciendo en ingresos',
-        ),
-      ];
+    AchievementTier(
+      threshold: 2,
+      title: 'Ingresos al alza',
+      goal: '2 meses aumentando ingresos',
+      celebration: '{v} meses seguidos aumentando tus ingresos',
+    ),
+    AchievementTier(
+      threshold: 3,
+      title: 'Crecimiento sostenido',
+      goal: '3 meses aumentando ingresos',
+      celebration: '{v} meses consecutivos ganando más',
+    ),
+    AchievementTier(
+      threshold: 6,
+      title: 'Despegue',
+      goal: '6 meses aumentando ingresos',
+      celebration: '{v} meses seguidos creciendo en ingresos',
+    ),
+  ];
 }
 
 class IncomeDiversityAchievementAnalyzer extends SingleAchievementAnalyzer {
@@ -989,8 +996,7 @@ class IncomeDiversityAchievementAnalyzer extends SingleAchievementAnalyzer {
   String get title => 'Ingresos diversificados';
 
   @override
-  String get lockedHint =>
-      'Consigue una segunda fuente de ingresos este mes';
+  String get lockedHint => 'Consigue una segunda fuente de ingresos este mes';
 
   @override
   String get traceReason =>

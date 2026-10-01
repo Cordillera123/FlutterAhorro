@@ -66,9 +66,7 @@ class AccountService extends ChangeNotifier {
 
       if (accountsJson != null) {
         final List<dynamic> accountsList = json.decode(accountsJson);
-        _accounts = accountsList
-            .map((json) => Account.fromJson(json))
-            .toList();
+        _accounts = accountsList.map((json) => Account.fromJson(json)).toList();
 
         // Ordenar: cuenta por defecto primero, luego por fecha de creación
         _accounts.sort((a, b) {
@@ -84,7 +82,8 @@ class AccountService extends ChangeNotifier {
       }
 
       // Cargar cuenta activa
-      _activeAccountId = prefs.getString(_activeAccountKey) ?? Account.defaultAccountId;
+      _activeAccountId =
+          prefs.getString(_activeAccountKey) ?? Account.defaultAccountId;
 
       // Verificar que la cuenta activa existe
       final activeExists = _accounts.any((a) => a.id == _activeAccountId);
@@ -162,12 +161,14 @@ class AccountService extends ChangeNotifier {
   }) async {
     // Validar límite máximo
     if (!canCreateMoreAccounts) {
-      throw Exception('Has alcanzado el límite máximo de $_maxAccounts cuentas');
+      throw Exception(
+        'Has alcanzado el límite máximo de $_maxAccounts cuentas',
+      );
     }
 
     // Validar que no exista otra con el mismo nombre
     final nameExists = _accounts.any(
-          (a) => a.name.toLowerCase() == name.toLowerCase(),
+      (a) => a.name.toLowerCase() == name.toLowerCase(),
     );
     if (nameExists) {
       throw Exception('Ya existe una cuenta con el nombre "$name"');
@@ -206,7 +207,7 @@ class AccountService extends ChangeNotifier {
 
     // Validar que no exista otra con el mismo nombre
     final nameExists = _accounts.any(
-          (a) => a.id != id && a.name.toLowerCase() == name.toLowerCase(),
+      (a) => a.id != id && a.name.toLowerCase() == name.toLowerCase(),
     );
     if (nameExists) {
       throw Exception('Ya existe una cuenta con el nombre "$name"');
@@ -227,7 +228,7 @@ class AccountService extends ChangeNotifier {
   /// Eliminar cuenta (no se puede eliminar la cuenta por defecto)
   Future<void> deleteAccount(String accountId) async {
     final account = _accounts.firstWhere(
-          (a) => a.id == accountId,
+      (a) => a.id == accountId,
       orElse: () => throw Exception('Cuenta no encontrada'),
     );
 
@@ -367,7 +368,11 @@ class AccountService extends ChangeNotifier {
   }
 
   /// Migra una lista JSON agregando accountId a cada elemento que no lo tenga
-  Future<void> _migrateJsonList(SharedPreferences prefs, String key, String defaultAccountId) async {
+  Future<void> _migrateJsonList(
+    SharedPreferences prefs,
+    String key,
+    String defaultAccountId,
+  ) async {
     try {
       final jsonStr = prefs.getString(key);
       if (jsonStr == null) {

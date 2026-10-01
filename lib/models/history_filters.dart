@@ -163,7 +163,13 @@ class HistoryFilters {
   }
 
   static const Map<String, String> _accentMap = {
-    'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'ü': 'u', 'ñ': 'n',
+    'á': 'a',
+    'é': 'e',
+    'í': 'i',
+    'ó': 'o',
+    'ú': 'u',
+    'ü': 'u',
+    'ñ': 'n',
   };
 
   static String _normalize(String input) {

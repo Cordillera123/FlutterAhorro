@@ -20,7 +20,9 @@ class AlertsSection extends StatelessWidget {
         ...alerts.map(
           (alert) => DashboardMessageTile(
             message: alert,
-            badge: alert.severity == AlertSeverity.critical ? 'Crítico' : 'Atención',
+            badge: alert.severity == AlertSeverity.critical
+                ? 'Crítico'
+                : 'Atención',
             accentColor: alert.severity == AlertSeverity.critical
                 ? DashboardTheme.dangerRed
                 : DashboardTheme.warningYellow,

@@ -26,14 +26,12 @@ class DashboardOrchestrator {
   final AchievementEngine _achievementEngine;
   final DashboardDataAssembler _assembler = DashboardDataAssembler();
 
-  DashboardOrchestrator._(
-    AnalyzerRegistry registry,
-  )
-      : _alertEngine = AlertEngine(registry),
-        _observationEngine = ObservationEngine(registry),
-        _forecastEngine = ForecastEngine(registry),
-        _opportunityEngine = OpportunityEngine(registry),
-        _achievementEngine = AchievementEngine(registry);
+  DashboardOrchestrator._(AnalyzerRegistry registry)
+    : _alertEngine = AlertEngine(registry),
+      _observationEngine = ObservationEngine(registry),
+      _forecastEngine = ForecastEngine(registry),
+      _opportunityEngine = OpportunityEngine(registry),
+      _achievementEngine = AchievementEngine(registry);
 
   factory DashboardOrchestrator.create() =>
       DashboardOrchestrator._(AnalyzerRegistry());
@@ -96,8 +94,7 @@ class DashboardOrchestrator {
           .where((c) => c.amount > 0 && c.date.isAfter(fourWeeksAgo))
           .toList();
       if (contributions.isEmpty) continue;
-      final total =
-          contributions.fold(0.0, (sum, c) => sum + c.amount);
+      final total = contributions.fold(0.0, (sum, c) => sum + c.amount);
       rates[goal.id!] = total / 4;
     }
     return rates;

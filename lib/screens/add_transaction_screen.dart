@@ -608,7 +608,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                 return 'Por favor ingresa un monto';
               }
               final amount = double.tryParse(value);
-              if (amount == null || amount <= 0) {
+              if (amount == null || !amount.isFinite || amount <= 0) {
                 return 'El monto debe ser mayor a \$0.00';
               }
               if (amount > 999999999.99) {
@@ -1753,39 +1753,42 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                   ),
                 ),
                 const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '${isIncome ? '+' : '-'}${FormatUtils.formatMoney(amount)}',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: color,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isIncome
-                            ? primaryGreen.withOpacity(0.1)
-                            : primaryRed.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        isIncome ? 'Ingreso' : 'Gasto',
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      AmountText(
+                        '${isIncome ? '+' : '-'}${FormatUtils.formatMoney(amount)}',
+                        alignment: Alignment.centerRight,
                         style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
                           color: color,
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isIncome
+                              ? primaryGreen.withOpacity(0.1)
+                              : primaryRed.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          isIncome ? 'Ingreso' : 'Gasto',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: color,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

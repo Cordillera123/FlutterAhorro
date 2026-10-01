@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 
 /// Tipos de cuenta predefinidos
 enum AccountType {
-  main,        // Principal
-  savings,     // Ahorros
-  investment,  // Inversiones
-  work,        // Trabajo
-  personal,    // Personal
-  business,    // Negocio
-  emergency,   // Emergencia
-  education,   // Educación
-  family,      // Familia
-  other,       // Otro
+  main, // Principal
+  savings, // Ahorros
+  investment, // Inversiones
+  work, // Trabajo
+  personal, // Personal
+  business, // Negocio
+  emergency, // Emergencia
+  education, // Educación
+  family, // Familia
+  other, // Otro
 }
 
 /// Modelo para cuentas financieras del usuario.

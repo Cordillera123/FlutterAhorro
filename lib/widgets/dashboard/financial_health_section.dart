@@ -35,7 +35,9 @@ class _FinancialHealthSectionState extends State<FinancialHealthSection> {
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(20),
-          decoration: DashboardTheme.cardDecoration(borderColor: color.withValues(alpha: 0.3)),
+          decoration: DashboardTheme.cardDecoration(
+            borderColor: color.withValues(alpha: 0.3),
+          ),
           child: Column(
             children: [
               Row(
@@ -76,7 +78,10 @@ class _FinancialHealthSectionState extends State<FinancialHealthSection> {
                         const SizedBox(height: 4),
                         Text(
                           'Basado en ${health.activeFactorCount} de ${health.totalFactorCount} factores',
-                          style: TextStyle(color: DashboardTheme.textMedium, fontSize: 13),
+                          style: TextStyle(
+                            color: DashboardTheme.textMedium,
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
@@ -93,7 +98,9 @@ class _FinancialHealthSectionState extends State<FinancialHealthSection> {
               TextButton.icon(
                 onPressed: () => setState(() => _expanded = !_expanded),
                 icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
-                label: Text(_expanded ? 'Ocultar desglose' : 'Ver desglose del puntaje'),
+                label: Text(
+                  _expanded ? 'Ocultar desglose' : 'Ver desglose del puntaje',
+                ),
               ),
               if (_expanded) ...[
                 const SizedBox(height: 8),
@@ -127,7 +134,10 @@ class _FinancialHealthSectionState extends State<FinancialHealthSection> {
           Icon(icon, size: 18, color: color),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(obs.message, style: TextStyle(color: DashboardTheme.textMedium, fontSize: 13)),
+            child: Text(
+              obs.message,
+              style: TextStyle(color: DashboardTheme.textMedium, fontSize: 13),
+            ),
           ),
         ],
       ),
@@ -143,18 +153,39 @@ class _FinancialHealthSectionState extends State<FinancialHealthSection> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(factor.label, style: TextStyle(fontWeight: FontWeight.w600, color: DashboardTheme.textDark)),
-                Text(factor.explanation, style: TextStyle(fontSize: 12, color: DashboardTheme.textMedium)),
+                Text(
+                  factor.label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: DashboardTheme.textDark,
+                  ),
+                ),
+                Text(
+                  factor.explanation,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: DashboardTheme.textMedium,
+                  ),
+                ),
               ],
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('${factor.rawScore}/100', style: TextStyle(fontWeight: FontWeight.w700, color: DashboardTheme.textDark)),
+              Text(
+                '${factor.rawScore}/100',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: DashboardTheme.textDark,
+                ),
+              ),
               Text(
                 '+${factor.contributionPoints.toStringAsFixed(0)} pts',
-                style: TextStyle(fontSize: 11, color: DashboardTheme.textMedium),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: DashboardTheme.textMedium,
+                ),
               ),
             ],
           ),

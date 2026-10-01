@@ -175,8 +175,7 @@ class DashboardSnapshot {
     required this.expensesThisWeek,
   });
 
-  int get currentMonthKey =>
-      referenceMonth.year * 100 + referenceMonth.month;
+  int get currentMonthKey => referenceMonth.year * 100 + referenceMonth.month;
 
   int get previousMonthKey {
     final prev = DateTime(referenceMonth.year, referenceMonth.month - 1);
@@ -196,9 +195,7 @@ class DashboardSnapshot {
 
   IncomeSourceAggregate? get topIncomeSource {
     if (incomeBySource.isEmpty) return null;
-    return incomeBySource.values.reduce(
-      (a, b) => a.amount > b.amount ? a : b,
-    );
+    return incomeBySource.values.reduce((a, b) => a.amount > b.amount ? a : b);
   }
 
   bool get hasSufficientData => totalTransactionCount >= 3;

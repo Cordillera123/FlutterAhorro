@@ -331,7 +331,10 @@ class _HistoryFiltersSheetState extends State<HistoryFiltersSheet> {
                     ),
                     child: const Text(
                       'Aplicar filtros',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
@@ -393,18 +396,26 @@ class _HistoryFiltersSheetState extends State<HistoryFiltersSheet> {
   Widget _buildDateRangeRow() {
     return Row(
       children: [
-        Expanded(child: _dateButton(label: 'Desde', date: _dateFrom, isFrom: true)),
+        Expanded(
+          child: _dateButton(label: 'Desde', date: _dateFrom, isFrom: true),
+        ),
         const SizedBox(width: 12),
-        Expanded(child: _dateButton(label: 'Hasta', date: _dateTo, isFrom: false)),
+        Expanded(
+          child: _dateButton(label: 'Hasta', date: _dateTo, isFrom: false),
+        ),
       ],
     );
   }
 
-  Widget _dateButton({required String label, required DateTime? date, required bool isFrom}) {
+  Widget _dateButton({
+    required String label,
+    required DateTime? date,
+    required bool isFrom,
+  }) {
     final formatted = date == null
         ? 'Sin límite'
         : '${date.day.toString().padLeft(2, '0')}/'
-            '${date.month.toString().padLeft(2, '0')}/${date.year}';
+              '${date.month.toString().padLeft(2, '0')}/${date.year}';
     return GestureDetector(
       onTap: () => _pickDate(isFrom: isFrom),
       child: Container(
@@ -417,11 +428,18 @@ class _HistoryFiltersSheetState extends State<HistoryFiltersSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(fontSize: 11, color: textMedium)),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 11, color: textMedium),
+            ),
             const SizedBox(height: 2),
             Row(
               children: [
-                const Icon(Icons.calendar_today_outlined, size: 13, color: primaryBlue),
+                const Icon(
+                  Icons.calendar_today_outlined,
+                  size: 13,
+                  color: primaryBlue,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   formatted,
@@ -455,13 +473,17 @@ class _HistoryFiltersSheetState extends State<HistoryFiltersSheet> {
           onTap: () {
             HapticFeedback.selectionClick();
             setState(() {
-              isSelected ? _accountIds.remove(account.id) : _accountIds.add(account.id);
+              isSelected
+                  ? _accountIds.remove(account.id)
+                  : _accountIds.add(account.id);
             });
           },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected ? account.color.withOpacity(0.12) : backgroundLight,
+              color: isSelected
+                  ? account.color.withOpacity(0.12)
+                  : backgroundLight,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isSelected ? account.color : borderLight,
@@ -508,7 +530,9 @@ class _HistoryFiltersSheetState extends State<HistoryFiltersSheet> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected ? primaryBlue.withOpacity(0.1) : backgroundLight,
+              color: isSelected
+                  ? primaryBlue.withOpacity(0.1)
+                  : backgroundLight,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isSelected ? primaryBlue : borderLight,
@@ -554,7 +578,9 @@ class _HistoryFiltersSheetState extends State<HistoryFiltersSheet> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected ? primaryBlue.withOpacity(0.1) : backgroundLight,
+              color: isSelected
+                  ? primaryBlue.withOpacity(0.1)
+                  : backgroundLight,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isSelected ? primaryBlue : borderLight,
@@ -585,14 +611,21 @@ class _HistoryFiltersSheetState extends State<HistoryFiltersSheet> {
   Widget _buildAmountRange() {
     return Row(
       children: [
-        Expanded(child: _amountField(controller: _minController, hint: 'Mínimo')),
+        Expanded(
+          child: _amountField(controller: _minController, hint: 'Mínimo'),
+        ),
         const SizedBox(width: 12),
-        Expanded(child: _amountField(controller: _maxController, hint: 'Máximo')),
+        Expanded(
+          child: _amountField(controller: _maxController, hint: 'Máximo'),
+        ),
       ],
     );
   }
 
-  Widget _amountField({required TextEditingController controller, required String hint}) {
+  Widget _amountField({
+    required TextEditingController controller,
+    required String hint,
+  }) {
     return TextField(
       controller: controller,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -604,7 +637,10 @@ class _HistoryFiltersSheetState extends State<HistoryFiltersSheet> {
         hintText: hint,
         filled: true,
         fillColor: backgroundLight,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: borderLight),

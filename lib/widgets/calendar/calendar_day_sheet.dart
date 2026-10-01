@@ -14,11 +14,7 @@ class CalendarDaySheet extends StatelessWidget {
   /// Callback opcional al tocar un movimiento (p. ej. abrir edición).
   final ValueChanged<Transaction>? onMovementTap;
 
-  const CalendarDaySheet({
-    super.key,
-    required this.data,
-    this.onMovementTap,
-  });
+  const CalendarDaySheet({super.key, required this.data, this.onMovementTap});
 
   /// Helper para presentar el sheet con el estilo estándar del proyecto.
   static Future<void> show(
@@ -30,7 +26,8 @@ class CalendarDaySheet extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => CalendarDaySheet(data: data, onMovementTap: onMovementTap),
+      builder: (_) =>
+          CalendarDaySheet(data: data, onMovementTap: onMovementTap),
     );
   }
 
@@ -112,7 +109,7 @@ class CalendarDaySheet extends StatelessWidget {
                 Text(
                   data.hasMovements
                       ? '${data.movementCount} '
-                          '${data.movementCount == 1 ? 'movimiento' : 'movimientos'}'
+                            '${data.movementCount == 1 ? 'movimiento' : 'movimientos'}'
                       : 'Sin movimientos',
                   style: const TextStyle(
                     fontSize: 13,

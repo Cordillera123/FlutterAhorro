@@ -42,7 +42,11 @@ class ForecastsSection extends StatelessWidget {
   Widget _header() {
     return Row(
       children: [
-        Icon(Icons.timeline_rounded, color: DashboardTheme.primaryPurple, size: 22),
+        Icon(
+          Icons.timeline_rounded,
+          color: DashboardTheme.primaryPurple,
+          size: 22,
+        ),
         const SizedBox(width: 8),
         Text(
           'Lo que viene',

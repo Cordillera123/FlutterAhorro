@@ -40,10 +40,7 @@ class AccountSelectorButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              account.emoji,
-              style: const TextStyle(fontSize: 18),
-            ),
+            Text(account.emoji, style: const TextStyle(fontSize: 18)),
             const SizedBox(width: 8),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 120),
@@ -157,10 +154,7 @@ class _AccountSelectorSheet extends StatelessWidget {
                       SizedBox(height: 4),
                       Text(
                         'Cambia entre tus cuentas financieras',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: textMedium,
-                        ),
+                        style: TextStyle(fontSize: 14, color: textMedium),
                       ),
                     ],
                   ),

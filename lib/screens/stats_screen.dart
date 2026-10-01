@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../services/account_service.dart';
+import '../services/category_service.dart';
 import '../services/stats_service.dart';
 import '../services/transaction_service.dart';
 import '../utils/format_utils.dart';
@@ -20,6 +22,8 @@ class _StatsScreenState extends State<StatsScreen>
     with TickerProviderStateMixin {
   final StatsService _statsService = StatsService();
   final TransactionService _transactionService = TransactionService();
+  final CategoryService _categoryService = CategoryService();
+  final AccountService _accountService = AccountService();
   late AnimationController _animationController;
   late Animation<double> _fadeInAnimation;
   late Animation<double> _slideAnimation;
@@ -54,6 +58,23 @@ class _StatsScreenState extends State<StatsScreen>
     super.initState();
     _initAnimations();
     _loadStats();
+    // Las estadísticas se derivan de los datos reales: se recalculan solas al
+    // registrar/editar/eliminar una transacción, cambiar una categoría o de cuenta.
+    _transactionService.addListener(_onDataChanged);
+    _categoryService.addListener(_onDataChanged);
+    _accountService.addListener(_onDataChanged);
+  }
+
+  void _onDataChanged() {
+    if (!mounted || _isLoading) return;
+    setState(_recomputeStats);
+  }
+
+  void _recomputeStats() {
+    _financialStats = _statsService.getCurrentVsPreviousStats();
+    _categoryStats = _statsService.getCategoryStats();
+    _weeklyStats = _statsService.getWeeklyStats();
+    _overallStats = _statsService.getOverallStats();
   }
 
   void _initAnimations() {
@@ -81,10 +102,7 @@ class _StatsScreenState extends State<StatsScreen>
     try {
       await _transactionService.loadTransactions();
 
-      _financialStats = _statsService.getCurrentVsPreviousStats();
-      _categoryStats = _statsService.getCategoryStats();
-      _weeklyStats = _statsService.getWeeklyStats();
-      _overallStats = _statsService.getOverallStats();
+      _recomputeStats();
 
       if (mounted) {
         setState(() {
@@ -103,6 +121,9 @@ class _StatsScreenState extends State<StatsScreen>
 
   @override
   void dispose() {
+    _transactionService.removeListener(_onDataChanged);
+    _categoryService.removeListener(_onDataChanged);
+    _accountService.removeListener(_onDataChanged);
     _animationController.dispose();
     super.dispose();
   }
@@ -344,12 +365,20 @@ class _StatsScreenState extends State<StatsScreen>
     Color color,
     double current,
     double previous,
-    double change,
+    double? change,
   ) {
-    final isPositive = change >= 0;
-    final changeColor = title == 'Gastos'
+    // Sin base de comparación (mes anterior en 0) no hay porcentaje: se
+    // muestra "Nuevo" / "—" en un color neutro y sin flecha.
+    final hasChange = change != null;
+    final isPositive = (change ?? 0) >= 0;
+    final changeColor = !hasChange
+        ? textMedium
+        : title == 'Gastos'
         ? (isPositive ? dangerRed : successGreen)
         : (isPositive ? successGreen : dangerRed);
+    final changeLabel = hasChange
+        ? FormatUtils.formatPercentageCapped(change.abs())
+        : FormatUtils.formatGrowthLabel(null, current: current);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -414,20 +443,26 @@ class _StatsScreenState extends State<StatsScreen>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        isPositive
-                            ? Icons.arrow_upward_rounded
-                            : Icons.arrow_downward_rounded,
-                        color: changeColor,
-                        size: 14,
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        '${change.abs().toStringAsFixed(1)}%',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                      if (hasChange) ...[
+                        Icon(
+                          isPositive
+                              ? Icons.arrow_upward_rounded
+                              : Icons.arrow_downward_rounded,
                           color: changeColor,
+                          size: 14,
+                        ),
+                        const SizedBox(width: 2),
+                      ],
+                      Flexible(
+                        child: Text(
+                          changeLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: changeColor,
+                          ),
                         ),
                       ),
                     ],
@@ -625,9 +660,7 @@ class _StatsScreenState extends State<StatsScreen>
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => ChartsScreen(categoryStats: _categoryStats),
-          ),
+          MaterialPageRoute(builder: (context) => const ChartsScreen()),
         );
       },
       child: Container(
@@ -877,11 +910,14 @@ class _StatsScreenState extends State<StatsScreen>
           ),
           const SizedBox(width: 12),
           Expanded(
+            flex: 3,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   category.categoryName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -890,35 +926,41 @@ class _StatsScreenState extends State<StatsScreen>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${category.transactionCount} transacciones',
+                  '${category.transactionCount} '
+                  '${category.transactionCount == 1 ? 'transacción' : 'transacciones'}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 12, color: textMedium),
                 ),
               ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                FormatUtils.formatMoney(category.amount),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: color,
+          const SizedBox(width: 8),
+          Flexible(
+            flex: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                AmountText(
+                  FormatUtils.formatMoney(category.amount),
+                  alignment: Alignment.centerRight,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '${category.percentage.toStringAsFixed(1)}%',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: color,
+                const SizedBox(height: 2),
+                Text(
+                  FormatUtils.formatPercentageCapped(category.percentage),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

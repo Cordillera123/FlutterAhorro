@@ -39,33 +39,33 @@ class LogoTestScreen extends StatelessWidget {
             ),
             SizedBox(height: 16),
             AppLogo.small(),
-            
+
             SizedBox(height: 32),
             Divider(),
             SizedBox(height: 32),
-            
+
             Text(
               'Logo Mediano (con texto)',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 16),
             AppLogo.medium(),
-            
+
             SizedBox(height: 32),
             Divider(),
             SizedBox(height: 32),
-            
+
             Text(
               'Logo Grande (animado)',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 16),
             AppLogo.large(),
-            
+
             SizedBox(height: 32),
             Divider(),
             SizedBox(height: 32),
-            
+
             Text(
               'Logo para Splash (con fondo)',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -81,20 +81,17 @@ class LogoTestScreen extends StatelessWidget {
               ),
               child: AppLogo.splash(),
             ),
-            
+
             SizedBox(height: 32),
             Divider(),
             SizedBox(height: 32),
-            
+
             Text(
               'Logo Loading (con animaciones)',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 16),
-            SizedBox(
-              height: 200,
-              child: AppLogoLoading(),
-            ),
+            SizedBox(height: 200, child: AppLogoLoading()),
           ],
         ),
       ),

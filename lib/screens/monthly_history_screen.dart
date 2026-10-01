@@ -584,14 +584,15 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 4),
-          Text(
+          AmountText(
             FormatUtils.formatMoney(amount),
+            alignment: Alignment.center,
+            textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: color,
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -705,7 +706,7 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      AmountText(
                         month.fullMonthLabel,
                         style: const TextStyle(
                           fontSize: 18,
@@ -723,12 +724,17 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
                             color: textMedium,
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            '${month.transactionCount} transacciones',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: textMedium,
-                              fontWeight: FontWeight.w500,
+                          Flexible(
+                            child: Text(
+                              '${month.transactionCount} '
+                              '${month.transactionCount == 1 ? 'transacción' : 'transacciones'}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: textMedium,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ],
@@ -736,9 +742,11 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
                     ],
                   ),
                 ),
+                const SizedBox(width: 8),
                 TweenAnimationBuilder<double>(
                   duration: const Duration(milliseconds: 1000),
-                  tween: Tween(begin: 0.0, end: savingsRate),
+                  // Sin ingresos no existe una tasa de ahorro (savingsRate es null).
+                  tween: Tween(begin: 0.0, end: savingsRate ?? 0.0),
                   curve: Curves.easeOutCubic,
                   builder: (context, animValue, child) {
                     return Container(
@@ -763,7 +771,13 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
                         ],
                       ),
                       child: Text(
-                        '${isPositive ? '+' : ''}${animValue.toStringAsFixed(1)}%',
+                        savingsRate == null
+                            ? '—'
+                            : FormatUtils.formatPercentageCapped(
+                                animValue,
+                                signed: true,
+                              ),
+                        maxLines: 1,
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
@@ -882,9 +896,9 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
                     ],
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
                             padding: const EdgeInsets.all(8),
@@ -912,13 +926,17 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
                           ),
                         ],
                       ),
-                      Text(
-                        '${isPositive ? '+' : ''}${FormatUtils.formatMoney(animValue)}',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: isPositive ? successGreen : dangerRed,
-                          letterSpacing: -0.5,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: AmountText(
+                          '${isPositive ? '+' : ''}${FormatUtils.formatMoney(animValue)}',
+                          alignment: Alignment.centerRight,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: isPositive ? successGreen : dangerRed,
+                            letterSpacing: -0.5,
+                          ),
                         ),
                       ),
                     ],
@@ -948,12 +966,16 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
                       'Categoría principal: ',
                       style: TextStyle(fontSize: 12, color: textMedium),
                     ),
-                    Text(
-                      '${month.topExpenseCategory!.categoryIcon} ${month.topExpenseCategory!.categoryName}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: primaryBlue,
+                    Flexible(
+                      child: Text(
+                        '${month.topExpenseCategory!.categoryIcon} ${month.topExpenseCategory!.categoryName}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: primaryBlue,
+                        ),
                       ),
                     ),
                   ],
@@ -993,15 +1015,16 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
           ),
         ),
         const SizedBox(height: 6),
-        Text(
+        AmountText(
           FormatUtils.formatMoney(amount),
+          alignment: Alignment.center,
+          textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w800,
             color: color,
             letterSpacing: -0.3,
           ),
-          textAlign: TextAlign.center,
         ),
       ],
     );

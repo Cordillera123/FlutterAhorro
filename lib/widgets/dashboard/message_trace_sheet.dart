@@ -83,7 +83,10 @@ class MessageTraceSheet extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Text(dp.label, style: TextStyle(color: DashboardTheme.textMedium)),
+                      child: Text(
+                        dp.label,
+                        style: TextStyle(color: DashboardTheme.textMedium),
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Flexible(
@@ -124,7 +127,10 @@ class MessageTraceSheet extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Text(value, style: TextStyle(color: DashboardTheme.textMedium, height: 1.4)),
+        Text(
+          value,
+          style: TextStyle(color: DashboardTheme.textMedium, height: 1.4),
+        ),
       ],
     );
   }

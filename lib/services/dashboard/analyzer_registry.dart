@@ -19,70 +19,70 @@ class AnalyzerRegistry {
   final List<DashboardAnalyzer<DashboardAchievement>> achievementAnalyzers;
 
   AnalyzerRegistry()
-      : alertAnalyzers = [
-          BudgetExceededAlertAnalyzer(),
-          BudgetDangerAlertAnalyzer(),
-          NegativeSavingsAlertAnalyzer(),
-          GoalOverdueAlertAnalyzer(),
-          NoIncomeWeekAlertAnalyzer(),
-          InactivityAlertAnalyzer(),
-        ],
-        observationAnalyzers = [
-          ExpenseVsPreviousObservationAnalyzer(),
-          IncomeVsPreviousObservationAnalyzer(),
-          BestSavingsMonthObservationAnalyzer(),
-          SavingsStreakObservationAnalyzer(),
-          GoalNearObservationAnalyzer(),
-          CategoryReductionObservationAnalyzer(),
-          WeekendSpendingObservationAnalyzer(),
-          PeakWeekdayObservationAnalyzer(),
-          MonthEndLoadObservationAnalyzer(),
-          DominantIncomeObservationAnalyzer(),
-          DominantExpenseObservationAnalyzer(),
-          DailyAverageChangeObservationAnalyzer(),
-          RegistrationStreakObservationAnalyzer(),
-        ],
-        forecastAnalyzers = [
-          MonthEndSavingsForecastAnalyzer(),
-          ExpenseTrendForecastAnalyzer(),
-          GoalCompletionForecastAnalyzer(),
-          GoalExtraSavingsForecastAnalyzer(),
-          BudgetDepletionForecastAnalyzer(),
-          BalanceProjectionForecastAnalyzer(),
-        ],
-        opportunityAnalyzers = [
-          BudgetAlertOpportunityAnalyzer(),
-          ReduceCategoryOpportunityAnalyzer(),
-          BoostGoalOpportunityAnalyzer(),
-          BudgetTrimOpportunityAnalyzer(),
-          RecordIncomeOpportunityAnalyzer(),
-          SavingsOpportunityAnalyzer(),
-        ],
-        achievementAnalyzers = [
-          // Primeros pasos
-          MovementsAchievementAnalyzer(),
-          FirstIncomeAchievementAnalyzer(),
-          // Constancia
-          RegistrationStreakAchievementAnalyzer(),
-          ActiveMonthAchievementAnalyzer(),
-          MonthsUsingAchievementAnalyzer(),
-          // Ahorro
-          SavingsRecordAchievementAnalyzer(),
-          MonthlySavingsAchievementAnalyzer(),
-          TotalSavingsAchievementAnalyzer(),
-          SavingsRateAchievementAnalyzer(),
-          PositiveMonthsAchievementAnalyzer(),
-          // Presupuestos
-          FirstBudgetAchievementAnalyzer(),
-          BudgetStreakAchievementAnalyzer(),
-          // Metas
-          FirstGoalAchievementAnalyzer(),
-          GoalsCompletedAchievementAnalyzer(),
-          GoalNearAchievementAnalyzer(),
-          // Crecimiento
-          SavingsUpStreakAchievementAnalyzer(),
-          ExpenseDownStreakAchievementAnalyzer(),
-          IncomeUpStreakAchievementAnalyzer(),
-          IncomeDiversityAchievementAnalyzer(),
-        ];
+    : alertAnalyzers = [
+        BudgetExceededAlertAnalyzer(),
+        BudgetDangerAlertAnalyzer(),
+        NegativeSavingsAlertAnalyzer(),
+        GoalOverdueAlertAnalyzer(),
+        NoIncomeWeekAlertAnalyzer(),
+        InactivityAlertAnalyzer(),
+      ],
+      observationAnalyzers = [
+        ExpenseVsPreviousObservationAnalyzer(),
+        IncomeVsPreviousObservationAnalyzer(),
+        BestSavingsMonthObservationAnalyzer(),
+        SavingsStreakObservationAnalyzer(),
+        GoalNearObservationAnalyzer(),
+        CategoryReductionObservationAnalyzer(),
+        WeekendSpendingObservationAnalyzer(),
+        PeakWeekdayObservationAnalyzer(),
+        MonthEndLoadObservationAnalyzer(),
+        DominantIncomeObservationAnalyzer(),
+        DominantExpenseObservationAnalyzer(),
+        DailyAverageChangeObservationAnalyzer(),
+        RegistrationStreakObservationAnalyzer(),
+      ],
+      forecastAnalyzers = [
+        MonthEndSavingsForecastAnalyzer(),
+        ExpenseTrendForecastAnalyzer(),
+        GoalCompletionForecastAnalyzer(),
+        GoalExtraSavingsForecastAnalyzer(),
+        BudgetDepletionForecastAnalyzer(),
+        BalanceProjectionForecastAnalyzer(),
+      ],
+      opportunityAnalyzers = [
+        BudgetAlertOpportunityAnalyzer(),
+        ReduceCategoryOpportunityAnalyzer(),
+        BoostGoalOpportunityAnalyzer(),
+        BudgetTrimOpportunityAnalyzer(),
+        RecordIncomeOpportunityAnalyzer(),
+        SavingsOpportunityAnalyzer(),
+      ],
+      achievementAnalyzers = [
+        // Primeros pasos
+        MovementsAchievementAnalyzer(),
+        FirstIncomeAchievementAnalyzer(),
+        // Constancia
+        RegistrationStreakAchievementAnalyzer(),
+        ActiveMonthAchievementAnalyzer(),
+        MonthsUsingAchievementAnalyzer(),
+        // Ahorro
+        SavingsRecordAchievementAnalyzer(),
+        MonthlySavingsAchievementAnalyzer(),
+        TotalSavingsAchievementAnalyzer(),
+        SavingsRateAchievementAnalyzer(),
+        PositiveMonthsAchievementAnalyzer(),
+        // Presupuestos
+        FirstBudgetAchievementAnalyzer(),
+        BudgetStreakAchievementAnalyzer(),
+        // Metas
+        FirstGoalAchievementAnalyzer(),
+        GoalsCompletedAchievementAnalyzer(),
+        GoalNearAchievementAnalyzer(),
+        // Crecimiento
+        SavingsUpStreakAchievementAnalyzer(),
+        ExpenseDownStreakAchievementAnalyzer(),
+        IncomeUpStreakAchievementAnalyzer(),
+        IncomeDiversityAchievementAnalyzer(),
+      ];
 }

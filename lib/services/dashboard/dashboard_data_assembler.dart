@@ -40,29 +40,29 @@ class DashboardDataAssembler {
           a.confidence.index.compareTo(b.confidence.index),
     );
 
-    final sortedObservations =
-        _deduplicator.dedupeAndLimit<DashboardObservation>(
-      items: observations,
-      idExtractor: (o) => o.id,
-      limit: config.maxObservations,
-    );
+    final sortedObservations = _deduplicator
+        .dedupeAndLimit<DashboardObservation>(
+          items: observations,
+          idExtractor: (o) => o.id,
+          limit: config.maxObservations,
+        );
 
-    final sortedOpportunities =
-        _deduplicator.dedupeAndLimit<DashboardOpportunity>(
-      items: opportunities,
-      idExtractor: (o) => o.id,
-      limit: config.maxOpportunities,
-    );
+    final sortedOpportunities = _deduplicator
+        .dedupeAndLimit<DashboardOpportunity>(
+          items: opportunities,
+          idExtractor: (o) => o.id,
+          limit: config.maxOpportunities,
+        );
 
     // Los logros no se recortan como el resto de mensajes: el catálogo
     // completo alimenta la pantalla de Logros. Solo la lista destacada
     // (los ya conseguidos) respeta el límite de configuración.
-    final uniqueAchievements =
-        _deduplicator.dedupeAndLimit<DashboardAchievement>(
-      items: achievements,
-      idExtractor: (a) => a.id,
-      limit: achievements.length,
-    );
+    final uniqueAchievements = _deduplicator
+        .dedupeAndLimit<DashboardAchievement>(
+          items: achievements,
+          idExtractor: (a) => a.id,
+          limit: achievements.length,
+        );
 
     final unlocked = uniqueAchievements.where((a) => a.unlocked).toList()
       ..sort(_compareUnlocked);

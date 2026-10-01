@@ -53,11 +53,7 @@ class DashboardHelpers {
     return date.year * 100 + date.month;
   }
 
-  static int _nextExpectedFromNewest(
-    int key,
-    int count,
-    List<int> sorted,
-  ) {
+  static int _nextExpectedFromNewest(int key, int count, List<int> sorted) {
     if (count >= sorted.length) return -1;
     return sorted[count];
   }

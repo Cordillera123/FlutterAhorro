@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import '../services/account_service.dart';
+import '../services/category_service.dart';
 import '../services/stats_service.dart';
+import '../services/transaction_service.dart';
 import '../widgets/pie_chart_widget.dart';
 import '../utils/format_utils.dart';
 import '../theme/app_colors.dart';
 import '../widgets/common/common.dart';
 
+/// Distribución de los gastos del mes por categoría. Los datos se calculan
+/// aquí mismo a partir de las transacciones reales (no se reciben de otra
+/// pantalla) y se recalculan cuando cambian transacciones, categorías o cuenta.
 class ChartsScreen extends StatefulWidget {
-  final List<CategoryStats> categoryStats;
-
-  const ChartsScreen({super.key, required this.categoryStats});
+  const ChartsScreen({super.key});
 
   @override
   State<ChartsScreen> createState() => _ChartsScreenState();
@@ -16,6 +20,13 @@ class ChartsScreen extends StatefulWidget {
 
 class _ChartsScreenState extends State<ChartsScreen>
     with TickerProviderStateMixin {
+  final StatsService _statsService = StatsService();
+  final TransactionService _transactionService = TransactionService();
+  final CategoryService _categoryService = CategoryService();
+  final AccountService _accountService = AccountService();
+
+  late List<CategoryStats> _categoryStats;
+
   late AnimationController _animationController;
   late AnimationController _legendController;
   late Animation<double> _fadeInAnimation;
@@ -35,7 +46,16 @@ class _ChartsScreenState extends State<ChartsScreen>
   @override
   void initState() {
     super.initState();
+    _categoryStats = _statsService.getCategoryStats();
     _initAnimations();
+    _transactionService.addListener(_onDataChanged);
+    _categoryService.addListener(_onDataChanged);
+    _accountService.addListener(_onDataChanged);
+  }
+
+  void _onDataChanged() {
+    if (!mounted) return;
+    setState(() => _categoryStats = _statsService.getCategoryStats());
   }
 
   void _initAnimations() {
@@ -87,6 +107,9 @@ class _ChartsScreenState extends State<ChartsScreen>
 
   @override
   void dispose() {
+    _transactionService.removeListener(_onDataChanged);
+    _categoryService.removeListener(_onDataChanged);
+    _accountService.removeListener(_onDataChanged);
     _animationController.dispose();
     _legendController.dispose();
     super.dispose();
@@ -213,7 +236,7 @@ class _ChartsScreenState extends State<ChartsScreen>
   }
 
   Widget _buildHeaderSection() {
-    final total = widget.categoryStats.fold<double>(
+    final total = _categoryStats.fold<double>(
       0,
       (sum, stat) => sum + stat.amount,
     );
@@ -264,7 +287,7 @@ class _ChartsScreenState extends State<ChartsScreen>
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
+                    AmountText(
                       FormatUtils.formatMoney(total),
                       style: const TextStyle(
                         fontSize: 20,
@@ -276,6 +299,7 @@ class _ChartsScreenState extends State<ChartsScreen>
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -286,7 +310,8 @@ class _ChartsScreenState extends State<ChartsScreen>
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '${widget.categoryStats.length} categorías',
+                  '${_categoryStats.length} '
+                  '${_categoryStats.length == 1 ? 'categoría' : 'categorías'}',
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -302,7 +327,7 @@ class _ChartsScreenState extends State<ChartsScreen>
   }
 
   Widget _buildChartCard() {
-    if (widget.categoryStats.isEmpty) {
+    if (_categoryStats.isEmpty) {
       return _buildEmptyChart();
     }
 
@@ -359,7 +384,7 @@ class _ChartsScreenState extends State<ChartsScreen>
                     width: 210, // ✅ OPTIMIZADO: De 220 a 210
                     height: 210, // ✅ OPTIMIZADO: De 220 a 210
                     child: PieChartWidget(
-                      categoryStats: widget.categoryStats,
+                      categoryStats: _categoryStats,
                       size: 210, // ✅ OPTIMIZADO: De 220 a 210
                       showLegend: false,
                     ),
@@ -375,7 +400,7 @@ class _ChartsScreenState extends State<ChartsScreen>
   }
 
   Widget _buildLegendSection() {
-    if (widget.categoryStats.isEmpty) return const SizedBox.shrink();
+    if (_categoryStats.isEmpty) return const SizedBox.shrink();
 
     return FadeTransition(
       opacity: _legendFadeAnimation,
@@ -393,7 +418,7 @@ class _ChartsScreenState extends State<ChartsScreen>
           const SizedBox(height: 16),
 
           // Lista de categorías con colores
-          ...widget.categoryStats.asMap().entries.map((entry) {
+          ..._categoryStats.asMap().entries.map((entry) {
             final index = entry.key;
             final category = entry.value;
             return _buildLegendItem(category, index);
@@ -404,28 +429,12 @@ class _ChartsScreenState extends State<ChartsScreen>
   }
 
   Widget _buildLegendItem(CategoryStats category, int index) {
-    // Colores del gráfico (mismos que PieChartWidget)
-    final colors = [
-      const Color(0xFFFF6B6B), // Rojo coral
-      const Color(0xFF4ECDC4), // Turquesa
-      const Color(0xFF45B7D1), // Azul cielo
-      const Color(0xFF96CEB4), // Verde menta
-      const Color(0xFFFECA57), // Amarillo dorado
-      const Color(0xFFFF9FF3), // Rosa fucsia
-      const Color(0xFF54A0FF), // Azul brillante
-      const Color(0xFF5F27CD), // Púrpura
-      const Color(0xFFFF9F43), // Naranja
-      const Color(0xFF00D2D3), // Cian
-      const Color(0xFFFF6348), // Rojo tomate
-      const Color(0xFF2ED573), // Verde lime
-    ];
-
+    // Mismos colores que el gráfico (una sola paleta, la del PieChartWidget)
+    final colors = PieChartWidget.pieColors;
     final color = colors[index % colors.length];
-    final total = widget.categoryStats.fold<double>(
-      0,
-      (sum, stat) => sum + stat.amount,
-    );
-    final percentage = (category.amount / total * 100).toStringAsFixed(1);
+    // El porcentaje viene calculado por StatsService sobre el total real de
+    // gastos, el mismo que ve el gráfico: lista y gráfico no pueden diferir.
+    final percentage = category.percentage.toStringAsFixed(1);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8), // ✅ OPTIMIZADO - De 10 a 8
@@ -497,37 +506,41 @@ class _ChartsScreenState extends State<ChartsScreen>
           const SizedBox(width: 8),
 
           // Porcentaje y monto
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  '$percentage%',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: color,
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '$percentage%',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: color,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                FormatUtils.formatMoney(category.amount),
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: textDark,
+                const SizedBox(height: 4),
+                AmountText(
+                  FormatUtils.formatMoney(category.amount),
+                  alignment: Alignment.centerRight,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: textDark,
+                  ),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -535,18 +548,13 @@ class _ChartsScreenState extends State<ChartsScreen>
   }
 
   Widget _buildInsightsSection() {
-    if (widget.categoryStats.isEmpty) return const SizedBox.shrink();
+    if (_categoryStats.isEmpty) return const SizedBox.shrink();
 
     // Encontrar la categoría con mayor gasto
-    final topCategory = widget.categoryStats.reduce(
+    final topCategory = _categoryStats.reduce(
       (a, b) => a.amount > b.amount ? a : b,
     );
-
-    final total = widget.categoryStats.fold<double>(
-      0,
-      (sum, stat) => sum + stat.amount,
-    );
-    final topPercentage = (topCategory.amount / total * 100).toStringAsFixed(0);
+    final topPercentage = topCategory.percentage.toStringAsFixed(0);
 
     return FadeTransition(
       opacity: _legendFadeAnimation,

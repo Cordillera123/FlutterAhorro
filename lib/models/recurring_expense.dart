@@ -5,40 +5,40 @@ part 'recurring_expense.g.dart';
 
 // Frecuencia del gasto recurrente
 enum RecurrenceFrequency {
-  daily,      // Diario
-  weekly,     // Semanal
-  monthly,    // Mensual
-  custom      // Personalizado (cada X días)
+  daily, // Diario
+  weekly, // Semanal
+  monthly, // Mensual
+  custom, // Personalizado (cada X días)
 }
 
 // Días de la semana para gastos semanales
 enum WeekDay {
-  monday,    // Lunes
-  tuesday,   // Martes
+  monday, // Lunes
+  tuesday, // Martes
   wednesday, // Miércoles
-  thursday,  // Jueves
-  friday,    // Viernes
-  saturday,  // Sábado
-  sunday     // Domingo
+  thursday, // Jueves
+  friday, // Viernes
+  saturday, // Sábado
+  sunday, // Domingo
 }
 
 @JsonSerializable()
 class RecurringExpense {
   final String id;
-  final String name;                    // Nombre del gasto (ej: "Transporte diario")
-  final String description;             // Descripción (ej: "Bus casa-trabajo")
-  final double amount;                  // Monto
-  final ExpenseCategory category;       // Categoría
-  final RecurrenceFrequency frequency;  // Frecuencia
-  final int? customDays;                // Días personalizados (si frequency es custom)
-  final List<WeekDay>? weekDays;        // Días de la semana (si frequency es weekly)
-  final int? monthlyDay;                // Día del mes (si frequency es monthly)
-  final DateTime startDate;             // Fecha de inicio
-  final DateTime? endDate;              // Fecha de fin (opcional)
-  final bool isActive;                  // Si está activo
-  final DateTime createdAt;             // Fecha de creación
-  final DateTime? lastProcessed;        // Última vez que se procesó
-  final String accountId;              // ID de la cuenta a la que pertenece
+  final String name; // Nombre del gasto (ej: "Transporte diario")
+  final String description; // Descripción (ej: "Bus casa-trabajo")
+  final double amount; // Monto
+  final ExpenseCategory category; // Categoría
+  final RecurrenceFrequency frequency; // Frecuencia
+  final int? customDays; // Días personalizados (si frequency es custom)
+  final List<WeekDay>? weekDays; // Días de la semana (si frequency es weekly)
+  final int? monthlyDay; // Día del mes (si frequency es monthly)
+  final DateTime startDate; // Fecha de inicio
+  final DateTime? endDate; // Fecha de fin (opcional)
+  final bool isActive; // Si está activo
+  final DateTime createdAt; // Fecha de creación
+  final DateTime? lastProcessed; // Última vez que se procesó
+  final String accountId; // ID de la cuenta a la que pertenece
 
   RecurringExpense({
     required this.id,
@@ -121,7 +121,9 @@ class RecurringExpense {
         return 'Todos los días';
       case RecurrenceFrequency.weekly:
         if (weekDays != null && weekDays!.isNotEmpty) {
-          final dayNames = weekDays!.map((day) => _getWeekDayName(day)).join(', ');
+          final dayNames = weekDays!
+              .map((day) => _getWeekDayName(day))
+              .join(', ');
           return 'Cada $dayNames';
         }
         return 'Semanal';
@@ -137,13 +139,20 @@ class RecurringExpense {
 
   String _getWeekDayName(WeekDay day) {
     switch (day) {
-      case WeekDay.monday: return 'Lunes';
-      case WeekDay.tuesday: return 'Martes';
-      case WeekDay.wednesday: return 'Miércoles';
-      case WeekDay.thursday: return 'Jueves';
-      case WeekDay.friday: return 'Viernes';
-      case WeekDay.saturday: return 'Sábado';
-      case WeekDay.sunday: return 'Domingo';
+      case WeekDay.monday:
+        return 'Lunes';
+      case WeekDay.tuesday:
+        return 'Martes';
+      case WeekDay.wednesday:
+        return 'Miércoles';
+      case WeekDay.thursday:
+        return 'Jueves';
+      case WeekDay.friday:
+        return 'Viernes';
+      case WeekDay.saturday:
+        return 'Sábado';
+      case WeekDay.sunday:
+        return 'Domingo';
     }
   }
 
@@ -160,21 +169,26 @@ class RecurringExpense {
     if (!isActive) return false;
 
     // Si tiene fecha de fin y ya pasó, no ejecutar
-    if (endDate != null && targetDate.isAfter(DateTime(endDate!.year, endDate!.month, endDate!.day))) {
+    if (endDate != null &&
+        targetDate.isAfter(
+          DateTime(endDate!.year, endDate!.month, endDate!.day),
+        )) {
       return false;
     }
 
     // Si es antes de la fecha de inicio, no ejecutar
-    if (targetDate.isBefore(DateTime(startDate.year, startDate.month, startDate.day))) {
+    if (targetDate.isBefore(
+      DateTime(startDate.year, startDate.month, startDate.day),
+    )) {
       return false;
     }
 
     // Si ya se procesó ese día, no ejecutar de nuevo
     if (lastProcessed != null) {
       final lastProcessedDate = DateTime(
-          lastProcessed!.year,
-          lastProcessed!.month,
-          lastProcessed!.day
+        lastProcessed!.year,
+        lastProcessed!.month,
+        lastProcessed!.day,
       );
       if (lastProcessedDate == targetDate) return false;
     }
@@ -197,15 +211,23 @@ class RecurringExpense {
 
       case RecurrenceFrequency.custom:
         if (customDays != null && lastProcessed != null) {
-          final daysSinceLastProcessed = targetDate.difference(
-              DateTime(lastProcessed!.year, lastProcessed!.month, lastProcessed!.day)
-          ).inDays;
+          final daysSinceLastProcessed = targetDate
+              .difference(
+                DateTime(
+                  lastProcessed!.year,
+                  lastProcessed!.month,
+                  lastProcessed!.day,
+                ),
+              )
+              .inDays;
           return daysSinceLastProcessed >= customDays!;
         } else if (customDays != null) {
           // Primera vez, verificar desde startDate
-          final daysSinceStart = targetDate.difference(
-              DateTime(startDate.year, startDate.month, startDate.day)
-          ).inDays;
+          final daysSinceStart = targetDate
+              .difference(
+                DateTime(startDate.year, startDate.month, startDate.day),
+              )
+              .inDays;
           return daysSinceStart % customDays! == 0;
         }
         return false;
@@ -214,14 +236,22 @@ class RecurringExpense {
 
   WeekDay _weekDayOf(DateTime date) {
     switch (date.weekday) {
-      case 1: return WeekDay.monday;
-      case 2: return WeekDay.tuesday;
-      case 3: return WeekDay.wednesday;
-      case 4: return WeekDay.thursday;
-      case 5: return WeekDay.friday;
-      case 6: return WeekDay.saturday;
-      case 7: return WeekDay.sunday;
-      default: return WeekDay.monday;
+      case 1:
+        return WeekDay.monday;
+      case 2:
+        return WeekDay.tuesday;
+      case 3:
+        return WeekDay.wednesday;
+      case 4:
+        return WeekDay.thursday;
+      case 5:
+        return WeekDay.friday;
+      case 6:
+        return WeekDay.saturday;
+      case 7:
+        return WeekDay.sunday;
+      default:
+        return WeekDay.monday;
     }
   }
 
@@ -244,7 +274,9 @@ class RecurringExpense {
 
     for (var i = 0; i < horizonDays; i++) {
       if (endDate != null &&
-          candidate.isAfter(DateTime(endDate!.year, endDate!.month, endDate!.day))) {
+          candidate.isAfter(
+            DateTime(endDate!.year, endDate!.month, endDate!.day),
+          )) {
         return null;
       }
       if (_runsOn(candidate)) return candidate;
@@ -258,7 +290,9 @@ class RecurringExpense {
     double transactionAmount = amount;
 
     // Para gastos semanales, calculamos el monto diario
-    if (frequency == RecurrenceFrequency.weekly && weekDays != null && weekDays!.isNotEmpty) {
+    if (frequency == RecurrenceFrequency.weekly &&
+        weekDays != null &&
+        weekDays!.isNotEmpty) {
       transactionAmount = amount / weekDays!.length;
     }
 

@@ -164,8 +164,7 @@ class SavingsStreakObservationAnalyzer
     return DashboardObservation(
       id: id,
       title: 'Racha de ahorro',
-      message:
-          'Has aumentado tu ahorro durante $streak meses consecutivos',
+      message: 'Has aumentado tu ahorro durante $streak meses consecutivos',
       icon: Icons.local_fire_department_rounded,
       dimension: ObservationDimension.trend,
       numericValue: streak.toDouble(),
@@ -206,10 +205,11 @@ class GoalNearObservationAnalyzer
 
   @override
   DashboardObservation? analyze(DashboardAnalysisContext context) {
-    final near = context.activeGoals
-        .where((g) => g.remainingAmount > 0 && g.progressPercentage >= 0.85)
-        .toList()
-      ..sort((a, b) => a.remainingAmount.compareTo(b.remainingAmount));
+    final near =
+        context.activeGoals
+            .where((g) => g.remainingAmount > 0 && g.progressPercentage >= 0.85)
+            .toList()
+          ..sort((a, b) => a.remainingAmount.compareTo(b.remainingAmount));
     if (near.isEmpty) return null;
     final goal = near.first;
     return DashboardObservation(
@@ -243,7 +243,8 @@ class WeekendSpendingObservationAnalyzer
   bool canAnalyze(DashboardAnalysisContext context) {
     final s = context.snapshot;
     if (s.currentMonthExpenses <= 0) return false;
-    final weekend = (s.expensesByWeekday[6] ?? 0) + (s.expensesByWeekday[7] ?? 0);
+    final weekend =
+        (s.expensesByWeekday[6] ?? 0) + (s.expensesByWeekday[7] ?? 0);
     final weekdays = s.currentMonthExpenses - weekend;
     return weekend > weekdays * 0.6 && weekend > 0;
   }
@@ -251,7 +252,8 @@ class WeekendSpendingObservationAnalyzer
   @override
   DashboardObservation? analyze(DashboardAnalysisContext context) {
     final s = context.snapshot;
-    final weekend = (s.expensesByWeekday[6] ?? 0) + (s.expensesByWeekday[7] ?? 0);
+    final weekend =
+        (s.expensesByWeekday[6] ?? 0) + (s.expensesByWeekday[7] ?? 0);
     final pct = (weekend / s.currentMonthExpenses) * 100;
     return DashboardObservation(
       id: id,
@@ -322,7 +324,8 @@ class MonthEndLoadObservationAnalyzer
 
   @override
   bool canAnalyze(DashboardAnalysisContext context) {
-    final lastWeek = context.snapshot.expensesByWeekOfMonth[5] ??
+    final lastWeek =
+        context.snapshot.expensesByWeekOfMonth[5] ??
         context.snapshot.expensesByWeekOfMonth[4];
     if (lastWeek == null) return false;
     return lastWeek.percentageOfMonth >= 35;
@@ -381,10 +384,7 @@ class DominantIncomeObservationAnalyzer
         reason: 'Una categoría de ingreso concentra más del 50%',
         inputs: [
           DataPoint(label: 'Fuente', value: top.displayName),
-          DataPoint(
-            label: 'Monto',
-            value: FormatUtils.formatMoney(top.amount),
-          ),
+          DataPoint(label: 'Monto', value: FormatUtils.formatMoney(top.amount)),
         ],
         formula: 'ingresos(categoría) / ingresos(totales)',
       ),

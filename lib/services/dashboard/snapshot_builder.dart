@@ -58,7 +58,11 @@ class SnapshotBuilder {
     double incomeThisWeek = 0;
     double expensesThisWeek = 0;
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
-    final weekStartDate = DateTime(weekStart.year, weekStart.month, weekStart.day);
+    final weekStartDate = DateTime(
+      weekStart.year,
+      weekStart.month,
+      weekStart.day,
+    );
 
     final cutoff30 = now.subtract(const Duration(days: 30));
     final cutoffHistory = DateTime(now.year, now.month - historyMonths, 1);
@@ -188,8 +192,7 @@ class SnapshotBuilder {
 
     final totalCurrentExpenses = currentMonthExpenses;
     final expensesByCategory = <String, CategoryAggregate>{};
-    final currentMonthCategories =
-        expensesByMonthAndCategory[currentKey] ?? {};
+    final currentMonthCategories = expensesByMonthAndCategory[currentKey] ?? {};
     currentMonthCategories.forEach((key, amount) {
       expensesByCategory[key] = CategoryAggregate(
         key: key,
@@ -210,8 +213,7 @@ class SnapshotBuilder {
       if (t.type != TransactionType.income) continue;
       if (monthKey(t.date) != currentKey) continue;
       final key = MovementRecord.categoryKeyFromTransaction(t);
-      currentIncomeByKey[key] =
-          (currentIncomeByKey[key] ?? 0) + t.amount;
+      currentIncomeByKey[key] = (currentIncomeByKey[key] ?? 0) + t.amount;
       incomeNames[key] = t.categoryName;
     }
     currentIncomeByKey.forEach((key, amount) {
@@ -219,8 +221,9 @@ class SnapshotBuilder {
         key: key,
         displayName: incomeNames[key] ?? key,
         amount: amount,
-        percentageOfIncome:
-            totalCurrentIncome > 0 ? (amount / totalCurrentIncome) * 100 : 0,
+        percentageOfIncome: totalCurrentIncome > 0
+            ? (amount / totalCurrentIncome) * 100
+            : 0,
         transactionCount: incomeCounts[key] ?? 0,
       );
     });
@@ -240,18 +243,15 @@ class SnapshotBuilder {
     MonthAggregate? worstSavings;
     for (final aggregate in monthlyHistory.values) {
       if (aggregate.transactionCount == 0) continue;
-      if (bestSavings == null ||
-          aggregate.savings > bestSavings.savings) {
+      if (bestSavings == null || aggregate.savings > bestSavings.savings) {
         bestSavings = aggregate;
       }
-      if (worstSavings == null ||
-          aggregate.savings < worstSavings.savings) {
+      if (worstSavings == null || aggregate.savings < worstSavings.savings) {
         worstSavings = aggregate;
       }
     }
 
-    final prevDaysInMonth =
-        DateTime(now.year, now.month, 0).day;
+    final prevDaysInMonth = DateTime(now.year, now.month, 0).day;
     final previousDailyAvg = previousMonthExpenses / prevDaysInMonth;
 
     final budgetProgress = activeBudgets
@@ -266,9 +266,11 @@ class SnapshotBuilder {
 
     final daysSinceLast = lastTransactionDate == null
         ? 999
-        : DateTime(now.year, now.month, now.day)
-            .difference(lastTransactionDate)
-            .inDays;
+        : DateTime(
+            now.year,
+            now.month,
+            now.day,
+          ).difference(lastTransactionDate).inDays;
 
     return DashboardSnapshot(
       accountId: account.id,
@@ -295,8 +297,9 @@ class SnapshotBuilder {
       dailyAverageExpense: daysElapsed > 0
           ? currentMonthExpenses / daysElapsed
           : 0,
-      dailyAverageIncome:
-          daysElapsed > 0 ? currentMonthIncome / daysElapsed : 0,
+      dailyAverageIncome: daysElapsed > 0
+          ? currentMonthIncome / daysElapsed
+          : 0,
       previousMonthDailyAverageExpense: previousDailyAvg,
       lastTransactionDate: lastTransactionDate,
       daysSinceLastTransaction: daysSinceLast,
@@ -317,18 +320,24 @@ class SnapshotBuilder {
   ) {
     if (record.isIncome) return false;
     if (date.isBefore(
-        DateTime(budget.startDate.year, budget.startDate.month,
-            budget.startDate.day))) {
+      DateTime(
+        budget.startDate.year,
+        budget.startDate.month,
+        budget.startDate.day,
+      ),
+    )) {
       return false;
     }
-    if (date.isAfter(DateTime(
-      budget.endDate.year,
-      budget.endDate.month,
-      budget.endDate.day,
-      23,
-      59,
-      59,
-    ))) {
+    if (date.isAfter(
+      DateTime(
+        budget.endDate.year,
+        budget.endDate.month,
+        budget.endDate.day,
+        23,
+        59,
+        59,
+      ),
+    )) {
       return false;
     }
     final budgetKey = MovementRecord.budgetCategoryKey(

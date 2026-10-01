@@ -42,8 +42,7 @@ class DayCalendarData {
   bool get hasMultipleMovements => movementCount > 1;
 
   /// Indica si el día contiene al menos un ingreso.
-  bool get hasIncome =>
-      movements.any((m) => m.type == TransactionType.income);
+  bool get hasIncome => movements.any((m) => m.type == TransactionType.income);
 
   /// Indica si el día contiene al menos un gasto.
   bool get hasExpense =>

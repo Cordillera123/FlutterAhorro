@@ -924,12 +924,16 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
                     ],
                   ),
                 ),
-                Text(
-                  FormatUtils.formatMoney(amount),
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: dangerRed,
+                const SizedBox(width: 8),
+                Flexible(
+                  child: AmountText(
+                    FormatUtils.formatMoney(amount),
+                    alignment: Alignment.centerRight,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: dangerRed,
+                    ),
                   ),
                 ),
               ],

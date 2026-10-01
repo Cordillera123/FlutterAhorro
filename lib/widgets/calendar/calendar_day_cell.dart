@@ -37,14 +37,14 @@ class CalendarDayCell extends StatelessWidget {
     final Color background = isSelected
         ? CalendarTheme.primaryBlue
         : isToday
-            ? CalendarTheme.primaryBlue.withValues(alpha: 0.10)
-            : Colors.transparent;
+        ? CalendarTheme.primaryBlue.withValues(alpha: 0.10)
+        : Colors.transparent;
 
     final Color numberColor = isSelected
         ? Colors.white
         : isToday
-            ? CalendarTheme.primaryBlue
-            : CalendarTheme.textDark;
+        ? CalendarTheme.primaryBlue
+        : CalendarTheme.textDark;
 
     return GestureDetector(
       onTap: onTap,
@@ -100,7 +100,9 @@ class CalendarDayCell extends StatelessWidget {
     // Sin movimientos -> punto gris (⚪).
     if (!hasMovements) {
       return _dot(
-        selected ? Colors.white.withValues(alpha: 0.4) : CalendarTheme.emptyGray,
+        selected
+            ? Colors.white.withValues(alpha: 0.4)
+            : CalendarTheme.emptyGray,
       );
     }
 
@@ -118,7 +120,10 @@ class CalendarDayCell extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (hasIncome)
-              _dot(selected ? Colors.white : CalendarTheme.incomeGreen, size: 5),
+              _dot(
+                selected ? Colors.white : CalendarTheme.incomeGreen,
+                size: 5,
+              ),
             if (hasIncome && hasExpense) const SizedBox(width: 2),
             if (hasExpense)
               _dot(selected ? Colors.white : CalendarTheme.expenseRed, size: 5),

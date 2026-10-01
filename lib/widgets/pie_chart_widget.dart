@@ -18,21 +18,8 @@ class PieChartWidget extends StatefulWidget {
     this.onCategorySelected,
   });
 
-  @override
-  State<PieChartWidget> createState() => _PieChartWidgetState();
-}
-
-class _PieChartWidgetState extends State<PieChartWidget>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late AnimationController _pulseController;
-  late Animation<double> _animation;
-  late Animation<double> _pulseAnimation;
-  
-  CategoryStats? _selectedCategory;
-  int? _hoveredIndex;
-
-  // Colores vibrantes y atractivos para el gráfico
+  // Colores vibrantes y atractivos para el gráfico. Públicos para que la
+  // leyenda de otras pantallas use exactamente la misma paleta.
   static const List<Color> pieColors = [
     Color(0xFFFF6B6B), // Rojo coral
     Color(0xFF4ECDC4), // Turquesa
@@ -47,6 +34,22 @@ class _PieChartWidgetState extends State<PieChartWidget>
     Color(0xFFFF6348), // Rojo tomate
     Color(0xFF2ED573), // Verde lime
   ];
+
+  @override
+  State<PieChartWidget> createState() => _PieChartWidgetState();
+}
+
+class _PieChartWidgetState extends State<PieChartWidget>
+    with TickerProviderStateMixin {
+  late AnimationController _animationController;
+  late AnimationController _pulseController;
+  late Animation<double> _animation;
+  late Animation<double> _pulseAnimation;
+
+  CategoryStats? _selectedCategory;
+  int? _hoveredIndex;
+
+  static const List<Color> pieColors = PieChartWidget.pieColors;
 
   @override
   void initState() {
@@ -70,15 +73,37 @@ class _PieChartWidgetState extends State<PieChartWidget>
       curve: Curves.elasticOut,
     );
 
-    _pulseAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.1,
-    ).animate(CurvedAnimation(
-      parent: _pulseController,
-      curve: Curves.easeInOut,
-    ));
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
 
     _animationController.forward();
+  }
+
+  @override
+  void didUpdateWidget(covariant PieChartWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Los datos se recalculan (nuevos objetos) cuando cambian las
+    // transacciones: la selección se vuelve a enlazar por categoría, y se
+    // descarta si esa categoría ya no tiene gastos.
+    final selected = _selectedCategory;
+    if (selected == null) return;
+    final index = _indexOfSelected;
+    if (index == -1) {
+      _selectedCategory = null;
+      _pulseController.stop();
+      _pulseController.reset();
+    } else {
+      _selectedCategory = widget.categoryStats[index];
+    }
+  }
+
+  int get _indexOfSelected {
+    final selected = _selectedCategory;
+    if (selected == null) return -1;
+    return widget.categoryStats.indexWhere(
+      (c) => c.categoryKey == selected.categoryKey,
+    );
   }
 
   @override
@@ -89,70 +114,67 @@ class _PieChartWidgetState extends State<PieChartWidget>
   }
 
   @override
-Widget build(BuildContext context) {
-  if (widget.categoryStats.isEmpty) {
-    return _buildEmptyChart();
-  }
+  Widget build(BuildContext context) {
+    if (widget.categoryStats.isEmpty) {
+      return _buildEmptyChart();
+    }
 
-  return Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      AnimatedBuilder(
-        animation: _animation,
-        builder: (context, child) {
-          return GestureDetector(
-            onTapDown: _handleTapDown,
-            child: Container(
-              width: widget.size,
-              height: widget.size,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
-                  ),
-                  BoxShadow(
-                    color: Colors.purple.withOpacity(0.15),
-                    blurRadius: 24,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: AnimatedBuilder(
-                animation: _pulseAnimation,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: _selectedCategory != null ? _pulseAnimation.value : 1.0,
-                    child: CustomPaint(
-                      painter: PieChartPainter(
-                        categoryStats: widget.categoryStats,
-                        animationValue: _animation.value,
-                        selectedIndex: _selectedCategory != null 
-                            ? widget.categoryStats.indexOf(_selectedCategory!)
-                            : -1,
-                        hoveredIndex: _hoveredIndex,
-                        colors: pieColors,
-                      ),
-                      size: Size(widget.size, widget.size),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AnimatedBuilder(
+          animation: _animation,
+          builder: (context, child) {
+            return GestureDetector(
+              onTapDown: _handleTapDown,
+              child: Container(
+                width: widget.size,
+                height: widget.size,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
                     ),
-                  );
-                },
+                    BoxShadow(
+                      color: Colors.purple.withOpacity(0.15),
+                      blurRadius: 24,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: AnimatedBuilder(
+                  animation: _pulseAnimation,
+                  builder: (context, child) {
+                    return Transform.scale(
+                      scale: _selectedCategory != null
+                          ? _pulseAnimation.value
+                          : 1.0,
+                      child: CustomPaint(
+                        painter: PieChartPainter(
+                          categoryStats: widget.categoryStats,
+                          animationValue: _animation.value,
+                          selectedIndex: _indexOfSelected,
+                          hoveredIndex: _hoveredIndex,
+                          colors: pieColors,
+                        ),
+                        size: Size(widget.size, widget.size),
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-          );
-        },
-      ),
-      
-      // Leyenda opcional
-      if (widget.showLegend) ...[
-        const SizedBox(height: 20),
-        _buildLegend(),
+            );
+          },
+        ),
+
+        // Leyenda opcional
+        if (widget.showLegend) ...[const SizedBox(height: 20), _buildLegend()],
       ],
-    ],
-  );
-}
+    );
+  }
 
   Widget _buildEmptyChart() {
     return Container(
@@ -161,20 +183,13 @@ Widget build(BuildContext context) {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: Colors.grey.withOpacity(0.1),
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.3),
-          width: 2,
-        ),
+        border: Border.all(color: Colors.grey.withOpacity(0.3), width: 2),
       ),
       child: const Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.pie_chart_outline_rounded,
-              size: 40,
-              color: Colors.grey,
-            ),
+            Icon(Icons.pie_chart_outline_rounded, size: 40, color: Colors.grey),
             SizedBox(height: 8),
             Text(
               'Sin datos',
@@ -198,7 +213,8 @@ Widget build(BuildContext context) {
         final index = entry.key;
         final category = entry.value;
         final color = pieColors[index % pieColors.length];
-        final isSelected = _selectedCategory == category;
+        final isSelected =
+            _selectedCategory?.categoryKey == category.categoryKey;
 
         return GestureDetector(
           onTap: () => _selectCategory(category),
@@ -254,31 +270,26 @@ Widget build(BuildContext context) {
   }
 
   // Widget para cada item de detalle en el modal
-  Widget _buildDetailItem(String label, String value, IconData icon, Color color) {
+  Widget _buildDetailItem(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            color.withOpacity(0.08),
-            color.withOpacity(0.05),
-          ],
+          colors: [color.withOpacity(0.08), color.withOpacity(0.05)],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1.5,
-        ),
+        border: Border.all(color: color.withOpacity(0.2), width: 1.5),
       ),
       child: Column(
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 28,
-          ),
+          Icon(icon, color: color, size: 28),
           const SizedBox(height: 8),
           Text(
             label,
@@ -314,37 +325,41 @@ Widget build(BuildContext context) {
     final center = Offset(widget.size / 2, widget.size / 2);
     final tapPosition = details.localPosition;
     final distance = (tapPosition - center).distance;
-    
+
     // Verificar si el tap está dentro del círculo
     if (distance <= widget.size / 2) {
       final angle = math.atan2(
         tapPosition.dy - center.dy,
         tapPosition.dx - center.dx,
       );
-      
+
       // Convertir ángulo a porcentaje del círculo
       double normalizedAngle = (angle + math.pi / 2) % (2 * math.pi);
       if (normalizedAngle < 0) normalizedAngle += 2 * math.pi;
-      
+
       double currentAngle = 0;
-      bool foundCategory = false; // ✅ NUEVO: Flag para detectar si encontramos categoría
-      
+      bool foundCategory =
+          false; // ✅ NUEVO: Flag para detectar si encontramos categoría
+
       for (int i = 0; i < widget.categoryStats.length; i++) {
         final category = widget.categoryStats[i];
         final segmentAngle = (category.percentage / 100) * 2 * math.pi;
-        
-        if (normalizedAngle >= currentAngle && normalizedAngle <= currentAngle + segmentAngle) {
+
+        if (normalizedAngle >= currentAngle &&
+            normalizedAngle <= currentAngle + segmentAngle) {
           _selectCategory(category);
           HapticFeedback.mediumImpact();
           foundCategory = true;
           break;
         }
-        
+
         currentAngle += segmentAngle;
       }
-      
+
       // ✅ NUEVO: Si tocamos el centro y hay categoría seleccionada, deseleccionar
-      if (!foundCategory && distance < widget.size * 0.3 && _selectedCategory != null) {
+      if (!foundCategory &&
+          distance < widget.size * 0.3 &&
+          _selectedCategory != null) {
         _selectCategory(null);
         HapticFeedback.lightImpact();
       }
@@ -360,7 +375,7 @@ Widget build(BuildContext context) {
       _pulseController.reset();
       _pulseController.repeat(reverse: true);
       HapticFeedback.mediumImpact();
-      
+
       // Mostrar el modal usando BottomSheet
       _showCategoryBottomSheet(context);
     } else {
@@ -373,9 +388,10 @@ Widget build(BuildContext context) {
 
   void _showCategoryBottomSheet(BuildContext context) {
     if (_selectedCategory == null) return;
-    
-    final color = pieColors[widget.categoryStats.indexOf(_selectedCategory!) % pieColors.length];
-    
+
+    final selectedIndex = _indexOfSelected < 0 ? 0 : _indexOfSelected;
+    final color = pieColors[selectedIndex % pieColors.length];
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -385,9 +401,7 @@ Widget build(BuildContext context) {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border(
-              top: BorderSide(color: color, width: 4),
-            ),
+            border: Border(top: BorderSide(color: color, width: 4)),
           ),
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
@@ -409,7 +423,7 @@ Widget build(BuildContext context) {
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  
+
                   // Header
                   Row(
                     children: [
@@ -465,9 +479,9 @@ Widget build(BuildContext context) {
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Divider
                   Container(
                     height: 2,
@@ -481,9 +495,9 @@ Widget build(BuildContext context) {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Grid de información - 2x2
                   _buildDetailItem(
                     'Monto Total',
@@ -491,38 +505,39 @@ Widget build(BuildContext context) {
                     Icons.attach_money_rounded,
                     color,
                   ),
-                  
+
                   const SizedBox(height: 12),
-                  
+
                   _buildDetailItem(
                     'Porcentaje del Total',
                     '${_selectedCategory!.percentage.toStringAsFixed(1)}%',
                     Icons.pie_chart_rounded,
                     color,
                   ),
-                  
+
                   const SizedBox(height: 12),
-                  
+
                   _buildDetailItem(
                     'Número de Transacciones',
                     '${_selectedCategory!.transactionCount}',
                     Icons.receipt_long_rounded,
                     color,
                   ),
-                  
+
                   const SizedBox(height: 12),
-                  
+
                   _buildDetailItem(
                     'Promedio por Transacción',
                     FormatUtils.formatMoney(
-                      _selectedCategory!.amount / _selectedCategory!.transactionCount
+                      _selectedCategory!.amount /
+                          _selectedCategory!.transactionCount,
                     ),
                     Icons.analytics_rounded,
                     color,
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Botón de cierre
                   GestureDetector(
                     onTap: () {
@@ -553,7 +568,11 @@ Widget build(BuildContext context) {
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                          Icon(
+                            Icons.check_circle_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                           SizedBox(width: 8),
                           Text(
                             'Entendido',
@@ -567,7 +586,7 @@ Widget build(BuildContext context) {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 8),
                 ],
               ),
@@ -576,6 +595,7 @@ Widget build(BuildContext context) {
         );
       },
     ).whenComplete(() {
+      if (!mounted) return;
       setState(() {
         _selectedCategory = null;
       });
@@ -605,76 +625,75 @@ class PieChartPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
-    
+
     // Dibujar sombra del círculo con múltiples capas para mayor profundidad
     final shadowPaint1 = Paint()
       ..color = Colors.black.withOpacity(0.15)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-    
+
     final shadowPaint2 = Paint()
       ..color = Colors.black.withOpacity(0.08)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15);
-    
+
     canvas.drawCircle(center.translate(0, 4), radius * 0.95, shadowPaint2);
     canvas.drawCircle(center.translate(0, 2), radius * 0.98, shadowPaint1);
 
     double startAngle = -math.pi / 2; // Comenzar desde arriba
-    
+
     for (int i = 0; i < categoryStats.length; i++) {
       final category = categoryStats[i];
-      final sweepAngle = (category.percentage / 100) * 2 * math.pi * animationValue;
+      final sweepAngle =
+          (category.percentage / 100) * 2 * math.pi * animationValue;
       final color = colors[i % colors.length];
-      
+
       // Determinar si este segmento está seleccionado o hover
       final isSelected = i == selectedIndex;
       final isHovered = i == hoveredIndex;
       final effectiveRadius = isSelected ? radius * 1.08 : radius;
-      
+
       // Crear gradiente radial para cada segmento
-      final paint = Paint()
-        ..style = PaintingStyle.fill;
-      
+      final paint = Paint()..style = PaintingStyle.fill;
+
       // Gradiente más dramático para segmentos seleccionados
       if (isSelected || isHovered) {
-        paint.shader = RadialGradient(
-          center: Alignment.center,
-          colors: [
-            Colors.white.withOpacity(0.3),
-            color.withOpacity(0.9),
-            color,
-            color.withOpacity(0.8),
-          ],
-          stops: const [0.0, 0.3, 0.7, 1.0],
-        ).createShader(Rect.fromCircle(center: center, radius: effectiveRadius));
+        paint.shader =
+            RadialGradient(
+              center: Alignment.center,
+              colors: [
+                Colors.white.withOpacity(0.3),
+                color.withOpacity(0.9),
+                color,
+                color.withOpacity(0.8),
+              ],
+              stops: const [0.0, 0.3, 0.7, 1.0],
+            ).createShader(
+              Rect.fromCircle(center: center, radius: effectiveRadius),
+            );
       } else {
-        paint.shader = RadialGradient(
-          center: Alignment.center,
-          colors: [
-            color.withOpacity(0.7),
-            color,
-            color.withOpacity(0.9),
-          ],
-          stops: const [0.0, 0.6, 1.0],
-        ).createShader(Rect.fromCircle(center: center, radius: effectiveRadius));
+        paint.shader =
+            RadialGradient(
+              center: Alignment.center,
+              colors: [color.withOpacity(0.7), color, color.withOpacity(0.9)],
+              stops: const [0.0, 0.6, 1.0],
+            ).createShader(
+              Rect.fromCircle(center: center, radius: effectiveRadius),
+            );
       }
 
       final rect = Rect.fromCircle(center: center, radius: effectiveRadius);
-      
-      canvas.drawArc(
-        rect,
-        startAngle,
-        sweepAngle,
-        true,
-        paint,
-      );
+
+      canvas.drawArc(rect, startAngle, sweepAngle, true, paint);
 
       // Dibujar highlight brillante en la parte superior del segmento
       if (animationValue > 0.7) {
         final highlightPaint = Paint()
           ..color = Colors.white.withOpacity(0.4)
           ..style = PaintingStyle.fill;
-        
-        final highlightRect = Rect.fromCircle(center: center, radius: effectiveRadius * 0.7);
+
+        final highlightRect = Rect.fromCircle(
+          center: center,
+          radius: effectiveRadius * 0.7,
+        );
         canvas.drawArc(
           highlightRect,
           startAngle,
@@ -690,14 +709,8 @@ class PieChartPainter extends CustomPainter {
           ..color = Colors.white
           ..style = PaintingStyle.stroke
           ..strokeWidth = isSelected ? 3 : 2;
-        
-        canvas.drawArc(
-          rect,
-          startAngle,
-          sweepAngle,
-          true,
-          borderPaint,
-        );
+
+        canvas.drawArc(rect, startAngle, sweepAngle, true, borderPaint);
       }
 
       // Dibujar el ícono de la categoría en el centro del segmento
@@ -709,7 +722,13 @@ class PieChartPainter extends CustomPainter {
           center.dy + math.sin(iconAngle) * iconRadius,
         );
 
-        _drawCategoryIcon(canvas, iconCenter, category.categoryIcon, color, isSelected);
+        _drawCategoryIcon(
+          canvas,
+          iconCenter,
+          category.categoryIcon,
+          color,
+          isSelected,
+        );
       }
 
       startAngle += sweepAngle;
@@ -721,10 +740,16 @@ class PieChartPainter extends CustomPainter {
     }
   }
 
-  void _drawCategoryIcon(Canvas canvas, Offset center, String icon, Color color, [bool isSelected = false]) {
+  void _drawCategoryIcon(
+    Canvas canvas,
+    Offset center,
+    String icon,
+    Color color, [
+    bool isSelected = false,
+  ]) {
     final iconSize = isSelected ? 18.0 : 16.0;
     final backgroundRadius = isSelected ? 16.0 : 14.0;
-    
+
     final textPainter = TextPainter(
       text: TextSpan(
         text: icon,
@@ -744,7 +769,7 @@ class PieChartPainter extends CustomPainter {
     );
 
     textPainter.layout();
-    
+
     // Dibujar fondo circular para el ícono con gradiente
     final backgroundPaint = Paint()
       ..shader = LinearGradient(
@@ -755,15 +780,15 @@ class PieChartPainter extends CustomPainter {
           Colors.white.withOpacity(0.85),
         ],
       ).createShader(Rect.fromCircle(center: center, radius: backgroundRadius));
-    
+
     canvas.drawCircle(center, backgroundRadius, backgroundPaint);
-    
+
     // Dibujar borde del fondo con gradiente
     final borderPaint = Paint()
       ..color = isSelected ? color : color.withOpacity(0.8)
       ..style = PaintingStyle.stroke
       ..strokeWidth = isSelected ? 3 : 2;
-    
+
     canvas.drawCircle(center, backgroundRadius, borderPaint);
 
     // Dibujar highlight si está seleccionado
@@ -771,7 +796,7 @@ class PieChartPainter extends CustomPainter {
       final highlightPaint = Paint()
         ..color = Colors.white.withOpacity(0.6)
         ..style = PaintingStyle.fill;
-      
+
       canvas.drawCircle(center.translate(-4, -4), 4, highlightPaint);
     }
 
@@ -786,14 +811,14 @@ class PieChartPainter extends CustomPainter {
     final shadowPaint1 = Paint()
       ..color = Colors.black.withOpacity(0.15)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-    
+
     final shadowPaint2 = Paint()
       ..color = Colors.black.withOpacity(0.08)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
-    
+
     canvas.drawCircle(center.translate(0, 2), radius, shadowPaint2);
     canvas.drawCircle(center.translate(0, 1), radius, shadowPaint1);
-    
+
     // Fondo del círculo central con gradiente
     final centerPaint = Paint()
       ..shader = RadialGradient(
@@ -805,9 +830,9 @@ class PieChartPainter extends CustomPainter {
         ],
         stops: const [0.0, 0.6, 1.0],
       ).createShader(Rect.fromCircle(center: center, radius: radius));
-    
+
     canvas.drawCircle(center, radius, centerPaint);
-    
+
     // Borde del círculo central con gradiente
     final borderPaint = Paint()
       ..shader = LinearGradient(
@@ -820,19 +845,23 @@ class PieChartPainter extends CustomPainter {
       ).createShader(Rect.fromCircle(center: center, radius: radius))
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
-    
+
     canvas.drawCircle(center, radius, borderPaint);
 
     // Highlight en la parte superior
     final highlightPaint = Paint()
       ..color = Colors.white.withOpacity(0.6)
       ..style = PaintingStyle.fill;
-    
-    canvas.drawCircle(center.translate(-radius * 0.3, -radius * 0.3), radius * 0.2, highlightPaint);
+
+    canvas.drawCircle(
+      center.translate(-radius * 0.3, -radius * 0.3),
+      radius * 0.2,
+      highlightPaint,
+    );
 
     // Texto del total
     final totalAmount = categoryStats.fold(0.0, (sum, cat) => sum + cat.amount);
-    
+
     final titlePainter = TextPainter(
       text: const TextSpan(
         text: 'Total',
@@ -845,36 +874,61 @@ class PieChartPainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     );
 
-    final amountPainter = TextPainter(
-      text: TextSpan(
-        text: FormatUtils.formatMoney(totalAmount),
-        style: const TextStyle(
-          fontSize: 14,
-          color: Color(0xFF1E293B),
-          fontWeight: FontWeight.w800,
+    // El monto debe caber dentro del círculo central: se reduce la fuente y,
+    // si aun así no cabe (millones), se abrevia ("20 M $").
+    final maxTextWidth = radius * 2 * 0.86;
+    TextPainter layoutAmount(String text, double fontSize) {
+      return TextPainter(
+        text: TextSpan(
+          text: text,
+          style: TextStyle(
+            fontSize: fontSize,
+            color: const Color(0xFF1E293B),
+            fontWeight: FontWeight.w800,
+          ),
         ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
+        textDirection: TextDirection.ltr,
+        maxLines: 1,
+      )..layout();
+    }
+
+    const double baseFontSize = 14;
+    const double minFontSize = 9;
+    final fullText = FormatUtils.formatMoney(totalAmount);
+    var amountPainter = layoutAmount(fullText, baseFontSize);
+    if (amountPainter.width > maxTextWidth) {
+      final fitted = (baseFontSize * maxTextWidth / amountPainter.width)
+          .clamp(minFontSize, baseFontSize)
+          .toDouble();
+      amountPainter = layoutAmount(fullText, fitted);
+      if (amountPainter.width > maxTextWidth) {
+        final shortText = FormatUtils.formatMoneyShort(totalAmount);
+        amountPainter = layoutAmount(shortText, baseFontSize);
+        if (amountPainter.width > maxTextWidth) {
+          final shortFitted =
+              (baseFontSize * maxTextWidth / amountPainter.width)
+                  .clamp(minFontSize, baseFontSize)
+                  .toDouble();
+          amountPainter = layoutAmount(shortText, shortFitted);
+        }
+      }
+    }
 
     titlePainter.layout();
-    amountPainter.layout();
 
     titlePainter.paint(
       canvas,
       center.translate(-titlePainter.width / 2, -titlePainter.height - 4),
     );
 
-    amountPainter.paint(
-      canvas,
-      center.translate(-amountPainter.width / 2, 4),
-    );
+    amountPainter.paint(canvas, center.translate(-amountPainter.width / 2, 4));
   }
 
   @override
   bool shouldRepaint(PieChartPainter oldDelegate) {
     return oldDelegate.animationValue != animationValue ||
-           oldDelegate.selectedIndex != selectedIndex ||
-           oldDelegate.hoveredIndex != hoveredIndex;
+        oldDelegate.selectedIndex != selectedIndex ||
+        oldDelegate.hoveredIndex != hoveredIndex ||
+        !identical(oldDelegate.categoryStats, categoryStats);
   }
 }

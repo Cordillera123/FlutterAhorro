@@ -1072,12 +1072,16 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
                         ],
                       ),
                     ),
-                    Text(
-                      FormatUtils.formatMoney(amount),
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: primaryBlue,
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: AmountText(
+                        FormatUtils.formatMoney(amount),
+                        alignment: Alignment.centerRight,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: primaryBlue,
+                        ),
                       ),
                     ),
                   ],

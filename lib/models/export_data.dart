@@ -52,19 +52,25 @@ class ExportData {
   /// reporte (no es ingreso ni gasto, pero sí mueve saldo real).
   double get transferNetDelta => transactions
       .where((t) => t.type == TransactionType.transfer)
-      .fold(0.0, (sum, t) => sum + ((t.isTransferOut ?? true) ? -t.amount : t.amount));
+      .fold(
+        0.0,
+        (sum, t) => sum + ((t.isTransferOut ?? true) ? -t.amount : t.amount),
+      );
 
   /// Suma de [Account.initialBalance] de las cuentas relevantes según filtros.
   double get totalInitialBalance {
     final relevant = config.filters.hasAccountFilter
-        ? accounts.where((a) => config.filters.accountIds.contains(a.id)).toList()
+        ? accounts
+              .where((a) => config.filters.accountIds.contains(a.id))
+              .toList()
         : accounts;
     return relevant.fold(0.0, (sum, a) => sum + a.initialBalance);
   }
 
   /// Balance real = saldo inicial + transacciones netas del período filtrado
   /// (incluyendo el efecto de las transferencias entre cuentas).
-  double get totalBalance => totalInitialBalance + netBalance + transferNetDelta;
+  double get totalBalance =>
+      totalInitialBalance + netBalance + transferNetDelta;
 
   int get transactionCount => transactions.length;
   int get budgetCount => budgets.length;
@@ -144,8 +150,7 @@ class ExportData {
 
   // ─── Métricas de presupuestos ─────────────────────────────────────────
 
-  double get totalBudgeted =>
-      budgets.fold(0.0, (sum, b) => sum + b.amount);
+  double get totalBudgeted => budgets.fold(0.0, (sum, b) => sum + b.amount);
 
   int get activeBudgetCount => budgets.where((b) => b.isActive).length;
 }

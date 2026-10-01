@@ -2,38 +2,21 @@ import 'package:flutter/material.dart';
 import '../utils/format_utils.dart';
 
 enum GoalType {
-  purchase,    // Comprar algo específico (moto, carro, etc.)
-  savings,     // Ahorrar dinero general
-  emergency,   // Fondo de emergencia
-  vacation,    // Viaje o vacaciones
-  education,   // Educación o cursos
-  custom,      // Meta personalizada
+  purchase, // Comprar algo específico (moto, carro, etc.)
+  savings, // Ahorrar dinero general
+  emergency, // Fondo de emergencia
+  vacation, // Viaje o vacaciones
+  education, // Educación o cursos
+  custom, // Meta personalizada
 }
 
-enum GoalPriority {
-  low,
-  medium,
-  high,
-  urgent,
-}
+enum GoalPriority { low, medium, high, urgent }
 
-enum GoalStatus {
-  active,
-  paused,
-  completed,
-  cancelled,
-}
+enum GoalStatus { active, paused, completed, cancelled }
 
-enum AutoSaveFrequency {
-  daily,
-  weekly,
-  monthly,
-}
+enum AutoSaveFrequency { daily, weekly, monthly }
 
-enum GoalContributionCadence {
-  weekly,
-  monthly,
-}
+enum GoalContributionCadence { weekly, monthly }
 
 class GoalContributionSuggestion {
   final double amount;
@@ -106,7 +89,8 @@ class FinancialGoal {
     required this.accountId,
   });
 
-  static DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
+  static DateTime _dateOnly(DateTime date) =>
+      DateTime(date.year, date.month, date.day);
 
   static int _lastDayOfMonth(int year, int month) {
     return DateUtils.getDaysInMonth(year, month);
@@ -130,7 +114,10 @@ class FinancialGoal {
   }) {
     final normalizedNow = _dateOnly(referenceDate ?? DateTime.now());
     final normalizedTargetDate = _dateOnly(targetDate);
-    final remainingAmount = (targetAmount - currentAmount).clamp(0.0, double.infinity);
+    final remainingAmount = (targetAmount - currentAmount).clamp(
+      0.0,
+      double.infinity,
+    );
 
     if (remainingAmount <= 0) {
       return const GoalContributionSuggestion(
@@ -140,9 +127,15 @@ class FinancialGoal {
       );
     }
 
-    final monthsRemaining = _approxMonthsBetween(normalizedNow, normalizedTargetDate);
+    final monthsRemaining = _approxMonthsBetween(
+      normalizedNow,
+      normalizedTargetDate,
+    );
     if (monthsRemaining <= 12) {
-      final weeksRemaining = _approxWeeksBetween(normalizedNow, normalizedTargetDate);
+      final weeksRemaining = _approxWeeksBetween(
+        normalizedNow,
+        normalizedTargetDate,
+      );
       return GoalContributionSuggestion(
         amount: remainingAmount / weeksRemaining,
         cadence: GoalContributionCadence.weekly,
@@ -158,7 +151,8 @@ class FinancialGoal {
   }
 
   // Getters calculados
-  double get remainingAmount => (targetAmount - currentAmount).clamp(0.0, double.infinity);
+  double get remainingAmount =>
+      (targetAmount - currentAmount).clamp(0.0, double.infinity);
 
   double get progressPercentage {
     if (targetAmount <= 0) return 0.0;
@@ -173,7 +167,10 @@ class FinancialGoal {
   }
 
   int get monthsRemaining {
-    return _approxMonthsBetween(_dateOnly(DateTime.now()), _dateOnly(targetDate));
+    return _approxMonthsBetween(
+      _dateOnly(DateTime.now()),
+      _dateOnly(targetDate),
+    );
   }
 
   GoalContributionSuggestion get contributionSuggestion {
@@ -356,7 +353,8 @@ class FinancialGoal {
   // Consejos personalizados para alcanzar la meta
   String get mainTip {
     if (isCompleted) return 'Ya tienes el dinero suficiente para tu meta.';
-    if (isOverdue) return 'Meta vencida. Considera extender la fecha o ajustar el monto.';
+    if (isOverdue)
+      return 'Meta vencida. Considera extender la fecha o ajustar el monto.';
 
     final suggestion = contributionSuggestion;
     if (suggestion.amount <= 0) {
@@ -376,7 +374,8 @@ class FinancialGoal {
     if (daysRemaining <= 0) return 'Hoy vence';
     if (daysRemaining == 1) return 'Vence mañana';
     if (daysRemaining <= 7) return 'Vence en $daysRemaining días';
-    if (daysRemaining <= 30) return 'Vence en ${(daysRemaining / 7).ceil()} semanas';
+    if (daysRemaining <= 30)
+      return 'Vence en ${(daysRemaining / 7).ceil()} semanas';
 
     return 'Vence en $monthsRemaining meses';
   }
@@ -418,10 +417,12 @@ class FinancialGoal {
       priority: GoalPriority.values[json['priority'] ?? 1],
       status: GoalStatus.values[json['status'] ?? 0],
       emoji: json['emoji'] ?? '🎯',
-        autoSaveAmount: (json['autoSaveAmount'] ?? json['monthlyContribution'] ?? 0)
-          .toDouble(),
+      autoSaveAmount:
+          (json['autoSaveAmount'] ?? json['monthlyContribution'] ?? 0)
+              .toDouble(),
       autoSave: json['autoSave'] ?? false,
-      autoSaveFrequency: AutoSaveFrequency.values[json['autoSaveFrequency'] ?? 2],
+      autoSaveFrequency:
+          AutoSaveFrequency.values[json['autoSaveFrequency'] ?? 2],
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'])

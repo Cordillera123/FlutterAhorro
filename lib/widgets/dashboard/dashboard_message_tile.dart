@@ -53,7 +53,11 @@ class DashboardMessageTile extends StatelessWidget {
                 ),
                 child: Text(
                   badge!,
-                  style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
           ],
@@ -66,7 +70,11 @@ class DashboardMessageTile extends StatelessWidget {
           ),
         ),
         trailing: IconButton(
-          icon: Icon(Icons.info_outline_rounded, color: DashboardTheme.textMedium, size: 20),
+          icon: Icon(
+            Icons.info_outline_rounded,
+            color: DashboardTheme.textMedium,
+            size: 20,
+          ),
           onPressed: () => MessageTraceSheet.show(
             context,
             title: message.title,

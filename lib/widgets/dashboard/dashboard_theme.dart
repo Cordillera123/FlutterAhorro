@@ -18,17 +18,17 @@ class DashboardTheme {
   static const Color borderLight = AppColors.borderLight;
 
   static BoxDecoration cardDecoration({Color? borderColor}) => BoxDecoration(
-        color: cardBackground,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor ?? borderLight),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      );
+    color: cardBackground,
+    borderRadius: BorderRadius.circular(20),
+    border: Border.all(color: borderColor ?? borderLight),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withValues(alpha: 0.04),
+        blurRadius: 12,
+        offset: const Offset(0, 4),
+      ),
+    ],
+  );
 
   static Color healthColor(int score) {
     if (score >= 80) return successGreen;

@@ -93,7 +93,7 @@ abstract class TieredAchievementAnalyzer
       progressLabel: target == null
           ? null
           : '${_format(value)} / ${_format(target.threshold)}'
-              '${unit.isEmpty ? '' : ' $unit'}',
+                '${unit.isEmpty ? '' : ' $unit'}',
       nextGoalLabel: target?.goal,
       tier: tierIndex + 1,
       maxTier: tiers.length,
@@ -102,8 +102,14 @@ abstract class TieredAchievementAnalyzer
         inputs: [
           DataPoint(label: 'Tu valor actual', value: _format(value)),
           if (target != null)
-            DataPoint(label: 'Siguiente nivel', value: _format(target.threshold)),
-          DataPoint(label: 'Nivel', value: '${tierIndex + 1} de ${tiers.length}'),
+            DataPoint(
+              label: 'Siguiente nivel',
+              value: _format(target.threshold),
+            ),
+          DataPoint(
+            label: 'Nivel',
+            value: '${tierIndex + 1} de ${tiers.length}',
+          ),
         ],
         formula: traceFormula,
       ),

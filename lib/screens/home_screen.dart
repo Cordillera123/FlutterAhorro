@@ -15,6 +15,8 @@ import '../models/reminder.dart';
 import '../utils/format_utils.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/account_selector.dart';
+import '../widgets/calendar/home_calendar_card.dart';
+import '../widgets/transaction_actions_sheet.dart';
 import '../widgets/dashboard/achievement_card.dart';
 import '../widgets/dashboard/dashboard_theme.dart';
 import 'achievements_screen.dart';
@@ -259,6 +261,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 ],
                                 const SizedBox(height: 24),
                                 _buildFinancialOverview(),
+                                const SizedBox(height: 20),
+                                const HomeCalendarCard(),
                                 const SizedBox(height: 28),
                                 ..._buildAchievementsPreview(),
                                 _buildQuickActions(),
@@ -1503,12 +1507,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
                 child: Icon(icon, color: color, size: 20),
               ),
-              Text(
-                subtitle ?? '',
-                style: TextStyle(
-                  color: color,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+              const SizedBox(width: 8),
+              Flexible(
+                child: AmountText(
+                  subtitle ?? '',
+                  alignment: Alignment.centerRight,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -1523,21 +1531,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
           const SizedBox(height: 6),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              return FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  amount,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              );
-            },
+          AmountText(
+            amount,
+            style: TextStyle(
+              color: color,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),
@@ -1781,81 +1781,93 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ? categoryInfo['emoji']!
         : transaction.categoryIcon;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              color: amountColor.withOpacity(0.1),
+    // Tocar una reciente abre el detalle con Editar/Eliminar. Home escucha a
+    // TransactionService, así que se actualiza sola al volver.
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => showTransactionActions(context, transaction),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: Colors.white,
+          border: Border.all(color: Colors.grey.withOpacity(0.1)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-            child: Center(
-              child: Text(categoryEmoji, style: const TextStyle(fontSize: 20)),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  transaction.description,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                    color: Color(0xFF1E293B),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  categoryName,
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              FittedBox(
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                color: amountColor.withOpacity(0.1),
+              ),
+              child: Center(
                 child: Text(
-                  '$sign${FormatUtils.formatMoney(transaction.amount)}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                    color: amountColor,
-                  ),
+                  categoryEmoji,
+                  style: const TextStyle(fontSize: 20),
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                FormatUtils.formatDateForList(transaction.date),
-                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              flex: 3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    transaction.description,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      color: Color(0xFF1E293B),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    categoryName,
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
-            ],
-          ),
-        ],
+            ),
+            const SizedBox(width: 12),
+            Flexible(
+              flex: 2,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  AmountText(
+                    '$sign${FormatUtils.formatMoney(transaction.amount)}',
+                    alignment: Alignment.centerRight,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      color: amountColor,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    FormatUtils.formatDateForList(transaction.date),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1969,7 +1981,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       return '';
     }
 
-    return FormatUtils.formatPercentageWithSign(stats.incomeGrowthPercentage);
+    return _growthText(stats.incomeGrowthPercentage, stats.currentIncome);
   }
 
   String _getExpenseGrowthText() {
@@ -1978,6 +1990,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       return '';
     }
 
-    return FormatUtils.formatPercentageWithSign(stats.expenseGrowthPercentage);
+    return _growthText(stats.expenseGrowthPercentage, stats.currentExpenses);
+  }
+
+  /// Variación vs. el mes anterior. Sin base de comparación (mes anterior en
+  /// 0) muestra "Nuevo" si ya hay movimiento este mes, o nada si no.
+  String _growthText(double? growth, double current) {
+    if (growth == null && current.abs() < 0.005) return '';
+    return FormatUtils.formatGrowthLabel(growth, current: current);
   }
 }

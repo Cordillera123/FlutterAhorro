@@ -9,18 +9,28 @@ class ExcelFormatter {
 
   // ─── Paleta de colores (formato AARRGGBB) ─────────────────────────────
 
-  static final ExcelColor _colorDarkHeader   = ExcelColor.fromHexString('FF1F2937');
-  static final ExcelColor _colorMediumHeader = ExcelColor.fromHexString('FF374151');
-  static final ExcelColor _colorSubHeader    = ExcelColor.fromHexString('FF6B7280');
-  static final ExcelColor _colorIncome       = ExcelColor.fromHexString('FF059669');
-  static final ExcelColor _colorExpense      = ExcelColor.fromHexString('FFDC2626');
-  static final ExcelColor _colorTransfer     = ExcelColor.fromHexString('FF3B82F6');
-  static final ExcelColor _colorWarning      = ExcelColor.fromHexString('FFD97706');
-  static final ExcelColor _colorAltRow       = ExcelColor.fromHexString('FFF9FAFB');
-  static final ExcelColor _colorWhite        = ExcelColor.fromHexString('FFFFFFFF');
-  static final ExcelColor _colorBlack        = ExcelColor.fromHexString('FF1F2937');
-  static final ExcelColor _colorPosBalance   = ExcelColor.fromHexString('FF065F46');
-  static final ExcelColor _colorNegBalance   = ExcelColor.fromHexString('FF991B1B');
+  static final ExcelColor _colorDarkHeader = ExcelColor.fromHexString(
+    'FF1F2937',
+  );
+  static final ExcelColor _colorMediumHeader = ExcelColor.fromHexString(
+    'FF374151',
+  );
+  static final ExcelColor _colorSubHeader = ExcelColor.fromHexString(
+    'FF6B7280',
+  );
+  static final ExcelColor _colorIncome = ExcelColor.fromHexString('FF059669');
+  static final ExcelColor _colorExpense = ExcelColor.fromHexString('FFDC2626');
+  static final ExcelColor _colorTransfer = ExcelColor.fromHexString('FF3B82F6');
+  static final ExcelColor _colorWarning = ExcelColor.fromHexString('FFD97706');
+  static final ExcelColor _colorAltRow = ExcelColor.fromHexString('FFF9FAFB');
+  static final ExcelColor _colorWhite = ExcelColor.fromHexString('FFFFFFFF');
+  static final ExcelColor _colorBlack = ExcelColor.fromHexString('FF1F2937');
+  static final ExcelColor _colorPosBalance = ExcelColor.fromHexString(
+    'FF065F46',
+  );
+  static final ExcelColor _colorNegBalance = ExcelColor.fromHexString(
+    'FF991B1B',
+  );
 
   // ─── Estilos de celda ─────────────────────────────────────────────────
 

@@ -30,7 +30,11 @@ class ObservationsSection extends StatelessWidget {
   Widget _header() {
     return Row(
       children: [
-        Icon(Icons.analytics_outlined, color: DashboardTheme.primaryBlue, size: 22),
+        Icon(
+          Icons.analytics_outlined,
+          color: DashboardTheme.primaryBlue,
+          size: 22,
+        ),
         const SizedBox(width: 8),
         Text(
           'Tu análisis',

@@ -24,11 +24,14 @@ class CategoryService extends ChangeNotifier {
 
   // Getter para categorías personalizadas de la cuenta activa
   List<CustomCategory> get customCategories => List.unmodifiable(
-    _customCategories.where((c) => c.accountId == _accountService.activeAccountId).toList(),
+    _customCategories
+        .where((c) => c.accountId == _accountService.activeAccountId)
+        .toList(),
   );
 
   // Getter para TODAS las categorías personalizadas (sin filtro)
-  List<CustomCategory> get allCustomCategories => List.unmodifiable(_customCategories);
+  List<CustomCategory> get allCustomCategories =>
+      List.unmodifiable(_customCategories);
 
   /// Retorna todas las categorías: sistema + personalizadas
   /// Formato: List<Map> con {id, name, emoji, isSystem}
@@ -121,7 +124,10 @@ class CategoryService extends ChangeNotifier {
   }
 
   /// Obtiene nombre y emoji de cualquier categoría por su ID
-  Map<String, String> getCategoryInfo(String? categoryId, ExpenseCategory? systemCategory) {
+  Map<String, String> getCategoryInfo(
+    String? categoryId,
+    ExpenseCategory? systemCategory,
+  ) {
     // Si es categoría del sistema
     if (systemCategory != null) {
       return {
@@ -133,7 +139,7 @@ class CategoryService extends ChangeNotifier {
     // Buscar en categorías personalizadas
     if (categoryId != null && categoryId.startsWith('custom_')) {
       final custom = _customCategories.firstWhere(
-            (c) => c.id == categoryId,
+        (c) => c.id == categoryId,
         orElse: () => CustomCategory(
           id: 'deleted',
           name: 'Otros',
@@ -141,17 +147,11 @@ class CategoryService extends ChangeNotifier {
           createdAt: DateTime.now(),
         ),
       );
-      return {
-        'name': custom.name,
-        'emoji': custom.emoji,
-      };
+      return {'name': custom.name, 'emoji': custom.emoji};
     }
 
     // Fallback a "Otros"
-    return {
-      'name': 'Otros',
-      'emoji': '📦',
-    };
+    return {'name': 'Otros', 'emoji': '📦'};
   }
 
   /// Cargar categorías desde SharedPreferences
@@ -208,7 +208,7 @@ class CategoryService extends ChangeNotifier {
   }) async {
     // Validar que no exista una categoría con el mismo nombre en la cuenta activa
     final nameExists = customCategories.any(
-          (c) => c.name.toLowerCase() == name.toLowerCase(),
+      (c) => c.name.toLowerCase() == name.toLowerCase(),
     );
     if (nameExists) {
       throw Exception('Ya existe una categoría con el nombre "$name"');
@@ -250,7 +250,7 @@ class CategoryService extends ChangeNotifier {
 
     // Validar que no exista otra categoría con el mismo nombre en la cuenta activa
     final nameExists = customCategories.any(
-          (c) => c.id != id && c.name.toLowerCase() == name.toLowerCase(),
+      (c) => c.id != id && c.name.toLowerCase() == name.toLowerCase(),
     );
     if (nameExists) {
       throw Exception('Ya existe una categoría con el nombre "$name"');
@@ -279,7 +279,9 @@ class CategoryService extends ChangeNotifier {
     final budgetService = BudgetService();
     await budgetService.loadBudgets();
 
-    return budgetService.budgets.where((b) => b.customCategoryId == categoryId).toList();
+    return budgetService.budgets
+        .where((b) => b.customCategoryId == categoryId)
+        .toList();
   }
 
   /// Verificar si una categoría tiene transacciones asociadas
@@ -287,13 +289,18 @@ class CategoryService extends ChangeNotifier {
     final transactionService = TransactionService();
     await transactionService.loadTransactions();
 
-    return transactionService.transactions.any((t) => t.customCategoryId == categoryId);
+    return transactionService.transactions.any(
+      (t) => t.customCategoryId == categoryId,
+    );
   }
 
   /// Eliminar categoría personalizada
   /// - Si hay presupuestos: los elimina
   /// - Si hay transacciones: las reasigna a "Otros"
-  Future<DeleteCategoryResult> deleteCategory(String categoryId, {bool deleteBudgets = false}) async {
+  Future<DeleteCategoryResult> deleteCategory(
+    String categoryId, {
+    bool deleteBudgets = false,
+  }) async {
     final index = _customCategories.indexWhere((c) => c.id == categoryId);
     if (index == -1) {
       throw Exception('Categoría no encontrada');
@@ -373,7 +380,9 @@ class DeleteCategoryResult {
       parts.add('$deletedBudgets presupuesto(s) eliminado(s)');
     }
     if (reassignedTransactions > 0) {
-      parts.add('$reassignedTransactions transacción(es) reasignada(s) a "Otros"');
+      parts.add(
+        '$reassignedTransactions transacción(es) reasignada(s) a "Otros"',
+      );
     }
     if (parts.isEmpty) {
       return 'Categoría "$categoryName" eliminada';

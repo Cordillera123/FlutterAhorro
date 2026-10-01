@@ -64,7 +64,7 @@ class AppLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final logoWidget = _buildLogo();
-    
+
     if (!showText) {
       return animated ? _buildAnimatedWrapper(logoWidget) : logoWidget;
     }
@@ -81,7 +81,7 @@ class AppLogo extends StatelessWidget {
 
   Widget _buildLogo() {
     final logoSize = _getLogoSize();
-    
+
     return Container(
       width: logoSize,
       height: logoSize,
@@ -117,11 +117,7 @@ class AppLogo extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF4CAF50),
-            Color(0xFF66BB6A),
-            Color(0xFF81C784),
-          ],
+          colors: [Color(0xFF4CAF50), Color(0xFF66BB6A), Color(0xFF81C784)],
         ),
       ),
       child: Icon(
@@ -142,13 +138,10 @@ class AppLogo extends StatelessWidget {
         final clampedValue = value.clamp(0.0, 1.0);
         final scale = (0.8 + (0.2 * clampedValue)).clamp(0.1, 1.2);
         final opacity = clampedValue.clamp(0.0, 1.0);
-        
+
         return Transform.scale(
           scale: scale,
-          child: Opacity(
-            opacity: opacity,
-            child: child,
-          ),
+          child: Opacity(opacity: opacity, child: child),
         );
       },
       child: child,
@@ -188,7 +181,7 @@ class AppLogo extends StatelessWidget {
     if (width != null && height != null) {
       return width!;
     }
-    
+
     switch (size) {
       case LogoSize.small:
         return 40;
@@ -211,7 +204,8 @@ class AppLogo extends StatelessWidget {
   }
 
   double _getIconSize() {
-    return _getLogoSize() * 0.5; // 50% del tamaño del logo para el ícono fallback
+    return _getLogoSize() *
+        0.5; // 50% del tamaño del logo para el ícono fallback
   }
 
   double _getTitleFontSize() {
@@ -254,27 +248,20 @@ class AppLogo extends StatelessWidget {
   }
 
   bool _shouldShowDefaultSubtitle() {
-    return size == LogoSize.medium || size == LogoSize.large || size == LogoSize.splash;
+    return size == LogoSize.medium ||
+        size == LogoSize.large ||
+        size == LogoSize.splash;
   }
 }
 
-enum LogoSize {
-  small,
-  medium,
-  large,
-  splash,
-}
+enum LogoSize { small, medium, large, splash }
 
 // Widget especializado para loading states con mejores controles
 class AppLogoLoading extends StatefulWidget {
   final double? size;
   final Color? color;
 
-  const AppLogoLoading({
-    super.key,
-    this.size,
-    this.color,
-  });
+  const AppLogoLoading({super.key, this.size, this.color});
 
   @override
   State<AppLogoLoading> createState() => _AppLogoLoadingState();
@@ -289,7 +276,7 @@ class _AppLogoLoadingState extends State<AppLogoLoading>
   @override
   void initState() {
     super.initState();
-    
+
     _rotationController = AnimationController(
       duration: const Duration(seconds: 2),
       vsync: this,
@@ -301,13 +288,9 @@ class _AppLogoLoadingState extends State<AppLogoLoading>
     );
 
     // Crear animación con valores controlados
-    _pulseAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _pulseController,
-      curve: Curves.easeInOut,
-    ));
+    _pulseAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
 
     // Iniciar animaciones de forma segura
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -349,7 +332,7 @@ class _AppLogoLoadingState extends State<AppLogoLoading>
                     final size = (widget.size ?? 100);
                     final animatedSize = size * (1 + pulseValue * 0.3);
                     final opacity = (0.2 * (1 - pulseValue)).clamp(0.0, 1.0);
-                    
+
                     return Container(
                       width: animatedSize.clamp(size * 0.5, size * 1.5),
                       height: animatedSize.clamp(size * 0.5, size * 1.5),
@@ -380,7 +363,7 @@ class _AppLogoLoadingState extends State<AppLogoLoading>
               animation: _rotationController,
               builder: (context, child) {
                 final progressValue = _rotationController.value.clamp(0.0, 1.0);
-                
+
                 return LinearProgressIndicator(
                   backgroundColor: Colors.grey[300],
                   valueColor: AlwaysStoppedAnimation<Color>(

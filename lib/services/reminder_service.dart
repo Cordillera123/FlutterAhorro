@@ -16,7 +16,8 @@ class ReminderService {
   factory ReminderService() => _instance;
   ReminderService._internal();
 
-  final RecurringExpenseService _recurringExpenseService = RecurringExpenseService();
+  final RecurringExpenseService _recurringExpenseService =
+      RecurringExpenseService();
   final GoalService _goalService = GoalService();
 
   /// Ventana de aviso para gastos recurrentes: cuántos días hacia adelante
@@ -53,16 +54,18 @@ class ReminderService {
       final daysUntil = next.difference(todayDate).inDays;
       if (daysUntil > recurringWindowDays) continue;
 
-      reminders.add(Reminder(
-        id: 'recurring_${expense.id}_${next.toIso8601String()}',
-        type: ReminderType.recurringExpense,
-        title: expense.name,
-        message: _recurringMessage(expense, daysUntil),
-        icon: Icons.event_repeat_rounded,
-        urgency: _urgencyForDays(daysUntil),
-        dueDate: next,
-        referenceId: expense.id,
-      ));
+      reminders.add(
+        Reminder(
+          id: 'recurring_${expense.id}_${next.toIso8601String()}',
+          type: ReminderType.recurringExpense,
+          title: expense.name,
+          message: _recurringMessage(expense, daysUntil),
+          icon: Icons.event_repeat_rounded,
+          urgency: _urgencyForDays(daysUntil),
+          dueDate: next,
+          referenceId: expense.id,
+        ),
+      );
     }
 
     return reminders;
@@ -83,27 +86,33 @@ class ReminderService {
       if (goal.isCompleted || goal.isOverdue) continue;
 
       if (goal.daysRemaining <= goalDeadlineWindowDays) {
-        reminders.add(Reminder(
-          id: 'goal_deadline_${goal.id}',
-          type: ReminderType.goalDeadline,
-          title: goal.name,
-          message: '${goal.timeInfo} · faltan ${FormatUtils.formatMoney(goal.remainingAmount)}',
-          icon: Icons.flag_rounded,
-          urgency: _urgencyForDays(goal.daysRemaining),
-          dueDate: goal.targetDate,
-          referenceId: goal.id ?? '',
-        ));
+        reminders.add(
+          Reminder(
+            id: 'goal_deadline_${goal.id}',
+            type: ReminderType.goalDeadline,
+            title: goal.name,
+            message:
+                '${goal.timeInfo} · faltan ${FormatUtils.formatMoney(goal.remainingAmount)}',
+            icon: Icons.flag_rounded,
+            urgency: _urgencyForDays(goal.daysRemaining),
+            dueDate: goal.targetDate,
+            referenceId: goal.id ?? '',
+          ),
+        );
       } else if (!goal.isOnTrack) {
-        reminders.add(Reminder(
-          id: 'goal_offtrack_${goal.id}',
-          type: ReminderType.goalOffTrack,
-          title: goal.name,
-          message: 'Vas atrasado — ${goal.suggestedContributionLabel} para llegar a tiempo',
-          icon: Icons.trending_down_rounded,
-          urgency: ReminderUrgency.upcoming,
-          dueDate: goal.targetDate,
-          referenceId: goal.id ?? '',
-        ));
+        reminders.add(
+          Reminder(
+            id: 'goal_offtrack_${goal.id}',
+            type: ReminderType.goalOffTrack,
+            title: goal.name,
+            message:
+                'Vas atrasado — ${goal.suggestedContributionLabel} para llegar a tiempo',
+            icon: Icons.trending_down_rounded,
+            urgency: ReminderUrgency.upcoming,
+            dueDate: goal.targetDate,
+            referenceId: goal.id ?? '',
+          ),
+        );
       }
     }
 

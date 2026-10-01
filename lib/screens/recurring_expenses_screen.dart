@@ -531,14 +531,13 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen>
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                Text(
+                AmountText(
                   amount,
                   style: const TextStyle(
                     color: textDark,
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                   ),
-                  overflow: TextOverflow.ellipsis, // Añadido
                 ),
               ],
             ),
@@ -624,12 +623,14 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen>
                     size: 14,
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    'Impacto estimado: ${FormatUtils.formatMoney(totalImpact)}',
-                    style: TextStyle(
-                      color: successGreen,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                  Flexible(
+                    child: AmountText(
+                      'Impacto estimado: ${FormatUtils.formatMoney(totalImpact)}',
+                      style: TextStyle(
+                        color: successGreen,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],

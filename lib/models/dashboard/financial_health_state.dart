@@ -28,10 +28,7 @@ class HealthObservation {
   final HealthFactorSentiment sentiment;
   final String message;
 
-  const HealthObservation({
-    required this.sentiment,
-    required this.message,
-  });
+  const HealthObservation({required this.sentiment, required this.message});
 }
 
 class FinancialHealthState {

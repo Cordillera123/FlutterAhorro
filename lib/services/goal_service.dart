@@ -24,14 +24,22 @@ class GoalService extends ChangeNotifier {
   List<FinancialGoal> get allGoals => _goals;
 
   // Getter para metas de la cuenta activa
-  List<FinancialGoal> get goals => _goals.where((g) => g.accountId == _accountService.activeAccountId).toList();
-  List<FinancialGoal> get activeGoals => goals.where((g) => g.status == GoalStatus.active).toList();
-  List<FinancialGoal> get pausedGoals => goals.where((g) => g.status == GoalStatus.paused).toList();
-  List<FinancialGoal> get completedGoals => goals.where((g) => g.status == GoalStatus.completed).toList();
-  List<GoalContribution> get contributions => _contributions.where((c) => c.accountId == _accountService.activeAccountId).toList();
+  List<FinancialGoal> get goals => _goals
+      .where((g) => g.accountId == _accountService.activeAccountId)
+      .toList();
+  List<FinancialGoal> get activeGoals =>
+      goals.where((g) => g.status == GoalStatus.active).toList();
+  List<FinancialGoal> get pausedGoals =>
+      goals.where((g) => g.status == GoalStatus.paused).toList();
+  List<FinancialGoal> get completedGoals =>
+      goals.where((g) => g.status == GoalStatus.completed).toList();
+  List<GoalContribution> get contributions => _contributions
+      .where((c) => c.accountId == _accountService.activeAccountId)
+      .toList();
 
   // Getter para TODAS las contribuciones (sin filtro de cuenta)
-  List<GoalContribution> get allContributions => List.unmodifiable(_contributions);
+  List<GoalContribution> get allContributions =>
+      List.unmodifiable(_contributions);
 
   // Validar si se pueden crear más metas en la cuenta activa
   // Solo cuentan las metas activas/pausadas (igual que el contador que ve el
@@ -52,7 +60,9 @@ class GoalService extends ChangeNotifier {
         // Migración: reasignar metas con accountId vacío o huérfano
         bool goalsNeedSave = false;
         for (int i = 0; i < _goals.length; i++) {
-          final resolved = _accountService.resolveAccountId(_goals[i].accountId);
+          final resolved = _accountService.resolveAccountId(
+            _goals[i].accountId,
+          );
           if (resolved != _goals[i].accountId) {
             _goals[i] = _goals[i].copyWith(accountId: resolved);
             goalsNeedSave = true;
@@ -82,13 +92,16 @@ class GoalService extends ChangeNotifier {
       final contributionsJson = prefs.getString(_contributionsKey);
       if (contributionsJson != null) {
         final List<dynamic> contributionsList = json.decode(contributionsJson);
-        _contributions = contributionsList.map((json) => GoalContribution.fromJson(json)).toList();
+        _contributions = contributionsList
+            .map((json) => GoalContribution.fromJson(json))
+            .toList();
 
         // Migración: reasignar contribuciones con accountId vacío o huérfano
         bool contributionsNeedSave = false;
         for (int i = 0; i < _contributions.length; i++) {
-          final resolved =
-          _accountService.resolveAccountId(_contributions[i].accountId);
+          final resolved = _accountService.resolveAccountId(
+            _contributions[i].accountId,
+          );
           if (resolved != _contributions[i].accountId) {
             _contributions[i] = GoalContribution(
               id: _contributions[i].id,
@@ -112,7 +125,6 @@ class GoalService extends ChangeNotifier {
 
       // Actualizar el currentAmount de cada meta basado en las contribuciones
       _updateGoalAmounts();
-
     } catch (e) {
       print('Error loading goals: $e');
       _goals = [];
@@ -124,8 +136,13 @@ class GoalService extends ChangeNotifier {
   void _updateGoalAmounts() {
     for (var goal in _goals) {
       if (goal.id != null) {
-        final goalContributions = _contributions.where((c) => c.goalId == goal.id).toList();
-        final totalContributed = goalContributions.fold(0.0, (sum, c) => sum + c.amount);
+        final goalContributions = _contributions
+            .where((c) => c.goalId == goal.id)
+            .toList();
+        final totalContributed = goalContributions.fold(
+          0.0,
+          (sum, c) => sum + c.amount,
+        );
 
         // Actualizar el monto actual
         final index = _goals.indexWhere((g) => g.id == goal.id);
@@ -133,7 +150,8 @@ class GoalService extends ChangeNotifier {
           _goals[index] = goal.copyWith(currentAmount: totalContributed);
 
           // Si la meta se completó, actualizar status
-          if (totalContributed >= goal.targetAmount && goal.status != GoalStatus.completed) {
+          if (totalContributed >= goal.targetAmount &&
+              goal.status != GoalStatus.completed) {
             _goals[index] = _goals[index].copyWith(
               status: GoalStatus.completed,
               completedAt: DateTime.now(),
@@ -160,7 +178,9 @@ class GoalService extends ChangeNotifier {
   Future<void> _saveContributions() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final contributionsJson = json.encode(_contributions.map((c) => c.toJson()).toList());
+      final contributionsJson = json.encode(
+        _contributions.map((c) => c.toJson()).toList(),
+      );
       await prefs.setString(_contributionsKey, contributionsJson);
     } catch (e) {
       print('Error saving contributions: $e');
@@ -198,7 +218,9 @@ class GoalService extends ChangeNotifier {
     // Validar límite máximo de metas activas/pausadas de la cuenta activa
     // (mismo criterio que canCreateMoreGoals y el contador visible al usuario)
     if (!canCreateMoreGoals) {
-      throw Exception('Has alcanzado el límite máximo de 15 metas. Elimina o completa algunas metas para crear nuevas.');
+      throw Exception(
+        'Has alcanzado el límite máximo de 15 metas. Elimina o completa algunas metas para crear nuevas.',
+      );
     }
 
     final newGoal = goal.copyWith(
@@ -219,8 +241,9 @@ class GoalService extends ChangeNotifier {
     }
 
     final existing = _goals[index];
-    final rawAccountId =
-    goal.accountId.isNotEmpty ? goal.accountId : existing.accountId;
+    final rawAccountId = goal.accountId.isNotEmpty
+        ? goal.accountId
+        : existing.accountId;
     final accountId = _accountService.resolveAccountId(rawAccountId);
 
     _goals[index] = goal.copyWith(
@@ -305,7 +328,12 @@ class GoalService extends ChangeNotifier {
   }
 
   // Agregar contribución a una meta
-  Future<void> addContribution(String goalId, double amount, {String? note, bool isAutomatic = false}) async {
+  Future<void> addContribution(
+    String goalId,
+    double amount, {
+    String? note,
+    bool isAutomatic = false,
+  }) async {
     final goal = getGoalById(goalId);
     if (goal == null) {
       throw Exception('Meta no encontrada');
@@ -349,7 +377,8 @@ class GoalService extends ChangeNotifier {
     );
 
     // Si se alcanzó la meta, marcarla como completada
-    if (updatedAmount >= goal.targetAmount && goal.status == GoalStatus.active) {
+    if (updatedAmount >= goal.targetAmount &&
+        goal.status == GoalStatus.active) {
       final completedGoal = updatedGoal.copyWith(
         status: GoalStatus.completed,
         completedAt: DateTime.now(),
@@ -363,7 +392,11 @@ class GoalService extends ChangeNotifier {
   }
 
   // Retirar dinero de una meta (reducir contribución)
-  Future<void> withdrawFromGoal(String goalId, double amount, {String? note}) async {
+  Future<void> withdrawFromGoal(
+    String goalId,
+    double amount, {
+    String? note,
+  }) async {
     final goal = getGoalById(goalId);
     if (goal == null) {
       throw Exception('Meta no encontrada');
@@ -411,7 +444,8 @@ class GoalService extends ChangeNotifier {
     );
 
     // Si estaba completada y ahora no, cambiar status
-    if (goal.status == GoalStatus.completed && updatedGoal.currentAmount < goal.targetAmount) {
+    if (goal.status == GoalStatus.completed &&
+        updatedGoal.currentAmount < goal.targetAmount) {
       final reactivatedGoal = updatedGoal.copyWith(
         status: GoalStatus.active,
         completedAt: null,
@@ -451,12 +485,16 @@ class GoalService extends ChangeNotifier {
   // Obtener metas que necesitan atención (atrasadas, sin progreso, etc.)
   List<FinancialGoal> getGoalsNeedingAttention() {
     final now = DateTime.now();
-    return activeGoals.where((goal) =>
-    goal.isOverdue ||
-        !goal.isOnTrack ||
-        (goal.daysRemaining <= 30 && goal.progressPercentage < 0.7) ||
-        (now.difference(goal.startDate).inDays > 30 && goal.progressPercentage < 0.1)
-    ).toList();
+    return activeGoals
+        .where(
+          (goal) =>
+              goal.isOverdue ||
+              !goal.isOnTrack ||
+              (goal.daysRemaining <= 30 && goal.progressPercentage < 0.7) ||
+              (now.difference(goal.startDate).inDays > 30 &&
+                  goal.progressPercentage < 0.1),
+        )
+        .toList();
   }
 
   // Procesar contribuciones automáticas
@@ -471,37 +509,46 @@ class GoalService extends ChangeNotifier {
 
         switch (goal.autoSaveFrequency) {
           case AutoSaveFrequency.daily:
-          // Verificar si ya se procesó hoy
+            // Verificar si ya se procesó hoy
             final lastContribution = _contributions
                 .where((c) => c.goalId == goal.id && c.isAutomatic)
-                .where((c) =>
-            c.date.year == today.year &&
-                c.date.month == today.month &&
-                c.date.day == today.day)
+                .where(
+                  (c) =>
+                      c.date.year == today.year &&
+                      c.date.month == today.month &&
+                      c.date.day == today.day,
+                )
                 .isNotEmpty;
             shouldProcess = !lastContribution;
             note = 'Contribución automática diaria';
             break;
 
           case AutoSaveFrequency.weekly:
-          // Verificar si ya se procesó esta semana (lunes)
-            final mondayOfWeek = today.subtract(Duration(days: today.weekday - 1));
+            // Verificar si ya se procesó esta semana (lunes)
+            final mondayOfWeek = today.subtract(
+              Duration(days: today.weekday - 1),
+            );
             final lastContribution = _contributions
                 .where((c) => c.goalId == goal.id && c.isAutomatic)
-                .where((c) => c.date.isAfter(mondayOfWeek.subtract(const Duration(days: 1))))
+                .where(
+                  (c) => c.date.isAfter(
+                    mondayOfWeek.subtract(const Duration(days: 1)),
+                  ),
+                )
                 .isNotEmpty;
             shouldProcess = !lastContribution && today.weekday == 1; // Lunes
             note = 'Contribución automática semanal';
             break;
 
           case AutoSaveFrequency.monthly:
-          // Verificar si ya se procesó este mes
+            // Verificar si ya se procesó este mes
             final thisMonth = DateTime(today.year, today.month);
             final lastContribution = _contributions
                 .where((c) => c.goalId == goal.id && c.isAutomatic)
                 .where((c) => DateTime(c.date.year, c.date.month) == thisMonth)
                 .isNotEmpty;
-            shouldProcess = !lastContribution && today.day == 1; // Primer día del mes
+            shouldProcess =
+                !lastContribution && today.day == 1; // Primer día del mes
             note = 'Contribución automática mensual';
             break;
         }
@@ -516,7 +563,9 @@ class GoalService extends ChangeNotifier {
             );
             processedCount++;
           } catch (e) {
-            print('Error processing automatic contribution for goal ${goal.name}: $e');
+            print(
+              'Error processing automatic contribution for goal ${goal.name}: $e',
+            );
           }
         }
       }
@@ -545,7 +594,8 @@ class GoalService extends ChangeNotifier {
       totalCurrentAmount += goal.currentAmount;
       totalMonthlyContributions += goal.autoSaveAmount;
 
-      if (goal.priority == GoalPriority.urgent && goal.status == GoalStatus.active) {
+      if (goal.priority == GoalPriority.urgent &&
+          goal.status == GoalStatus.active) {
         urgentGoals++;
       }
 
@@ -554,7 +604,8 @@ class GoalService extends ChangeNotifier {
       }
 
       if (goal.completedAt != null &&
-          DateTime(goal.completedAt!.year, goal.completedAt!.month) == thisMonth) {
+          DateTime(goal.completedAt!.year, goal.completedAt!.month) ==
+              thisMonth) {
         completedThisMonth++;
       }
     }
@@ -569,7 +620,9 @@ class GoalService extends ChangeNotifier {
       urgentGoals: urgentGoals,
       onTrackGoals: onTrackGoals,
       completedThisMonth: completedThisMonth,
-      overallProgress: totalTargetAmount > 0 ? totalCurrentAmount / totalTargetAmount : 0.0,
+      overallProgress: totalTargetAmount > 0
+          ? totalCurrentAmount / totalTargetAmount
+          : 0.0,
     );
   }
 
@@ -579,16 +632,28 @@ class GoalService extends ChangeNotifier {
     final lastMonth = DateTime(now.year, now.month - 1);
     final thisMonth = DateTime(now.year, now.month);
 
-    final thisMonthContributions = _contributions.where((c) =>
-    DateTime(c.date.year, c.date.month) == thisMonth && c.amount > 0
-    ).toList();
+    final thisMonthContributions = _contributions
+        .where(
+          (c) =>
+              DateTime(c.date.year, c.date.month) == thisMonth && c.amount > 0,
+        )
+        .toList();
 
-    final lastMonthContributions = _contributions.where((c) =>
-    DateTime(c.date.year, c.date.month) == lastMonth && c.amount > 0
-    ).toList();
+    final lastMonthContributions = _contributions
+        .where(
+          (c) =>
+              DateTime(c.date.year, c.date.month) == lastMonth && c.amount > 0,
+        )
+        .toList();
 
-    final thisMonthTotal = thisMonthContributions.fold(0.0, (sum, c) => sum + c.amount);
-    final lastMonthTotal = lastMonthContributions.fold(0.0, (sum, c) => sum + c.amount);
+    final thisMonthTotal = thisMonthContributions.fold(
+      0.0,
+      (sum, c) => sum + c.amount,
+    );
+    final lastMonthTotal = lastMonthContributions.fold(
+      0.0,
+      (sum, c) => sum + c.amount,
+    );
 
     return ContributionStats(
       thisMonthTotal: thisMonthTotal,
@@ -630,7 +695,8 @@ class GoalSummary {
     required this.overallProgress,
   });
 
-  double get remainingAmount => (totalTargetAmount - totalCurrentAmount).clamp(0.0, double.infinity);
+  double get remainingAmount =>
+      (totalTargetAmount - totalCurrentAmount).clamp(0.0, double.infinity);
   bool get isHealthy => onTrackGoals >= (activeGoals * 0.7);
 }
 
@@ -651,5 +717,7 @@ class ContributionStats {
   });
 
   bool get isGrowing => growthPercentage > 0;
-  String get growthText => isGrowing ? '+${growthPercentage.toStringAsFixed(1)}%' : '${growthPercentage.toStringAsFixed(1)}%';
+  String get growthText => isGrowing
+      ? '+${growthPercentage.toStringAsFixed(1)}%'
+      : '${growthPercentage.toStringAsFixed(1)}%';
 }

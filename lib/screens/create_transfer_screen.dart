@@ -447,9 +447,10 @@ class _CreateTransferScreenState extends State<CreateTransferScreen> {
       validator: (value) {
         if (value == null || value.isEmpty) return 'Ingresa un monto';
         final amount = double.tryParse(value);
-        if (amount == null || amount <= 0)
+        if (amount == null || !amount.isFinite || amount <= 0) {
           return 'El monto debe ser mayor a \$0.00';
-        if (amount > 999999999.99) return 'El monto máximo es \$999,999,999.99';
+        }
+        if (amount > 999999999.99) return 'El monto máximo es \$999.999.999,99';
         return null;
       },
     );

@@ -10,17 +10,13 @@ class DateRange {
   DateRange({required this.start, required this.end});
 }
 
-enum BudgetPeriod {
-  weekly,
-  monthly,
-  yearly,
-}
+enum BudgetPeriod { weekly, monthly, yearly }
 
 enum BudgetStatus {
-  safe,      // Menos del 70%
-  warning,   // 70% - 89%
-  danger,    // 90% - 99%
-  exceeded,  // 100% o más
+  safe, // Menos del 70%
+  warning, // 70% - 89%
+  danger, // 90% - 99%
+  exceeded, // 100% o más
 }
 
 class Budget {
@@ -30,8 +26,10 @@ class Budget {
   final BudgetPeriod period;
   final ExpenseCategory category; // Categoría del sistema
   final String? customCategoryId; // ID de categoría personalizada (opcional)
-  final String? customCategoryName; // Nombre de categoría personalizada (para display)
-  final String? customCategoryEmoji; // Emoji de categoría personalizada (para display)
+  final String?
+  customCategoryName; // Nombre de categoría personalizada (para display)
+  final String?
+  customCategoryEmoji; // Emoji de categoría personalizada (para display)
   final DateTime startDate;
   final DateTime endDate;
   final bool isActive;
@@ -63,7 +61,8 @@ class Budget {
   });
 
   /// Verifica si usa categoría personalizada
-  bool get hasCustomCategory => customCategoryId != null && customCategoryId!.startsWith('custom_');
+  bool get hasCustomCategory =>
+      customCategoryId != null && customCategoryId!.startsWith('custom_');
 
   // Getters calculados
   String get periodName {
@@ -206,20 +205,20 @@ class Budget {
 
     switch (period) {
       case BudgetPeriod.weekly:
-      // Nueva semana comienza el lunes actual
+        // Nueva semana comienza el lunes actual
         newStart = _getMondayOfWeek(now);
         newEnd = newStart.add(const Duration(days: 6)); // Domingo
         break;
 
       case BudgetPeriod.monthly:
-      // Nuevo mes comienza el primer día del mes actual
+        // Nuevo mes comienza el primer día del mes actual
         newStart = DateTime(now.year, now.month, 1);
         // Último día del mes
         newEnd = DateTime(now.year, now.month + 1, 0);
         break;
 
       case BudgetPeriod.yearly:
-      // Nuevo año comienza el 1 de enero
+        // Nuevo año comienza el 1 de enero
         newStart = DateTime(now.year, 1, 1);
         newEnd = DateTime(now.year, 12, 31);
         break;

@@ -34,7 +34,11 @@ class OpportunitiesSection extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
                     child: Row(
                       children: [
-                        Icon(Icons.bolt_rounded, size: 18, color: DashboardTheme.successGreen),
+                        Icon(
+                          Icons.bolt_rounded,
+                          size: 18,
+                          color: DashboardTheme.successGreen,
+                        ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
@@ -60,7 +64,11 @@ class OpportunitiesSection extends StatelessWidget {
   Widget _header() {
     return Row(
       children: [
-        Icon(Icons.lightbulb_outline_rounded, color: DashboardTheme.successGreen, size: 22),
+        Icon(
+          Icons.lightbulb_outline_rounded,
+          color: DashboardTheme.successGreen,
+          size: 22,
+        ),
         const SizedBox(width: 8),
         Text(
           'Oportunidades',

@@ -1,12 +1,6 @@
 // Enums compartidos del módulo Dashboard Inteligente.
 
-enum MessageCategory {
-  alert,
-  observation,
-  forecast,
-  opportunity,
-  achievement,
-}
+enum MessageCategory { alert, observation, forecast, opportunity, achievement }
 
 enum ObservationDimension {
   trend,

@@ -68,7 +68,8 @@ class AchievementCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                          if (achievement.maxTier > 1 && unlocked) _tierBadge(unlocked),
+                          if (achievement.maxTier > 1 && unlocked)
+                            _tierBadge(unlocked),
                         ],
                       ),
                       const SizedBox(height: 4),
@@ -126,10 +127,11 @@ class AchievementCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: (unlocked
-                ? DashboardTheme.warningYellow
-                : DashboardTheme.textMedium)
-            .withValues(alpha: 0.12),
+        color:
+            (unlocked
+                    ? DashboardTheme.warningYellow
+                    : DashboardTheme.textMedium)
+                .withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
@@ -164,11 +166,7 @@ class AchievementChip extends StatelessWidget {
   final DashboardAchievement achievement;
   final VoidCallback? onTap;
 
-  const AchievementChip({
-    super.key,
-    required this.achievement,
-    this.onTap,
-  });
+  const AchievementChip({super.key, required this.achievement, this.onTap});
 
   @override
   Widget build(BuildContext context) {

@@ -13,7 +13,8 @@ class ExecutiveSummaryGenerator {
   ) {
     if (!context.hasMinimumData) {
       return const ExecutiveSummary(
-        message: 'Registra más movimientos para que podamos analizar tus finanzas.',
+        message:
+            'Registra más movimientos para que podamos analizar tus finanzas.',
         subtitle: 'Necesitas al menos 3 transacciones',
       );
     }
@@ -22,7 +23,8 @@ class ExecutiveSummaryGenerator {
     if (critical.isNotEmpty) {
       return ExecutiveSummary(
         message: critical.first.message,
-        subtitle: 'Tu estado financiero es ${health.levelLabel} (${health.score}/100)',
+        subtitle:
+            'Tu estado financiero es ${health.levelLabel} (${health.score}/100)',
       );
     }
 

@@ -9,6 +9,7 @@ import '../services/category_service.dart';
 import '../services/account_service.dart';
 import '../utils/format_utils.dart';
 import '../widgets/history_filters_sheet.dart';
+import '../widgets/transaction_actions_sheet.dart';
 import 'add_transaction_screen.dart';
 import 'export_screen.dart';
 import 'financial_calendar_screen.dart';
@@ -805,12 +806,15 @@ class _HistoryScreenState extends State<HistoryScreen>
                         size: 20,
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        'Balance: ${FormatUtils.formatMoney(balance.abs())}',
-                        style: TextStyle(
-                          color: balance >= 0 ? successGreen : dangerRed,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
+                      Flexible(
+                        child: AmountText(
+                          'Balance: ${FormatUtils.formatMoney(balance.abs())}',
+                          alignment: Alignment.center,
+                          style: TextStyle(
+                            color: balance >= 0 ? successGreen : dangerRed,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ],
@@ -941,36 +945,47 @@ class _HistoryScreenState extends State<HistoryScreen>
         border: Border.all(color: borderLight, width: 1),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              Icon(Icons.calendar_today_rounded, color: textMedium, size: 16),
-              const SizedBox(width: 8),
-              Text(
-                date,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: textDark,
-                  fontSize: 15,
+          Expanded(
+            flex: 3,
+            child: Row(
+              children: [
+                Icon(Icons.calendar_today_rounded, color: textMedium, size: 16),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    date,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: textDark,
+                      fontSize: 15,
+                    ),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: totalAmount >= 0
-                  ? successGreen.withOpacity(0.1)
-                  : dangerRed.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+              ],
             ),
-            child: Text(
-              '${totalAmount >= 0 ? '+' : ''}${FormatUtils.formatMoney(totalAmount.abs())}',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: totalAmount >= 0 ? successGreen : dangerRed,
-                fontSize: 12,
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            flex: 2,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: totalAmount >= 0
+                    ? successGreen.withOpacity(0.1)
+                    : dangerRed.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: AmountText(
+                '${totalAmount >= 0 ? '+' : ''}${FormatUtils.formatMoney(totalAmount.abs())}',
+                alignment: Alignment.centerRight,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: totalAmount >= 0 ? successGreen : dangerRed,
+                  fontSize: 12,
+                ),
               ),
             ),
           ),
@@ -1487,184 +1502,10 @@ class _HistoryScreenState extends State<HistoryScreen>
     }
   }
 
-  // Menú contextual para mostrar opciones
-  void _showTransactionOptions(Transaction transaction) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _buildTransactionOptionsBottomSheet(transaction),
-    );
-  }
-
-  Widget _buildTransactionOptionsBottomSheet(Transaction transaction) {
-    final color = _transactionColor(transaction);
-    final sign = _transactionSign(transaction);
-    final isTransfer = transaction.isTransfer;
-
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: const EdgeInsets.all(24),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: borderLight,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Header de la transacción
-            Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Text(
-                      transaction.categoryIcon,
-                      style: const TextStyle(fontSize: 20),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        transaction.description,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: textDark,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '$sign${FormatUtils.formatMoney(transaction.amount)}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: color,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 32),
-
-            // Opciones
-            Row(
-              children: [
-                if (!isTransfer) ...[
-                  Expanded(
-                    child: _buildOptionButton(
-                      'Editar',
-                      'Modificar datos',
-                      Icons.edit_rounded,
-                      primaryBlue,
-                      () {
-                        Navigator.pop(context);
-                        _editTransaction(transaction);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                ],
-                Expanded(
-                  child: _buildOptionButton(
-                    'Eliminar',
-                    'Borrar transacción',
-                    Icons.delete_rounded,
-                    dangerRed,
-                    () async {
-                      Navigator.pop(context);
-                      final confirm = await _confirmDelete(transaction);
-                      if (confirm == true) {
-                        _deleteTransaction(transaction);
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOptionButton(
-    String title,
-    String subtitle,
-    IconData icon,
-    Color color,
-    VoidCallback onPressed,
-  ) {
-    return GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.2), width: 1),
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: Colors.white, size: 24),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: TextStyle(
-                color: color,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: textMedium,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
+  // Menú contextual (detalle + Editar/Eliminar): widget compartido con Inicio.
+  Future<void> _showTransactionOptions(Transaction transaction) async {
+    final changed = await showTransactionActions(context, transaction);
+    if (changed && mounted) _loadTransactions();
   }
 
   // Método para mostrar el diálogo de eliminar todas las transacciones

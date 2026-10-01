@@ -102,11 +102,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
         child: Column(
           children: [
             const Spacer(flex: 2),
-            Icon(
-              Icons.lock_outline,
-              size: 40,
-              color: AppColors.primaryBlue,
-            ),
+            Icon(Icons.lock_outline, size: 40, color: AppColors.primaryBlue),
             const SizedBox(height: 20),
             Text(
               isConfirmStep ? 'Confirma tu PIN' : 'Crea un PIN de 4 dígitos',

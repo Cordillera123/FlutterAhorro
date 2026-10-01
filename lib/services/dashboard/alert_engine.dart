@@ -9,10 +9,7 @@ class AlertEngine {
   AlertEngine(this._registry);
 
   List<DashboardAlert> run(DashboardAnalysisContext context) {
-    return _runAnalyzers<DashboardAlert>(
-      _registry.alertAnalyzers,
-      context,
-    );
+    return _runAnalyzers<DashboardAlert>(_registry.alertAnalyzers, context);
   }
 
   List<T> _runAnalyzers<T>(

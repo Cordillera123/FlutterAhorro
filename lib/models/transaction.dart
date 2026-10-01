@@ -5,54 +5,57 @@ part 'transaction.g.dart';
 
 // Enum para los tipos de transacción
 enum TransactionType {
-  income,   // Ingreso
-  expense,  // Gasto
-  transfer  // Transferencia contable entre cuentas propias (no es ingreso ni gasto)
+  income, // Ingreso
+  expense, // Gasto
+  transfer, // Transferencia contable entre cuentas propias (no es ingreso ni gasto)
 }
 
 // Enum para las categorías de gastos del sistema (no modificables)
 enum ExpenseCategory {
-  transport,      // Transporte
-  food,          // Alimentación
-  utilities,      // Servicios Básicos
-  health,         // Salud
-  education,      // Educación
-  entertainment,  // Entretenimiento
-  clothing,       // Ropa y Calzado
-  home,          // Hogar y Muebles
-  technology,    // Tecnología
-  savings,       // Ahorros e Inversión
-  gifts,         // Regalos y Donaciones
-  other          // Otros
+  transport, // Transporte
+  food, // Alimentación
+  utilities, // Servicios Básicos
+  health, // Salud
+  education, // Educación
+  entertainment, // Entretenimiento
+  clothing, // Ropa y Calzado
+  home, // Hogar y Muebles
+  technology, // Tecnología
+  savings, // Ahorros e Inversión
+  gifts, // Regalos y Donaciones
+  other, // Otros
 }
 
 // Enum para las categorías de ingresos
 enum IncomeCategory {
-  salary,       // Salario
-  freelance,    // Freelance/Independiente
-  business,     // Negocio
-  investment,   // Inversiones
-  rental,       // Alquiler/Renta
-  bonus,        // Bonificación
-  commission,   // Comisión
-  refund,       // Reembolso
-  gift,         // Regalo
-  extra,        // Extra
-  other         // Otros
+  salary, // Salario
+  freelance, // Freelance/Independiente
+  business, // Negocio
+  investment, // Inversiones
+  rental, // Alquiler/Renta
+  bonus, // Bonificación
+  commission, // Comisión
+  refund, // Reembolso
+  gift, // Regalo
+  extra, // Extra
+  other, // Otros
 }
 
 @JsonSerializable()
 class Transaction {
   final String id;
-  final double amount;           // Monto
-  final TransactionType type;    // Tipo: ingreso o gasto
-  final String description;      // Descripción
-  final DateTime date;          // Fecha
-  final ExpenseCategory? expenseCategory;  // Categoría de gasto del sistema (opcional)
-  final IncomeCategory? incomeCategory;    // Categoría de ingreso (opcional)
-  final String? customCategoryId;  // ID de categoría personalizada (opcional)
-  final String? customCategoryName; // Nombre de categoría personalizada (para historial)
-  final String? customCategoryEmoji; // Emoji de categoría personalizada (para historial)
+  final double amount; // Monto
+  final TransactionType type; // Tipo: ingreso o gasto
+  final String description; // Descripción
+  final DateTime date; // Fecha
+  final ExpenseCategory?
+  expenseCategory; // Categoría de gasto del sistema (opcional)
+  final IncomeCategory? incomeCategory; // Categoría de ingreso (opcional)
+  final String? customCategoryId; // ID de categoría personalizada (opcional)
+  final String?
+  customCategoryName; // Nombre de categoría personalizada (para historial)
+  final String?
+  customCategoryEmoji; // Emoji de categoría personalizada (para historial)
   final String accountId; // ID de la cuenta a la que pertenece
 
   // Campos exclusivos de transferencias (type == TransactionType.transfer).
@@ -60,7 +63,8 @@ class Transaction {
   // por cuenta), ambos comparten el mismo [transferId] y se borran juntos.
   final String? transferId; // Enlaza las dos patas de la misma transferencia
   final String? relatedAccountId; // La otra cuenta involucrada
-  final bool? isTransferOut; // true = esta pata resta (origen), false = suma (destino)
+  final bool?
+  isTransferOut; // true = esta pata resta (origen), false = suma (destino)
 
   Transaction({
     required this.id,
@@ -80,7 +84,8 @@ class Transaction {
   });
 
   /// Verifica si usa categoría personalizada
-  bool get hasCustomCategory => customCategoryId != null && customCategoryId!.startsWith('custom_');
+  bool get hasCustomCategory =>
+      customCategoryId != null && customCategoryId!.startsWith('custom_');
 
   /// Verifica si es una transferencia entre cuentas propias
   bool get isTransfer => type == TransactionType.transfer;
@@ -105,22 +110,26 @@ class Transaction {
       id: json['id'] as String,
       amount: (json['amount'] as num).toDouble(),
       type: TransactionType.values.firstWhere(
-            (e) => e.name == json['type'] || e.index == json['type'],
+        (e) => e.name == json['type'] || e.index == json['type'],
         orElse: () => TransactionType.expense,
       ),
       description: json['description'] as String,
       date: DateTime.parse(json['date'] as String),
       expenseCategory: json['expenseCategory'] != null
           ? ExpenseCategory.values.firstWhere(
-            (e) => e.name == json['expenseCategory'] || e.index == json['expenseCategory'],
-        orElse: () => ExpenseCategory.other,
-      )
+              (e) =>
+                  e.name == json['expenseCategory'] ||
+                  e.index == json['expenseCategory'],
+              orElse: () => ExpenseCategory.other,
+            )
           : null,
       incomeCategory: json['incomeCategory'] != null
           ? IncomeCategory.values.firstWhere(
-            (e) => e.name == json['incomeCategory'] || e.index == json['incomeCategory'],
-        orElse: () => IncomeCategory.other,
-      )
+              (e) =>
+                  e.name == json['incomeCategory'] ||
+                  e.index == json['incomeCategory'],
+              orElse: () => IncomeCategory.other,
+            )
           : null,
       customCategoryId: json['customCategoryId'] as String?,
       customCategoryName: json['customCategoryName'] as String?,

@@ -7,23 +7,24 @@ import '../../../../models/dashboard/message_trace.dart';
 import '../../../../utils/format_utils.dart';
 import '../../dashboard_analyzer.dart';
 
-class BudgetExceededAlertAnalyzer
-    implements DashboardAnalyzer<DashboardAlert> {
+class BudgetExceededAlertAnalyzer implements DashboardAnalyzer<DashboardAlert> {
   @override
   String get id => 'alert_budget_exceeded';
 
   @override
   bool canAnalyze(DashboardAnalysisContext context) {
-    return context.snapshot.budgetProgress
-        .any((p) => p.status == BudgetStatus.exceeded);
+    return context.snapshot.budgetProgress.any(
+      (p) => p.status == BudgetStatus.exceeded,
+    );
   }
 
   @override
   DashboardAlert? analyze(DashboardAnalysisContext context) {
-    final exceeded = context.snapshot.budgetProgress
-        .where((p) => p.status == BudgetStatus.exceeded)
-        .toList()
-      ..sort((a, b) => b.spentAmount.compareTo(a.spentAmount));
+    final exceeded =
+        context.snapshot.budgetProgress
+            .where((p) => p.status == BudgetStatus.exceeded)
+            .toList()
+          ..sort((a, b) => b.spentAmount.compareTo(a.spentAmount));
     if (exceeded.isEmpty) return null;
     final p = exceeded.first;
     final over = p.spentAmount - p.budget.amount;
@@ -35,10 +36,17 @@ class BudgetExceededAlertAnalyzer
       icon: Icons.error_outline_rounded,
       severity: AlertSeverity.critical,
       trace: MessageTrace(
-        reason: 'El gasto en la categoría supera el límite del presupuesto activo',
+        reason:
+            'El gasto en la categoría supera el límite del presupuesto activo',
         inputs: [
-          DataPoint(label: 'Gastado', value: FormatUtils.formatMoney(p.spentAmount)),
-          DataPoint(label: 'Límite', value: FormatUtils.formatMoney(p.budget.amount)),
+          DataPoint(
+            label: 'Gastado',
+            value: FormatUtils.formatMoney(p.spentAmount),
+          ),
+          DataPoint(
+            label: 'Límite',
+            value: FormatUtils.formatMoney(p.budget.amount),
+          ),
         ],
         formula: 'excedente = gastado − límite',
       ),
@@ -52,16 +60,18 @@ class BudgetDangerAlertAnalyzer implements DashboardAnalyzer<DashboardAlert> {
 
   @override
   bool canAnalyze(DashboardAnalysisContext context) {
-    return context.snapshot.budgetProgress
-        .any((p) => p.status == BudgetStatus.danger);
+    return context.snapshot.budgetProgress.any(
+      (p) => p.status == BudgetStatus.danger,
+    );
   }
 
   @override
   DashboardAlert? analyze(DashboardAnalysisContext context) {
-    final danger = context.snapshot.budgetProgress
-        .where((p) => p.status == BudgetStatus.danger)
-        .toList()
-      ..sort((a, b) => b.percentage.compareTo(a.percentage));
+    final danger =
+        context.snapshot.budgetProgress
+            .where((p) => p.status == BudgetStatus.danger)
+            .toList()
+          ..sort((a, b) => b.percentage.compareTo(a.percentage));
     if (danger.isEmpty) return null;
     final p = danger.first;
     return DashboardAlert(
@@ -74,8 +84,14 @@ class BudgetDangerAlertAnalyzer implements DashboardAnalyzer<DashboardAlert> {
       trace: MessageTrace(
         reason: 'El presupuesto alcanzó el 90% o más de su límite',
         inputs: [
-          DataPoint(label: 'Porcentaje usado', value: '${(p.percentage * 100).toStringAsFixed(0)}%'),
-          DataPoint(label: 'Restante', value: FormatUtils.formatMoney(p.remainingAmount)),
+          DataPoint(
+            label: 'Porcentaje usado',
+            value: '${(p.percentage * 100).toStringAsFixed(0)}%',
+          ),
+          DataPoint(
+            label: 'Restante',
+            value: FormatUtils.formatMoney(p.remainingAmount),
+          ),
         ],
         formula: 'porcentaje = gastado / límite',
       ),
@@ -106,7 +122,10 @@ class NoIncomeWeekAlertAnalyzer implements DashboardAnalyzer<DashboardAlert> {
       trace: MessageTrace(
         reason: 'No hay ingresos registrados en la semana calendario actual',
         inputs: [
-          DataPoint(label: 'Ingresos semana', value: FormatUtils.formatMoney(0)),
+          DataPoint(
+            label: 'Ingresos semana',
+            value: FormatUtils.formatMoney(0),
+          ),
           DataPoint(
             label: 'Gastos semana',
             value: FormatUtils.formatMoney(context.snapshot.expensesThisWeek),
@@ -174,16 +193,15 @@ class InactivityAlertAnalyzer implements DashboardAnalyzer<DashboardAlert> {
       severity: days >= 14 ? AlertSeverity.critical : AlertSeverity.warning,
       trace: MessageTrace(
         reason: 'No hay transacciones recientes en la cuenta activa',
-        inputs: [
-          DataPoint(label: 'Días sin movimientos', value: '$days'),
-        ],
+        inputs: [DataPoint(label: 'Días sin movimientos', value: '$days')],
         formula: 'días = hoy − fecha(última transacción)',
       ),
     );
   }
 }
 
-class NegativeSavingsAlertAnalyzer implements DashboardAnalyzer<DashboardAlert> {
+class NegativeSavingsAlertAnalyzer
+    implements DashboardAnalyzer<DashboardAlert> {
   @override
   String get id => 'alert_negative_savings';
 
@@ -213,7 +231,9 @@ class NegativeSavingsAlertAnalyzer implements DashboardAnalyzer<DashboardAlert> 
           ),
           DataPoint(
             label: 'Gastos',
-            value: FormatUtils.formatMoney(context.snapshot.currentMonthExpenses),
+            value: FormatUtils.formatMoney(
+              context.snapshot.currentMonthExpenses,
+            ),
           ),
         ],
         formula: 'ahorro = ingresos − gastos',

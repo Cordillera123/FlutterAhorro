@@ -18,7 +18,15 @@ class CalendarMonthGrid extends StatelessWidget {
     required this.onDaySelected,
   });
 
-  static const List<String> _weekDayLabels = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+  static const List<String> _weekDayLabels = [
+    'L',
+    'M',
+    'M',
+    'J',
+    'V',
+    'S',
+    'D',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -71,11 +79,13 @@ class CalendarMonthGrid extends StatelessWidget {
             final dayNumber = index - leadingBlanks + 1;
             final date = DateTime(month.year, month.month, dayNumber);
 
-            final isToday = date.year == now.year &&
+            final isToday =
+                date.year == now.year &&
                 date.month == now.month &&
                 date.day == now.day;
 
-            final isSelected = selectedDay != null &&
+            final isSelected =
+                selectedDay != null &&
                 selectedDay!.year == date.year &&
                 selectedDay!.month == date.month &&
                 selectedDay!.day == date.day;

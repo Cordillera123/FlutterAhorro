@@ -16,17 +16,14 @@ class MonthEndSavingsForecastAnalyzer
 
   @override
   bool canAnalyze(DashboardAnalysisContext context) {
-    return context.hasMonthData &&
-        context.snapshot.daysElapsedInMonth >= 7;
+    return context.hasMonthData && context.snapshot.daysElapsedInMonth >= 7;
   }
 
   @override
   DashboardForecast? analyze(DashboardAnalysisContext context) {
     final s = context.snapshot;
-    final projectedIncome =
-        s.dailyAverageIncome * s.daysInMonth;
-    final projectedExpenses =
-        s.dailyAverageExpense * s.daysInMonth;
+    final projectedIncome = s.dailyAverageIncome * s.daysInMonth;
+    final projectedExpenses = s.dailyAverageExpense * s.daysInMonth;
     final projectedSavings = projectedIncome - projectedExpenses;
 
     return DashboardForecast(
@@ -52,8 +49,7 @@ class MonthEndSavingsForecastAnalyzer
           ),
           DataPoint(label: 'Días del mes', value: '${s.daysInMonth}'),
         ],
-        formula:
-            'proy. ahorro = (ingreso/día × días) − (gasto/día × días)',
+        formula: 'proy. ahorro = (ingreso/día × días) − (gasto/día × días)',
       ),
     );
   }
@@ -102,8 +98,7 @@ class ExpenseTrendForecastAnalyzer
             value: FormatUtils.formatMoney(s.previousMonthExpenses),
           ),
         ],
-        formula:
-            'proy. gastos = promedio diario × días; comparar con anterior',
+        formula: 'proy. gastos = promedio diario × días; comparar con anterior',
       ),
     );
   }
@@ -189,8 +184,13 @@ class GoalExtraSavingsForecastAnalyzer
     final currentWeekly = goal.id != null
         ? context.weeklyContributionRateForGoal(goal.id!)
         : 0.0;
-    final effectiveWeekly = (currentWeekly + extraWeekly).clamp(0.01, double.infinity);
-    final currentDays = (goal.remainingAmount / (currentWeekly > 0 ? currentWeekly / 7 : 1)).ceil();
+    final effectiveWeekly = (currentWeekly + extraWeekly).clamp(
+      0.01,
+      double.infinity,
+    );
+    final currentDays =
+        (goal.remainingAmount / (currentWeekly > 0 ? currentWeekly / 7 : 1))
+            .ceil();
     final newDays = (goal.remainingAmount / (effectiveWeekly / 7)).ceil();
     final daysSaved = currentDays - newDays;
     if (daysSaved < 7 || currentWeekly <= 0) return null;
@@ -206,11 +206,15 @@ class GoalExtraSavingsForecastAnalyzer
       trace: MessageTrace(
         reason: 'Simulación con ahorro semanal adicional fijo',
         inputs: [
-          DataPoint(label: 'Ahorro extra/semana', value: FormatUtils.formatMoney(extraWeekly)),
+          DataPoint(
+            label: 'Ahorro extra/semana',
+            value: FormatUtils.formatMoney(extraWeekly),
+          ),
           DataPoint(label: 'Meta', value: goal.name),
         ],
         formula: 'días_nuevos = restante / ((ritmo + extra) / 7)',
-        impactDescription: 'Ahorro adicional de ${FormatUtils.formatMoney(extraWeekly * 4)} al mes aprox.',
+        impactDescription:
+            'Ahorro adicional de ${FormatUtils.formatMoney(extraWeekly * 4)} al mes aprox.',
       ),
     );
   }
@@ -233,15 +237,16 @@ class BudgetDepletionForecastAnalyzer
 
   @override
   DashboardForecast? analyze(DashboardAnalysisContext context) {
-    final candidates = context.snapshot.budgetProgress
-        .where(
-          (p) =>
-              p.remainingAmount > 0 &&
-              p.dailySpendRate > 0 &&
-              p.status != BudgetStatus.exceeded,
-        )
-        .toList()
-      ..sort((a, b) => a.daysUntilDepleted.compareTo(b.daysUntilDepleted));
+    final candidates =
+        context.snapshot.budgetProgress
+            .where(
+              (p) =>
+                  p.remainingAmount > 0 &&
+                  p.dailySpendRate > 0 &&
+                  p.status != BudgetStatus.exceeded,
+            )
+            .toList()
+          ..sort((a, b) => a.daysUntilDepleted.compareTo(b.daysUntilDepleted));
 
     if (candidates.isEmpty) return null;
     final p = candidates.first;
@@ -280,8 +285,7 @@ class BalanceProjectionForecastAnalyzer
 
   @override
   bool canAnalyze(DashboardAnalysisContext context) {
-    return context.hasMonthData &&
-        context.snapshot.daysElapsedInMonth >= 7;
+    return context.hasMonthData && context.snapshot.daysElapsedInMonth >= 7;
   }
 
   @override

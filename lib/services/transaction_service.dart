@@ -47,13 +47,15 @@ class TransactionService extends ChangeNotifier {
         // Migración: reasignar transacciones con accountId vacío o huérfano
         bool necesitaGuardar = false;
         for (int i = 0; i < _transactions.length; i++) {
-          final resolved =
-          _accountService.resolveAccountId(_transactions[i].accountId);
+          final resolved = _accountService.resolveAccountId(
+            _transactions[i].accountId,
+          );
           if (resolved != _transactions[i].accountId) {
             _transactions[i] = _transactions[i].copyWith(accountId: resolved);
             necesitaGuardar = true;
             print(
-                '🛠️ Migrada transacción huérfana: ${_transactions[i].description}');
+              '🛠️ Migrada transacción huérfana: ${_transactions[i].description}',
+            );
           }
         }
 
@@ -97,14 +99,25 @@ class TransactionService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Un monto debe ser finito y positivo: NaN/infinito romperían los balances
+  /// y ni siquiera se pueden serializar a JSON.
+  void _assertValidAmount(double amount) {
+    if (!amount.isFinite || amount <= 0) {
+      throw ArgumentError('El monto debe ser un número válido mayor a cero.');
+    }
+  }
+
   // Agregar una nueva transacción (asigna cuenta activa si no tiene)
   Future<void> addTransaction(Transaction transaction) async {
+    _assertValidAmount(transaction.amount);
     final transactionWithAccount = transaction.copyWith(
       accountId: _accountService.resolveAccountId(transaction.accountId),
     );
 
     print('🟢 ADD - accountId asignado: ${transactionWithAccount.accountId}');
-    print('🟢 ADD - activeAccountId actual: ${_accountService.activeAccountId}');
+    print(
+      '🟢 ADD - activeAccountId actual: ${_accountService.activeAccountId}',
+    );
 
     _transactions.add(transactionWithAccount);
     _transactions.sort((a, b) => b.date.compareTo(a.date));
@@ -128,7 +141,7 @@ class TransactionService extends ChangeNotifier {
     if (fromAccountId == toAccountId) {
       throw Exception('La cuenta de origen y destino no pueden ser la misma.');
     }
-    if (amount <= 0) {
+    if (!amount.isFinite || amount <= 0) {
       throw Exception('El monto de la transferencia debe ser mayor a cero.');
     }
     if (_accountService.getAccountById(fromAccountId) == null ||
@@ -193,14 +206,19 @@ class TransactionService extends ChangeNotifier {
 
   // Actualizar una transacción existente (con protección de accountId)
   Future<void> updateTransaction(Transaction updatedTransaction) async {
-    final index = _transactions.indexWhere((t) => t.id == updatedTransaction.id);
+    _assertValidAmount(updatedTransaction.amount);
+    final index = _transactions.indexWhere(
+      (t) => t.id == updatedTransaction.id,
+    );
     if (index != -1) {
       final existing = _transactions[index];
 
       print('🟡 UPDATE - ID: ${updatedTransaction.id}');
       print('🟡 UPDATE - accountId recibido: ${updatedTransaction.accountId}');
       print('🟡 UPDATE - accountId existente: ${existing.accountId}');
-      print('🟡 UPDATE - activeAccountId actual: ${_accountService.activeAccountId}');
+      print(
+        '🟡 UPDATE - activeAccountId actual: ${_accountService.activeAccountId}',
+      );
 
       final rawAccountId = updatedTransaction.accountId.isNotEmpty
           ? updatedTransaction.accountId
@@ -215,6 +233,7 @@ class TransactionService extends ChangeNotifier {
       notifyListeners();
     }
   }
+
   // Balance total de la cuenta activa (balance inicial + transacciones,
   // incluyendo el efecto de las transferencias entrantes/salientes)
   double get totalBalance => balanceForAccount(_accountService.activeAccountId);
@@ -222,7 +241,8 @@ class TransactionService extends ChangeNotifier {
   // Balance de cualquier cuenta (no solo la activa) — usado por la pantalla
   // de transferencias para mostrar el saldo disponible de origen/destino.
   double balanceForAccount(String accountId) {
-    double balance = _accountService.getAccountById(accountId)?.initialBalance ?? 0.0;
+    double balance =
+        _accountService.getAccountById(accountId)?.initialBalance ?? 0.0;
     for (var transaction in transactionsForAccount(accountId)) {
       balance = transaction.applyToBalance(balance);
     }
@@ -250,9 +270,12 @@ class TransactionService extends ChangeNotifier {
     final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
 
     return transactions.where((transaction) {
-      return transaction.date
-          .isAfter(firstDayOfMonth.subtract(const Duration(days: 1))) &&
-          transaction.date.isBefore(lastDayOfMonth.add(const Duration(days: 1)));
+      return transaction.date.isAfter(
+            firstDayOfMonth.subtract(const Duration(days: 1)),
+          ) &&
+          transaction.date.isBefore(
+            lastDayOfMonth.add(const Duration(days: 1)),
+          );
     }).toList();
   }
 
@@ -266,7 +289,8 @@ class TransactionService extends ChangeNotifier {
 
     for (var transaction in monthlyExpenses) {
       final category = transaction.expenseCategory ?? ExpenseCategory.other;
-      categoryTotals[category] = (categoryTotals[category] ?? 0) + transaction.amount;
+      categoryTotals[category] =
+          (categoryTotals[category] ?? 0) + transaction.amount;
     }
 
     return categoryTotals;
