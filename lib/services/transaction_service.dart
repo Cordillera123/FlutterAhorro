@@ -313,9 +313,21 @@ class TransactionService extends ChangeNotifier {
 
   /// Elimina exactamente las transacciones cuyos IDs están en [ids].
   /// Es la forma más segura de borrar una lista concreta visible al usuario.
+  ///
+  /// Igual que [deleteTransaction], si alguna es una pata de una transferencia
+  /// se borra también su pareja (en la otra cuenta): una transferencia nunca
+  /// puede quedar a medias.
   Future<void> deleteTransactionsByIds(List<String> ids) async {
     final idSet = ids.toSet();
-    _transactions.removeWhere((t) => idSet.contains(t.id));
+    final transferIds = <String>{
+      for (final t in _transactions)
+        if (idSet.contains(t.id) && t.transferId != null) t.transferId!,
+    };
+    _transactions.removeWhere(
+      (t) =>
+          idSet.contains(t.id) ||
+          (t.transferId != null && transferIds.contains(t.transferId)),
+    );
     await _saveTransactions();
     notifyListeners();
   }

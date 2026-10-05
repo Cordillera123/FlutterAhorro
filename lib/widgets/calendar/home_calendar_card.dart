@@ -9,7 +9,6 @@ import '../../services/calendar_service.dart';
 import '../../services/transaction_service.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/format_utils.dart';
-import '../transaction_actions_sheet.dart';
 import 'calendar_day_cell.dart';
 import 'calendar_day_sheet.dart';
 import 'calendar_legend.dart';
@@ -20,7 +19,8 @@ import 'calendar_month_grid.dart';
 /// Por defecto muestra solo la semana actual (ocupa poco espacio); un toque en
 /// el encabezado lo expande al mes completo. Cada día indica con puntos si
 /// tiene ingresos (verde) y/o gastos (rojo), y al tocarlo abre el detalle del
-/// día con sus transacciones.
+/// día con sus transacciones, desde donde también se puede agregar, editar o
+/// eliminar.
 ///
 /// No guarda ni calcula datos propios: lee de [CalendarService], que a su vez
 /// agrega las transacciones de [TransactionService] (la misma fuente del
@@ -69,16 +69,8 @@ class _HomeCalendarCardState extends State<HomeCalendarCard> {
     HapticFeedback.selectionClick();
     setState(() => _selectedDay = day);
 
-    final dayData = _calendarService.getDayData(day);
-    await CalendarDaySheet.show(
-      context,
-      data: dayData,
-      onMovementTap: (movement) {
-        // Cierra el panel del día y abre el detalle con Editar/Eliminar.
-        Navigator.of(context).pop();
-        showTransactionActions(context, movement);
-      },
-    );
+    // El panel del día permite agregar, editar y eliminar sin salir de aquí.
+    await CalendarDaySheet.show(context, date: day);
     if (mounted) setState(() => _selectedDay = null);
   }
 

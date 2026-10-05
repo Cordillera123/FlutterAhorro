@@ -427,7 +427,7 @@ class _CreateTransferScreenState extends State<CreateTransferScreen> {
         color: primaryBlue,
       ),
       decoration: InputDecoration(
-        hintText: '\$0.00',
+        hintText: FormatUtils.amountHint(),
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
@@ -448,9 +448,10 @@ class _CreateTransferScreenState extends State<CreateTransferScreen> {
         if (value == null || value.isEmpty) return 'Ingresa un monto';
         final amount = double.tryParse(value);
         if (amount == null || !amount.isFinite || amount <= 0) {
-          return 'El monto debe ser mayor a \$0.00';
+          return 'El monto debe ser mayor a ${FormatUtils.amountHint()}';
         }
-        if (amount > 999999999.99) return 'El monto máximo es \$999.999.999,99';
+        if (amount > 999999999.99)
+          return 'El monto máximo es ${FormatUtils.currencySymbol}999.999.999,99';
         return null;
       },
     );

@@ -412,8 +412,8 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
                   borderRadius: BorderRadius.circular(12),
                   color: successGreen.withOpacity(0.1),
                 ),
-                child: const Icon(
-                  Icons.attach_money_rounded,
+                child: Icon(
+                  FormatUtils.currencyIcon,
                   color: successGreen,
                   size: 20,
                 ),
@@ -451,7 +451,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
               AmountInputFormatter(),
             ],
             decoration: InputDecoration(
-              hintText: '\$0.00',
+              hintText: FormatUtils.amountHint(),
               hintStyle: const TextStyle(
                 color: textMedium,
                 fontSize: 18,
@@ -490,13 +490,13 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
               try {
                 final amount = FormatUtils.parseAmount(value);
                 if (amount <= 0) {
-                  return 'El monto debe ser mayor a \$0.00';
+                  return 'El monto debe ser mayor a ${FormatUtils.amountHint()}';
                 }
                 if (amount > 999999999.99) {
-                  return 'El monto máximo es \$999.999.999,99';
+                  return 'El monto máximo es ${FormatUtils.currencySymbol}999.999.999,99';
                 }
                 if (amount < 0.01) {
-                  return 'El monto mínimo es \$0.01';
+                  return 'El monto mínimo es ${FormatUtils.currencySymbol}0.01';
                 }
               } catch (e) {
                 return 'Formato de monto inválido';

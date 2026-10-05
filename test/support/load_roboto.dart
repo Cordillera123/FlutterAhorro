@@ -57,7 +57,12 @@ Directory? _materialFontsDir() {
       'artifacts/material_fonts',
       'material_fonts',
     ]) {
-      final d = Directory('$base${Platform.pathSeparator}$relative'.replaceAll('/', Platform.pathSeparator));
+      final d = Directory(
+        '$base${Platform.pathSeparator}$relative'.replaceAll(
+          '/',
+          Platform.pathSeparator,
+        ),
+      );
       if (d.existsSync()) return d;
     }
   }

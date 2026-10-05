@@ -259,10 +259,10 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
               LengthLimitingTextInputFormatter(13),
               AmountInputFormatter(),
             ],
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Monto',
-              hintText: '\$0.00',
-              prefixIcon: Icon(Icons.attach_money, color: primaryPurple),
+              hintText: FormatUtils.amountHint(),
+              prefixIcon: Icon(FormatUtils.currencyIcon, color: primaryPurple),
             ),
             style: const TextStyle(
               fontSize: 16,
@@ -277,13 +277,13 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
               try {
                 final amount = FormatUtils.parseAmount(value);
                 if (amount <= 0) {
-                  return 'El monto debe ser mayor a \$0.00';
+                  return 'El monto debe ser mayor a ${FormatUtils.amountHint()}';
                 }
                 if (amount > 999999999.99) {
-                  return 'El monto máximo es \$999.999.999,99';
+                  return 'El monto máximo es ${FormatUtils.currencySymbol}999.999.999,99';
                 }
                 if (amount < 0.01) {
-                  return 'El monto mínimo es \$0.01';
+                  return 'El monto mínimo es ${FormatUtils.currencySymbol}0.01';
                 }
               } catch (_) {
                 return 'Formato de monto inválido';

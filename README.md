@@ -1,4 +1,4 @@
-# ahorro_app
+# PiggyFy
 
 A new Flutter project.
 

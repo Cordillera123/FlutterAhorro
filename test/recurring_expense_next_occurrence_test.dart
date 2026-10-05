@@ -36,13 +36,20 @@ RecurringExpense _expense({
 // construir datos de prueba sin depender de una fecha fija del calendario.
 WeekDay _toWeekDay(int weekday) {
   switch (weekday) {
-    case 1: return WeekDay.monday;
-    case 2: return WeekDay.tuesday;
-    case 3: return WeekDay.wednesday;
-    case 4: return WeekDay.thursday;
-    case 5: return WeekDay.friday;
-    case 6: return WeekDay.saturday;
-    default: return WeekDay.sunday;
+    case 1:
+      return WeekDay.monday;
+    case 2:
+      return WeekDay.tuesday;
+    case 3:
+      return WeekDay.wednesday;
+    case 4:
+      return WeekDay.thursday;
+    case 5:
+      return WeekDay.friday;
+    case 6:
+      return WeekDay.saturday;
+    default:
+      return WeekDay.sunday;
   }
 }
 
@@ -81,7 +88,10 @@ void main() {
         startDate: base,
         isActive: false,
       );
-      expect(e.nextOccurrence(from: base.add(const Duration(days: 30))), isNull);
+      expect(
+        e.nextOccurrence(from: base.add(const Duration(days: 30))),
+        isNull,
+      );
     });
   });
 
@@ -96,15 +106,18 @@ void main() {
       expect(e.nextOccurrence(from: from), from.add(const Duration(days: 1)));
     });
 
-    test('con un solo día marcado, salta a la misma fecha la semana siguiente', () {
-      final from = base.add(const Duration(days: 30));
-      final e = _expense(
-        frequency: RecurrenceFrequency.weekly,
-        weekDays: [_toWeekDay(from.weekday)],
-        startDate: base,
-      );
-      expect(e.nextOccurrence(from: from), from.add(const Duration(days: 7)));
-    });
+    test(
+      'con un solo día marcado, salta a la misma fecha la semana siguiente',
+      () {
+        final from = base.add(const Duration(days: 30));
+        final e = _expense(
+          frequency: RecurrenceFrequency.weekly,
+          weekDays: [_toWeekDay(from.weekday)],
+          startDate: base,
+        );
+        expect(e.nextOccurrence(from: from), from.add(const Duration(days: 7)));
+      },
+    );
 
     test('sin días configurados, no hay próxima ocurrencia', () {
       final e = _expense(
@@ -159,7 +172,10 @@ void main() {
         startDate: base,
         lastProcessed: lastProcessed,
       );
-      expect(e.nextOccurrence(from: from), lastProcessed.add(const Duration(days: 10)));
+      expect(
+        e.nextOccurrence(from: from),
+        lastProcessed.add(const Duration(days: 10)),
+      );
     });
   });
 }

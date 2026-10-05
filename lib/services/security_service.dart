@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
+import '../utils/app_info.dart';
 
 /// Servicio de seguridad de la app: bloqueo con PIN, biometría y la
 /// preferencia de ocultar saldos.
@@ -151,7 +152,7 @@ class SecurityService extends ChangeNotifier {
   /// si el usuario cancela, falla la verificación, o la plataforma no
   /// soporta biometría.
   Future<bool> authenticateWithBiometrics({
-    String reason = 'Confirma tu identidad para acceder a AhorroApp',
+    String reason = 'Confirma tu identidad para acceder a ${AppInfo.name}',
   }) async {
     try {
       return await _localAuth.authenticate(

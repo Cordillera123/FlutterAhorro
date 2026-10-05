@@ -17,13 +17,16 @@ void main() {
   });
 
   group('SecurityService — PIN', () {
-    test('setPin habilita el bloqueo y permite verificar el PIN correcto', () async {
-      await service.setPin('1234');
+    test(
+      'setPin habilita el bloqueo y permite verificar el PIN correcto',
+      () async {
+        await service.setPin('1234');
 
-      expect(service.isLockEnabled, true);
-      expect(service.hasPin, true);
-      expect(await service.verifyPin('1234'), true);
-    });
+        expect(service.isLockEnabled, true);
+        expect(service.hasPin, true);
+        expect(await service.verifyPin('1234'), true);
+      },
+    );
 
     test('verifyPin rechaza un PIN incorrecto', () async {
       await service.setPin('1234');

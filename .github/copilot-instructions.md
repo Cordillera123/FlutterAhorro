@@ -1,4 +1,4 @@
-# GitHub Copilot Instructions - Ahorro App
+# GitHub Copilot Instructions - PiggyFy
 
 ## Project Overview
 Flutter personal finance app (Spanish UI, Colombian peso `$1.500.000,00`). Manages expense tracking, budgets with auto-reset, savings goals, recurring expenses, and custom categories.

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'tab_add_action.dart';
 import 'package:flutter/services.dart';
 import '../models/budget.dart';
 import '../models/transaction.dart';
@@ -18,7 +19,8 @@ class BudgetsScreen extends StatefulWidget {
 }
 
 class _BudgetsScreenState extends State<BudgetsScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin
+    implements TabAddActionHost {
   final BudgetService _budgetService = BudgetService();
   final TransactionService _transactionService = TransactionService();
   final AccountService _accountService = AccountService();
@@ -180,8 +182,8 @@ class _BudgetsScreenState extends State<BudgetsScreen>
                           20,
                           8,
                           20,
-                          24,
-                        ), // Reducido padding bottom
+                          120,
+                        ), // Espacio para el botón flotante
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -265,8 +267,6 @@ class _BudgetsScreenState extends State<BudgetsScreen>
                           ],
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      _buildHeaderAction(),
                     ],
                   ),
                 ],
@@ -274,25 +274,6 @@ class _BudgetsScreenState extends State<BudgetsScreen>
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeaderAction() {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        _navigateToCreateBudget();
-      },
-      child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: Colors.white.withOpacity(0.2),
-          border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
-        ),
-        child: const Icon(Icons.add_rounded, color: Colors.white, size: 24),
       ),
     );
   }
@@ -986,6 +967,10 @@ class _BudgetsScreenState extends State<BudgetsScreen>
   }
 
   // Métodos de navegación y acciones
+  // Botón flotante global "Agregar" (MainNavigationScreen).
+  @override
+  void onAddPressed() => _navigateToCreateBudget();
+
   void _navigateToCreateBudget() async {
     // Validar límite antes de navegar
     if (!_budgetService.canCreateBudget()) {

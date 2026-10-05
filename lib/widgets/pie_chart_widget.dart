@@ -502,7 +502,7 @@ class _PieChartWidgetState extends State<PieChartWidget>
                   _buildDetailItem(
                     'Monto Total',
                     FormatUtils.formatMoney(_selectedCategory!.amount),
-                    Icons.attach_money_rounded,
+                    FormatUtils.currencyIcon,
                     color,
                   ),
 

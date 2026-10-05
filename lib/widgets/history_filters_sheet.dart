@@ -6,6 +6,7 @@ import '../models/custom_category.dart';
 import '../models/history_filters.dart';
 import '../models/transaction.dart';
 import '../theme/app_colors.dart';
+import '../utils/format_utils.dart';
 
 /// Nombre + emoji de cada categoría de gasto, en el mismo orden y con los
 /// mismos textos que ya se ven en el historial (Transaction.categoryName).
@@ -633,7 +634,7 @@ class _HistoryFiltersSheetState extends State<HistoryFiltersSheet> {
         FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
       ],
       decoration: InputDecoration(
-        prefixText: '\$ ',
+        prefixText: '${FormatUtils.currencySymbol} ',
         hintText: hint,
         filled: true,
         fillColor: backgroundLight,

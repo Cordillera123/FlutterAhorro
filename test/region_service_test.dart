@@ -43,17 +43,20 @@ void main() {
       await service.setRegion(Region.ecuador);
     });
 
-    test('setRegion con la misma región no notifica innecesariamente', () async {
-      SharedPreferences.setMockInitialValues({});
-      final service = RegionService();
-      await service.load(); // Ecuador por defecto
+    test(
+      'setRegion con la misma región no notifica innecesariamente',
+      () async {
+        SharedPreferences.setMockInitialValues({});
+        final service = RegionService();
+        await service.load(); // Ecuador por defecto
 
-      var notifyCount = 0;
-      service.addListener(() => notifyCount++);
+        var notifyCount = 0;
+        service.addListener(() => notifyCount++);
 
-      await service.setRegion(Region.ecuador);
-      expect(notifyCount, 0);
-    });
+        await service.setRegion(Region.ecuador);
+        expect(notifyCount, 0);
+      },
+    );
   });
 
   group('Region — datos por región', () {
@@ -69,17 +72,25 @@ void main() {
   });
 
   group('FormatUtils.formatMoney — reacciona a la región activa', () {
-    test('el monto formateado incluye el símbolo de moneda de la región', () async {
-      SharedPreferences.setMockInitialValues({});
-      final service = RegionService();
-      await service.load();
-      await service.setRegion(Region.ecuador);
+    test(
+      'el monto formateado incluye el símbolo de moneda de la región',
+      () async {
+        SharedPreferences.setMockInitialValues({});
+        final service = RegionService();
+        await service.load();
+        await service.setRegion(Region.ecuador);
 
-      final formatted = FormatUtils.formatMoney(1234.5);
-      expect(formatted.contains('\$'), true);
-      expect(formatted.contains('1234') || formatted.contains('1.234') || formatted.contains('1,234'), true);
+        final formatted = FormatUtils.formatMoney(1234.5);
+        expect(formatted.contains('\$'), true);
+        expect(
+          formatted.contains('1234') ||
+              formatted.contains('1.234') ||
+              formatted.contains('1,234'),
+          true,
+        );
 
-      await service.setRegion(Region.colombia);
-    });
+        await service.setRegion(Region.colombia);
+      },
+    );
   });
 }

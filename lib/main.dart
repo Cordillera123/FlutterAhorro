@@ -9,6 +9,7 @@ import 'services/security_service.dart';
 import 'services/region_service.dart';
 import 'models/region.dart';
 import 'theme/app_colors.dart';
+import 'utils/app_info.dart';
 
 void main() async {
   try {
@@ -57,7 +58,7 @@ class AhorroApp extends StatelessWidget {
       builder: (context, child) {
         final region = RegionService().current;
         return MaterialApp(
-          title: 'Mi App de Ahorro',
+          title: AppInfo.name,
           debugShowCheckedModeBanner: false,
 
           // Configuración de localización

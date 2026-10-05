@@ -1,5 +1,8 @@
 import 'package:excel/excel.dart';
 
+import '../services/region_service.dart';
+import '../models/region.dart';
+
 /// Paleta de colores y estilos de celda reutilizables para reportes Excel.
 ///
 /// Clase utilitaria estática: no instanciar.
@@ -180,21 +183,25 @@ class ExcelFormatter {
 
   // ─── Helpers de formato de texto ──────────────────────────────────────
 
-  /// Moneda con separador de miles: `$1,234.56`.
+  /// Moneda con separador de miles, con el símbolo y los decimales de la
+  /// moneda activa: `$1,234.56`, `€1,234.56`, `¥1,235`.
   static String formatMoney(double amount) {
-    if (!amount.isFinite) return '\$0.00';
-    final abs = amount.abs();
-    final formatted = abs.toStringAsFixed(2);
+    final region = RegionService().current;
+    final symbol = region.currencySymbol;
+    final digits = region.decimalDigits;
+    if (!amount.isFinite) {
+      return digits == 0 ? '${symbol}0' : '${symbol}0.${'0' * digits}';
+    }
+    final formatted = amount.abs().toStringAsFixed(digits);
     final parts = formatted.split('.');
     final intPart = parts[0];
-    final decPart = parts[1];
 
     final buffer = StringBuffer();
     for (int i = 0; i < intPart.length; i++) {
       if (i > 0 && (intPart.length - i) % 3 == 0) buffer.write(',');
       buffer.write(intPart[i]);
     }
-    return '\$${buffer.toString()}.$decPart';
+    return digits == 0 ? '$symbol$buffer' : '$symbol$buffer.${parts[1]}';
   }
 
   /// Moneda con signo explícito: `+$1,234.56` / `-$1,234.56`.

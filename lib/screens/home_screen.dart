@@ -33,6 +33,7 @@ import 'history_screen.dart';
 import 'goals_screen.dart';
 import '../theme/app_colors.dart';
 import '../widgets/common/common.dart';
+import '../utils/app_info.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -503,7 +504,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
               const SizedBox(height: 16),
               const Text(
-                'Mi Ahorro',
+                AppInfo.name,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 22,
@@ -856,7 +857,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         letterSpacing: -0.5,
                       ),
                       decoration: InputDecoration(
-                        prefixText: '\$  ',
+                        prefixText: '${FormatUtils.currencySymbol}  ',
                         prefixStyle: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w600,

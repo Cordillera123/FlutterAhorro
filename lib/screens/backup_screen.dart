@@ -8,6 +8,7 @@ import '../services/backup_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/common/common.dart';
 import 'main_navigation_screen.dart';
+import '../utils/app_info.dart';
 
 /// Pantalla de copia de seguridad: crear (guardar en el teléfono) y restaurar
 /// (seleccionar archivo + validar + reemplazar datos).
@@ -104,7 +105,7 @@ class _BackupScreenState extends State<BackupScreen> {
     } catch (_) {
       setState(
         () => _errorMessage =
-            'El archivo seleccionado no es una copia de seguridad válida de AhorroApp.',
+            'El archivo seleccionado no es una copia de seguridad válida de ${AppInfo.name}.',
       );
       return;
     }
@@ -214,7 +215,7 @@ class _BackupScreenState extends State<BackupScreen> {
                     iconColor: dangerRed,
                     text:
                         'Selecciona un archivo de copia de seguridad '
-                        'generado por AhorroApp. Antes de restaurar se '
+                        'generado por ${AppInfo.name}. Antes de restaurar se '
                         'valida que el archivo sea correcto — si algo no '
                         'coincide, tus datos actuales no se tocan.',
                   ),

@@ -4,26 +4,67 @@ import '../models/region.dart';
 import '../services/region_service.dart';
 
 class FormatUtils {
-  // Formatear dinero según la región activa (locale y símbolo de moneda)
-  static String formatMoney(double amount) {
-    final region = RegionService().current;
+  // Formatear dinero según la región activa (formato numérico, símbolo y
+  // decimales propios de su moneda)
+  static String formatMoney(double amount) =>
+      formatMoneyIn(RegionService().current, amount);
+
+  /// Igual que [formatMoney] pero con la moneda de [region] (sirve para
+  /// mostrar un ejemplo de cada una en Configuración).
+  static String formatMoneyIn(Region region, double amount) {
     final formatter = NumberFormat.currency(
-      locale: region.localeCode,
+      locale: region.numberLocale,
       symbol: region.currencySymbol,
-      decimalDigits: 2, // CAMBIADO: de 0 a 2 para mostrar decimales
+      decimalDigits: region.decimalDigits,
     );
     return formatter.format(amount);
   }
 
   /// Monto abreviado (ej. "20 M $") para espacios muy reducidos, como el
-  /// centro del gráfico circular. Respeta el locale y la moneda de la región.
+  /// centro del gráfico circular. Respeta el formato y la moneda de la región.
   static String formatMoneyShort(double amount) {
     final region = RegionService().current;
     return NumberFormat.compactCurrency(
-      locale: region.localeCode,
+      locale: region.numberLocale,
       symbol: region.currencySymbol,
       decimalDigits: 1,
     ).format(amount);
+  }
+
+  /// Símbolo de la moneda activa (ej. `$`, `€`, `S/`).
+  static String get currencySymbol => RegionService().current.currencySymbol;
+
+  /// Texto de ayuda de un campo de monto (ej. `$0.00`, `€0.00`, `¥0`). Usa
+  /// los decimales de la moneda activa.
+  static String amountHint({bool decimals = true}) {
+    final region = RegionService().current;
+    final showDecimals = decimals && region.decimalDigits > 0;
+    return '${region.currencySymbol}${showDecimals ? '0.00' : '0'}';
+  }
+
+  /// Ícono de "dinero" acorde a la moneda activa: el signo de dólar solo para
+  /// las monedas que usan `$`, y el de euro, libra, yen o franco cuando
+  /// corresponde. Para el resto, un billete neutro.
+  static IconData get currencyIcon {
+    switch (RegionService().current.currencyCode) {
+      case 'USD':
+      case 'COP':
+      case 'MXN':
+      case 'ARS':
+      case 'CLP':
+      case 'CAD':
+        return Icons.attach_money_rounded;
+      case 'EUR':
+        return Icons.euro_rounded;
+      case 'GBP':
+        return Icons.currency_pound_rounded;
+      case 'JPY':
+        return Icons.currency_yen_rounded;
+      case 'CHF':
+        return Icons.currency_franc_rounded;
+      default:
+        return Icons.payments_rounded;
+    }
   }
 
   // Formatear fecha en formato corto (ej: "15 Ene")
@@ -158,6 +199,7 @@ class FormatUtils {
     // Remover símbolos de moneda, comas y espacios
     String cleanAmount = amount
         .replaceAll('\$', '')
+        .replaceAll(RegionService().current.currencySymbol, '')
         .replaceAll(',', '')
         .replaceAll(' ', '')
         .trim();
@@ -309,9 +351,9 @@ class FormatUtils {
   // NUEVO: Formatear dinero sin decimales para cantidades grandes
   static String formatMoneyCompact(double amount) {
     if (amount >= 1000000) {
-      return '\$${(amount / 1000000).toStringAsFixed(1)}M';
+      return '$currencySymbol${(amount / 1000000).toStringAsFixed(1)}M';
     } else if (amount >= 1000) {
-      return '\$${(amount / 1000).toStringAsFixed(0)}K';
+      return '$currencySymbol${(amount / 1000).toStringAsFixed(0)}K';
     } else {
       return formatMoney(amount);
     }

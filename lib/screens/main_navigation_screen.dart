@@ -7,6 +7,7 @@ import 'goals_screen.dart';
 import 'recurring_expenses_screen.dart';
 import 'add_transaction_screen.dart';
 import 'lock_screen.dart';
+import 'tab_add_action.dart';
 import '../models/transaction.dart';
 import '../services/security_service.dart';
 import '../theme/app_colors.dart';
@@ -45,7 +46,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   static const Color backgroundLight = AppColors.backgroundLight;
   static const Color borderLight = AppColors.borderLight;
 
-  final List<NavigationItem> _navigationItems = [
+  // Claves para pedirle a cada pestaña que cree "lo suyo" desde el botón
+  // flotante global (ver [TabAddActionHost]).
+  final GlobalKey _budgetsKey = GlobalKey(debugLabel: 'tab_budgets');
+  final GlobalKey _goalsKey = GlobalKey(debugLabel: 'tab_goals');
+  final GlobalKey _recurringKey = GlobalKey(debugLabel: 'tab_recurring');
+
+  late final List<NavigationItem> _navigationItems = [
     NavigationItem(
       icon: Icons.home_outlined,
       activeIcon: Icons.home_rounded,
@@ -58,14 +65,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
       activeIcon: Icons.account_balance_wallet_rounded,
       label: 'Presupuestos',
       color: primaryBlue,
-      screen: const BudgetsScreen(),
+      screen: BudgetsScreen(key: _budgetsKey),
     ),
     NavigationItem(
       icon: Icons.flag_outlined,
       activeIcon: Icons.flag_rounded,
       label: 'Metas',
       color: warningYellow,
-      screen: const GoalsScreen(),
+      screen: GoalsScreen(key: _goalsKey),
     ),
     NavigationItem(
       icon: Icons.history_outlined,
@@ -79,7 +86,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
       activeIcon: Icons.autorenew_rounded,
       label: 'Automático',
       color: primaryRed,
-      screen: const RecurringExpensesScreen(),
+      screen: RecurringExpensesScreen(key: _recurringKey),
     ),
   ];
 
@@ -271,29 +278,64 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
     );
   }
 
-  Widget? _buildFloatingActionButton() {
-    // CAMBIO PRINCIPAL: Excluir la pantalla de presupuestos (índice 1)
-    // Solo mostrar FAB en Inicio (0) e Historial (3)
-    if (_currentIndex == 0 || _currentIndex == 3) {
-      return ScaleTransition(
-        scale: _fabAnimation,
-        child: FloatingActionButton.extended(
-          onPressed: _showAddTransactionOptions,
-          backgroundColor: primaryBlue,
-          foregroundColor: Colors.white,
-          elevation: 8,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          icon: const Icon(Icons.add_rounded, size: 20),
-          label: const Text(
-            'Agregar',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-          ),
+  /// Botón flotante "Agregar": el mismo en las cinco pestañas (mismo estilo,
+  /// posición y texto). Lo que crea depende de la pestaña activa.
+  Widget _buildFloatingActionButton() {
+    return ScaleTransition(
+      scale: _fabAnimation,
+      child: FloatingActionButton.extended(
+        onPressed: _onAddPressed,
+        tooltip: _addTooltip,
+        backgroundColor: primaryBlue,
+        foregroundColor: Colors.white,
+        elevation: 8,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        icon: const Icon(Icons.add_rounded, size: 20),
+        label: const Text(
+          'Agregar',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
         ),
-      );
+      ),
+    );
+  }
+
+  // Índices de pestaña: 0 Inicio, 1 Presupuestos, 2 Metas, 3 Historial,
+  // 4 Automático.
+  String get _addTooltip {
+    switch (_currentIndex) {
+      case 1:
+        return 'Crear presupuesto';
+      case 2:
+        return 'Crear meta';
+      case 4:
+        return 'Crear gasto automático';
+      default:
+        return 'Agregar transacción';
     }
-    return null;
+  }
+
+  void _onAddPressed() {
+    switch (_currentIndex) {
+      case 1:
+        _requestAddFrom(_budgetsKey);
+        break;
+      case 2:
+        _requestAddFrom(_goalsKey);
+        break;
+      case 4:
+        _requestAddFrom(_recurringKey);
+        break;
+      default:
+        _showAddTransactionOptions();
+    }
+  }
+
+  void _requestAddFrom(GlobalKey tabKey) {
+    final state = tabKey.currentState;
+    if (state is TabAddActionHost) {
+      HapticFeedback.mediumImpact();
+      (state as TabAddActionHost).onAddPressed();
+    }
   }
 
   void _onNavItemTap(int index) {

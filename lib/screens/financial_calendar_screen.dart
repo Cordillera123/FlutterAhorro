@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../models/transaction.dart';
 import '../models/calendar/month_calendar_data.dart';
 import '../services/calendar_service.dart';
 import '../services/transaction_service.dart';
@@ -13,7 +12,6 @@ import '../widgets/calendar/calendar_month_grid.dart';
 import '../widgets/calendar/calendar_legend.dart';
 import '../widgets/calendar/calendar_day_sheet.dart';
 import '../widgets/common/common.dart';
-import 'add_transaction_screen.dart';
 
 /// Pantalla "Calendario Financiero".
 ///
@@ -141,29 +139,13 @@ class _FinancialCalendarScreenState extends State<FinancialCalendarScreen>
     return _visibleMonth.year == now.year && _visibleMonth.month == now.month;
   }
 
-  void _onDaySelected(DateTime day) {
+  Future<void> _onDaySelected(DateTime day) async {
     HapticFeedback.selectionClick();
     setState(() => _selectedDay = day);
 
-    final dayData = _calendarService.getDayData(day);
-    CalendarDaySheet.show(
-      context,
-      data: dayData,
-      onMovementTap: _openMovementEditor,
-    );
-  }
-
-  Future<void> _openMovementEditor(Transaction movement) async {
-    Navigator.of(context).pop(); // Cierra el bottom sheet.
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => AddTransactionScreen(
-          initialType: movement.type,
-          transactionToEdit: movement,
-        ),
-      ),
-    );
-    // Al volver, los listeners ya habrán refrescado los datos.
+    // El panel del día permite agregar, editar y eliminar sin salir de aquí;
+    // los listeners de esta pantalla refrescan el mes mientras tanto.
+    await CalendarDaySheet.show(context, date: day);
   }
 
   @override

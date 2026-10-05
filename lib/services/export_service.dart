@@ -13,6 +13,7 @@ import 'exporters/base_exporter.dart';
 import 'exporters/csv_service.dart';
 import 'goal_service.dart';
 import 'transaction_service.dart';
+import '../utils/app_info.dart';
 
 /// Servicio orquestador de exportación de reportes.
 ///
@@ -79,7 +80,7 @@ class ExportService {
       final savedPath = await FilePicker.saveFile(
         dialogTitle: 'Guardar reporte',
         fileName: _buildFileName(
-          prefix: 'AhorroApp_Reporte',
+          prefix: '${AppInfo.name}_Reporte',
           dateFrom: config.filters.dateFrom,
           dateTo: config.filters.dateTo,
           extension: exporter.fileExtension,

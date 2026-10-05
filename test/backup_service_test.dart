@@ -168,7 +168,8 @@ void main() {
 
     test('rechaza un backup sin ninguna cuenta', () {
       final noAccounts = _validBackupJson();
-      (noAccounts['data'] as Map<String, dynamic>)['accounts'] = <Map<String, dynamic>>[];
+      (noAccounts['data'] as Map<String, dynamic>)['accounts'] =
+          <Map<String, dynamic>>[];
       expect(
         () => service.validateAndParse(json.encode(noAccounts)),
         throwsA(isA<BackupValidationException>()),
@@ -178,7 +179,9 @@ void main() {
     test('rechaza una transacción corrupta sin tocar el resto del archivo', () {
       final corrupted = _validBackupJson();
       final data = corrupted['data'] as Map<String, dynamic>;
-      final transactions = List<Map<String, dynamic>>.from(data['transactions'] as List);
+      final transactions = List<Map<String, dynamic>>.from(
+        data['transactions'] as List,
+      );
       transactions[0].remove('id'); // campo requerido por Transaction.fromJson
       data['transactions'] = transactions;
 

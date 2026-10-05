@@ -3,6 +3,7 @@ import 'budget.dart';
 import 'export_config.dart';
 import 'financial_goal.dart';
 import 'transaction.dart';
+import '../utils/app_info.dart';
 
 /// DTO que agrupa todos los datos ya filtrados y listos para ser exportados.
 ///
@@ -32,7 +33,7 @@ class ExportData {
     required this.accounts,
     required this.config,
     required this.generatedAt,
-    this.appName = 'AhorroApp',
+    this.appName = AppInfo.name,
     this.appVersion = '1.0.0',
   });
 

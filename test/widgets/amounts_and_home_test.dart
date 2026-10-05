@@ -48,7 +48,11 @@ void main() {
     );
   }
 
-  Transaction income(double amount, {String description = 'Ingreso', DateTime? date}) {
+  Transaction income(
+    double amount, {
+    String description = 'Ingreso',
+    DateTime? date,
+  }) {
     counter++;
     return Transaction(
       id: 'w_$counter',
@@ -71,7 +75,11 @@ void main() {
 
   setUpAll(() async {
     // Métricas de texto reales (si no, los desbordes medidos serían falsos).
-    expect(await loadRoboto(), isTrue, reason: 'No se encontró Roboto en el SDK');
+    expect(
+      await loadRoboto(),
+      isTrue,
+      reason: 'No se encontró Roboto en el SDK',
+    );
     SharedPreferences.setMockInitialValues({});
     await AccountService().loadAccounts();
     accountId = AccountService().activeAccountId;
@@ -83,7 +91,9 @@ void main() {
   });
 
   group('AmountText', () {
-    testWidgets('reduce un monto enorme en vez de desbordar la fila', (tester) async {
+    testWidgets('reduce un monto enorme en vez de desbordar la fila', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -95,7 +105,10 @@ void main() {
                     Expanded(
                       child: AmountText(
                         '-20.000.032,45 \$',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                   ],
@@ -107,14 +120,19 @@ void main() {
       );
 
       expect(tester.takeException(), isNull);
-      expect(tester.getSize(find.byType(FittedBox)).width, lessThanOrEqualTo(90));
+      expect(
+        tester.getSize(find.byType(FittedBox)).width,
+        lessThanOrEqualTo(90),
+      );
       // Una sola línea: no se parte en dos.
       expect(tester.widget<Text>(find.byType(Text)).maxLines, 1);
     });
   });
 
   group('Control del detector de desbordes', () {
-    testWidgets('la fila original (chip -181818376.8%) sí desbordaba', (tester) async {
+    testWidgets('la fila original (chip -181818376.8%) sí desbordaba', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -128,12 +146,21 @@ void main() {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Septiembre 2026', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                          Text(
+                            'Septiembre 2026',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                           Row(
                             children: [
                               Icon(Icons.receipt_long_rounded, size: 14),
                               SizedBox(width: 4),
-                              Text('7 transacciones', style: TextStyle(fontSize: 13)),
+                              Text(
+                                '7 transacciones',
+                                style: TextStyle(fontSize: 13),
+                              ),
                             ],
                           ),
                         ],
@@ -143,7 +170,11 @@ void main() {
                       padding: EdgeInsets.symmetric(horizontal: 14),
                       child: Text(
                         '-181818376.8%',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
                   ],
@@ -161,44 +192,73 @@ void main() {
   });
 
   group('Caso 5: valores altos no producen overflow', () {
-    testWidgets('Historial mensual con 20.000.032,45 y una categoría de nombre largo', (tester) async {
+    testWidgets(
+      'Historial mensual con 20.000.032,45 y una categoría de nombre largo',
+      (tester) async {
+        useNarrowPhone(tester);
+        final longName = await categories.addCategory(
+          name: 'Categoría con un nombre larguísimo para probar el desborde',
+          emoji: '🧪',
+        );
+        await transactions.addTransaction(income(11));
+        await transactions.addTransaction(
+          expense(
+            20000032.45,
+            customId: longName.id,
+            customName: longName.name,
+            customEmoji: longName.emoji,
+          ),
+        );
+
+        await tester.pumpWidget(
+          const MaterialApp(home: MonthlyHistoryScreen()),
+        );
+        await tester.pumpAndSettle(const Duration(seconds: 3));
+
+        expect(tester.takeException(), isNull);
+        // La tasa de ahorro absurda se presenta acotada, no como -181818376,8%.
+        expect(find.text('<-999%'), findsOneWidget);
+        expect(find.textContaining('181818376'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'Historial mensual: mes con gastos y sin ingresos muestra "—"',
+      (tester) async {
+        useNarrowPhone(tester);
+        await transactions.addTransaction(
+          expense(1000000, system: ExpenseCategory.food),
+        );
+
+        await tester.pumpWidget(
+          const MaterialApp(home: MonthlyHistoryScreen()),
+        );
+        await tester.pumpAndSettle(const Duration(seconds: 3));
+
+        expect(tester.takeException(), isNull);
+        expect(find.text('—'), findsOneWidget);
+      },
+    );
+
+    testWidgets('Análisis gráfico con 20.000.032,45 en una categoría nueva', (
+      tester,
+    ) async {
       useNarrowPhone(tester);
-      final longName = await categories.addCategory(
-        name: 'Categoría con un nombre larguísimo para probar el desborde',
-        emoji: '🧪',
+      final big = await categories.addCategory(
+        name: 'Maquinaria',
+        emoji: '🏗️',
       );
-      await transactions.addTransaction(income(11));
       await transactions.addTransaction(
-        expense(20000032.45, customId: longName.id, customName: longName.name, customEmoji: longName.emoji),
+        expense(
+          20000032.45,
+          customId: big.id,
+          customName: big.name,
+          customEmoji: big.emoji,
+        ),
       );
-
-      await tester.pumpWidget(const MaterialApp(home: MonthlyHistoryScreen()));
-      await tester.pumpAndSettle(const Duration(seconds: 3));
-
-      expect(tester.takeException(), isNull);
-      // La tasa de ahorro absurda se presenta acotada, no como -181818376,8%.
-      expect(find.text('<-999%'), findsOneWidget);
-      expect(find.textContaining('181818376'), findsNothing);
-    });
-
-    testWidgets('Historial mensual: mes con gastos y sin ingresos muestra "—"', (tester) async {
-      useNarrowPhone(tester);
-      await transactions.addTransaction(expense(1000000, system: ExpenseCategory.food));
-
-      await tester.pumpWidget(const MaterialApp(home: MonthlyHistoryScreen()));
-      await tester.pumpAndSettle(const Duration(seconds: 3));
-
-      expect(tester.takeException(), isNull);
-      expect(find.text('—'), findsOneWidget);
-    });
-
-    testWidgets('Análisis gráfico con 20.000.032,45 en una categoría nueva', (tester) async {
-      useNarrowPhone(tester);
-      final big = await categories.addCategory(name: 'Maquinaria', emoji: '🏗️');
       await transactions.addTransaction(
-        expense(20000032.45, customId: big.id, customName: big.name, customEmoji: big.emoji),
+        expense(28.7, system: ExpenseCategory.food),
       );
-      await transactions.addTransaction(expense(28.7, system: ExpenseCategory.food));
 
       await tester.pumpWidget(const MaterialApp(home: ChartsScreen()));
       await tester.pumpAndSettle(const Duration(seconds: 3));
@@ -209,9 +269,13 @@ void main() {
   });
 
   group('Caso 1: el gráfico se actualiza solo con una categoría nueva', () {
-    testWidgets('aparece al registrar un gasto y desaparece al eliminarlo', (tester) async {
+    testWidgets('aparece al registrar un gasto y desaparece al eliminarlo', (
+      tester,
+    ) async {
       useNarrowPhone(tester);
-      await transactions.addTransaction(expense(50, system: ExpenseCategory.food));
+      await transactions.addTransaction(
+        expense(50, system: ExpenseCategory.food),
+      );
 
       await tester.pumpWidget(const MaterialApp(home: ChartsScreen()));
       await tester.pumpAndSettle(const Duration(seconds: 3));
@@ -252,49 +316,80 @@ void main() {
       useNarrowPhone(tester);
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(body: SingleChildScrollView(child: HomeCalendarCard())),
+          home: Scaffold(
+            body: SingleChildScrollView(child: HomeCalendarCard()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
     }
 
-    testWidgets('muestra la semana actual con indicadores de ingresos y gastos', (tester) async {
-      final now = DateTime.now();
-      await transactions.addTransaction(income(100, description: 'Sueldo de hoy'));
-      await transactions.addTransaction(expense(20, description: 'Café de hoy', system: ExpenseCategory.food));
+    // La celda de hoy se busca por su número de día, no por texto: el contador
+    // de transacciones ("2") puede coincidir con el número del día (el día 2).
+    Finder cellOfDay(int day) => find.byWidgetPredicate(
+      (w) => w is CalendarDayCell && w.dayNumber == day,
+    );
 
-      await pumpCard(tester);
+    // Cuántas veces aparece el texto "2" en la celda: el contador, más el
+    // número del día si justo es el 2.
+    Matcher countBadgeTwo(DateTime now) => findsNWidgets(now.day == 2 ? 2 : 1);
 
-      expect(find.text('Calendario'), findsOneWidget);
-      expect(find.byType(CalendarDayCell), findsNWidgets(7));
-      expect(find.byType(CalendarMonthGrid), findsNothing);
+    testWidgets(
+      'muestra la semana actual con indicadores de ingresos y gastos',
+      (tester) async {
+        final now = DateTime.now();
+        await transactions.addTransaction(
+          income(100, description: 'Sueldo de hoy'),
+        );
+        await transactions.addTransaction(
+          expense(20, description: 'Café de hoy', system: ExpenseCategory.food),
+        );
 
-      // Hoy tiene ingresos y gastos => contador "2" con los dos puntos.
-      final todayCell = find.widgetWithText(CalendarDayCell, '${now.day}');
-      expect(find.descendant(of: todayCell, matching: find.text('2')), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
+        await pumpCard(tester);
 
-    testWidgets('tocar un día abre sus transacciones y tocarlas abre Editar/Eliminar', (tester) async {
-      final now = DateTime.now();
-      await transactions.addTransaction(income(100, description: 'Sueldo de hoy'));
-      await transactions.addTransaction(expense(20, description: 'Café de hoy', system: ExpenseCategory.food));
+        expect(find.text('Calendario'), findsOneWidget);
+        expect(find.byType(CalendarDayCell), findsNWidgets(7));
+        expect(find.byType(CalendarMonthGrid), findsNothing);
 
-      await pumpCard(tester);
-      await tester.tap(find.widgetWithText(CalendarDayCell, '${now.day}'));
-      await tester.pumpAndSettle();
+        // Hoy tiene ingresos y gastos => contador "2" con los dos puntos.
+        final todayCell = cellOfDay(now.day);
+        expect(
+          find.descendant(of: todayCell, matching: find.text('2')),
+          countBadgeTwo(now),
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
 
-      expect(find.text('Sueldo de hoy'), findsOneWidget);
-      expect(find.text('Café de hoy'), findsOneWidget);
+    testWidgets(
+      'tocar un día abre sus transacciones y tocarlas abre Editar/Eliminar',
+      (tester) async {
+        final now = DateTime.now();
+        await transactions.addTransaction(
+          income(100, description: 'Sueldo de hoy'),
+        );
+        await transactions.addTransaction(
+          expense(20, description: 'Café de hoy', system: ExpenseCategory.food),
+        );
 
-      await tester.tap(find.text('Café de hoy'));
-      await tester.pumpAndSettle();
+        await pumpCard(tester);
+        await tester.tap(cellOfDay(now.day));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Editar'), findsOneWidget);
-      expect(find.text('Eliminar'), findsOneWidget);
-    });
+        expect(find.text('Sueldo de hoy'), findsOneWidget);
+        expect(find.text('Café de hoy'), findsOneWidget);
 
-    testWidgets('el encabezado expande al mes completo y lo colapsa', (tester) async {
+        await tester.tap(find.text('Café de hoy'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Editar'), findsOneWidget);
+        expect(find.text('Eliminar'), findsOneWidget);
+      },
+    );
+
+    testWidgets('el encabezado expande al mes completo y lo colapsa', (
+      tester,
+    ) async {
       await pumpCard(tester);
 
       await tester.tap(find.text('Calendario'));
@@ -307,17 +402,28 @@ void main() {
       expect(find.byType(CalendarDayCell), findsNWidgets(7));
     });
 
-    testWidgets('se actualiza solo cuando cambian las transacciones', (tester) async {
+    testWidgets('se actualiza solo cuando cambian las transacciones', (
+      tester,
+    ) async {
       final now = DateTime.now();
       await pumpCard(tester);
-      final todayCell = find.widgetWithText(CalendarDayCell, '${now.day}');
-      expect(find.descendant(of: todayCell, matching: find.text('2')), findsNothing);
+      final todayCell = cellOfDay(now.day);
+      // Sin movimientos no hay contador (solo el número del día, si es el 2).
+      expect(
+        find.descendant(of: todayCell, matching: find.text('2')),
+        findsNWidgets(now.day == 2 ? 1 : 0),
+      );
 
       await transactions.addTransaction(income(10));
-      await transactions.addTransaction(expense(5, system: ExpenseCategory.food));
+      await transactions.addTransaction(
+        expense(5, system: ExpenseCategory.food),
+      );
       await tester.pumpAndSettle();
 
-      expect(find.descendant(of: todayCell, matching: find.text('2')), findsOneWidget);
+      expect(
+        find.descendant(of: todayCell, matching: find.text('2')),
+        countBadgeTwo(now),
+      );
     });
   });
 
@@ -341,7 +447,11 @@ void main() {
     }
 
     testWidgets('muestra el detalle con Editar y Eliminar', (tester) async {
-      final tx = expense(12.5, description: 'Almuerzo', system: ExpenseCategory.food);
+      final tx = expense(
+        12.5,
+        description: 'Almuerzo',
+        system: ExpenseCategory.food,
+      );
       await transactions.addTransaction(tx);
       await openSheet(tester, tx);
 
@@ -351,8 +461,14 @@ void main() {
       expect(find.text('Eliminar'), findsOneWidget);
     });
 
-    testWidgets('Caso 4: eliminar quita la transacción de todas las fuentes', (tester) async {
-      final tx = expense(12.5, description: 'Almuerzo', system: ExpenseCategory.food);
+    testWidgets('Caso 4: eliminar quita la transacción de todas las fuentes', (
+      tester,
+    ) async {
+      final tx = expense(
+        12.5,
+        description: 'Almuerzo',
+        system: ExpenseCategory.food,
+      );
       await transactions.addTransaction(tx);
       await openSheet(tester, tx);
 
@@ -369,7 +485,11 @@ void main() {
     });
 
     testWidgets('cancelar la confirmación no elimina nada', (tester) async {
-      final tx = expense(8, description: 'Taxi', system: ExpenseCategory.transport);
+      final tx = expense(
+        8,
+        description: 'Taxi',
+        system: ExpenseCategory.transport,
+      );
       await transactions.addTransaction(tx);
       await openSheet(tester, tx);
 
@@ -378,7 +498,10 @@ void main() {
       await tester.tap(find.text('Cancelar'));
       await tester.pumpAndSettle();
 
-      expect(transactions.allTransactions.where((t) => t.id == tx.id), hasLength(1));
+      expect(
+        transactions.allTransactions.where((t) => t.id == tx.id),
+        hasLength(1),
+      );
     });
 
     testWidgets('una transferencia solo se puede eliminar', (tester) async {

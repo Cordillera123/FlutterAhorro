@@ -12,6 +12,7 @@ import '../models/region.dart';
 import '../services/region_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/common/common.dart';
+import '../utils/app_info.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -282,7 +283,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
             const SizedBox(width: 12),
             const Text(
-              'Mi App de Ahorro',
+              AppInfo.name,
               style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
             ),
           ],

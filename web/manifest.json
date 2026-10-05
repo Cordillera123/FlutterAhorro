@@ -1,11 +1,11 @@
 {
-    "name": "ahorro_app",
-    "short_name": "ahorro_app",
+    "name": "PiggyFy",
+    "short_name": "PiggyFy",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Controla tus gastos, presupuestos y metas de ahorro.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

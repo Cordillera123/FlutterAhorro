@@ -54,11 +54,13 @@ void main() {
     test('también busca en el nombre de categoría personalizada', () {
       const f = HistoryFilters(searchQuery: 'mascotas');
       expect(
-        f.matches(_tx(
-          description: 'Comida del perro',
-          customCategoryId: 'custom_1',
-          customCategoryName: 'Mascotas',
-        )),
+        f.matches(
+          _tx(
+            description: 'Comida del perro',
+            customCategoryId: 'custom_1',
+            customCategoryName: 'Mascotas',
+          ),
+        ),
         true,
       );
     });
@@ -98,7 +100,10 @@ void main() {
 
     test('filtra por tipo (incluye transfer)', () {
       const f = HistoryFilters(transactionTypes: {TransactionType.transfer});
-      expect(f.matches(_tx(type: TransactionType.transfer, isTransferOut: true)), true);
+      expect(
+        f.matches(_tx(type: TransactionType.transfer, isTransferOut: true)),
+        true,
+      );
       expect(f.matches(_tx(type: TransactionType.expense)), false);
     });
 
@@ -121,11 +126,21 @@ void main() {
     test('filtra por categoría de ingreso', () {
       const f = HistoryFilters(incomeCategories: {IncomeCategory.salary});
       expect(
-        f.matches(_tx(type: TransactionType.income, incomeCategory: IncomeCategory.salary)),
+        f.matches(
+          _tx(
+            type: TransactionType.income,
+            incomeCategory: IncomeCategory.salary,
+          ),
+        ),
         true,
       );
       expect(
-        f.matches(_tx(type: TransactionType.income, incomeCategory: IncomeCategory.freelance)),
+        f.matches(
+          _tx(
+            type: TransactionType.income,
+            incomeCategory: IncomeCategory.freelance,
+          ),
+        ),
         false,
       );
     });
@@ -136,17 +151,22 @@ void main() {
       expect(f.matches(_tx(customCategoryId: 'custom_2')), false);
     });
 
-    test('con un filtro de categoría activo, las transferencias quedan fuera', () {
-      const f = HistoryFilters(expenseCategories: {ExpenseCategory.food});
-      expect(
-        f.matches(_tx(type: TransactionType.transfer, isTransferOut: true)),
-        false,
-      );
-    });
+    test(
+      'con un filtro de categoría activo, las transferencias quedan fuera',
+      () {
+        const f = HistoryFilters(expenseCategories: {ExpenseCategory.food});
+        expect(
+          f.matches(_tx(type: TransactionType.transfer, isTransferOut: true)),
+          false,
+        );
+      },
+    );
 
     test('sin filtro de categoría, las transferencias sí pasan', () {
       expect(
-        HistoryFilters.empty.matches(_tx(type: TransactionType.transfer, isTransferOut: true)),
+        HistoryFilters.empty.matches(
+          _tx(type: TransactionType.transfer, isTransferOut: true),
+        ),
         true,
       );
     });

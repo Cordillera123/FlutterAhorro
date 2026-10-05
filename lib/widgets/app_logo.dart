@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/app_info.dart';
 
 class AppLogo extends StatelessWidget {
   final double? width;
@@ -152,7 +153,7 @@ class AppLogo extends StatelessWidget {
     return Column(
       children: [
         Text(
-          'Mi App de Ahorro',
+          AppInfo.name,
           style: TextStyle(
             fontSize: _getTitleFontSize(),
             fontWeight: FontWeight.w700,

@@ -4,11 +4,13 @@ import 'package:flutter/services.dart';
 import '../models/region.dart';
 import '../services/region_service.dart';
 import '../theme/app_colors.dart';
+import '../utils/app_refresh.dart';
+import '../utils/format_utils.dart';
 import '../widgets/common/common.dart';
 
 /// Pantalla de Configuración > Región y moneda: elige el país que define
-/// el formato de números/fechas del sistema y el símbolo de moneda usado
-/// en toda la app. No afecta los montos guardados — solo cómo se muestran.
+/// el formato de números del sistema y la moneda usada en toda la app. No
+/// afecta los montos guardados — solo cómo se muestran (no se convierten).
 class RegionSettingsScreen extends StatefulWidget {
   const RegionSettingsScreen({super.key});
 
@@ -19,10 +21,35 @@ class RegionSettingsScreen extends StatefulWidget {
 class _RegionSettingsScreenState extends State<RegionSettingsScreen> {
   final RegionService _regionService = RegionService();
 
+  /// Monto de ejemplo con el que cada fila muestra cómo se verán los números.
+  static const double _sampleAmount = 1234.5;
+
   Future<void> _onSelectRegion(Region region) async {
-    if (region == _regionService.current) return;
+    final current = _regionService.current;
+    if (region == current) return;
+
+    // Cambiar a otra MONEDA (no solo de país con la misma moneda) puede
+    // confundir si no se sabe que los montos no se convierten: se avisa.
+    if (region.currencyCode != current.currencyCode) {
+      final confirmed = await showAppConfirmDialog(
+        context,
+        title: '¿Cambiar a ${region.currencyName}?',
+        message:
+            'Los montos que ya registraste NO se convierten: un gasto de '
+            '10 pasará a mostrarse como '
+            '${FormatUtils.formatMoneyIn(region, 10)}. '
+            'Cambia solo cómo se ven los montos.',
+        confirmLabel: 'Cambiar',
+        icon: Icons.currency_exchange_rounded,
+        accentColor: AppColors.primaryBlue,
+      );
+      if (confirmed != true || !mounted) return;
+    }
+
     HapticFeedback.selectionClick();
     await _regionService.setRegion(region);
+    // Refresca las pantallas ya construidas para que muestren la nueva moneda.
+    rebuildEntireApp();
     if (mounted) setState(() {});
   }
 
@@ -49,8 +76,9 @@ class _RegionSettingsScreenState extends State<RegionSettingsScreen> {
         padding: const EdgeInsets.all(20),
         children: [
           Text(
-            'Define cómo se muestran los montos y las fechas en toda la app. '
-            'No cambia el dinero que ya registraste, solo su formato.',
+            'Define la moneda y cómo se escriben los montos en toda la app. '
+            'No cambia el dinero que ya registraste ni lo convierte, solo '
+            'su formato.',
             style: TextStyle(
               fontSize: 13.5,
               height: 1.4,
@@ -66,7 +94,9 @@ class _RegionSettingsScreenState extends State<RegionSettingsScreen> {
                 return AppListTile(
                   emoji: region.flagEmoji,
                   title: region.displayName,
-                  subtitle: '${region.currencyName} (${region.currencyCode})',
+                  subtitle:
+                      '${region.currencyName} (${region.currencyCode}) · '
+                      '${FormatUtils.formatMoneyIn(region, _sampleAmount)}',
                   onTap: () => _onSelectRegion(region),
                   trailing: Icon(
                     selected

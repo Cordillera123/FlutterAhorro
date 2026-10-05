@@ -16,6 +16,7 @@ import 'category_service.dart';
 import 'goal_service.dart';
 import 'recurring_expense_service.dart';
 import 'transaction_service.dart';
+import '../utils/app_info.dart';
 
 /// Versión de la app mostrada en la metadata del backup. Es solo
 /// informativa (no participa en la validación) — actualizar junto a
@@ -158,7 +159,7 @@ class BackupService {
 
   static String _buildFileName() {
     final now = DateTime.now();
-    return 'AhorroApp_Backup_'
+    return '${AppInfo.name}_Backup_'
         '${now.year}${now.month.toString().padLeft(2, '0')}'
         '${now.day.toString().padLeft(2, '0')}_'
         '${now.hour.toString().padLeft(2, '0')}'
@@ -181,7 +182,7 @@ class BackupService {
     } catch (_) {
       throw const BackupValidationException(
         'El archivo seleccionado no es un JSON válido de copia de '
-        'seguridad de AhorroApp.',
+        'seguridad de ${AppInfo.name}.',
       );
     }
 

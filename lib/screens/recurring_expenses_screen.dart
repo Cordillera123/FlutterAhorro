@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'tab_add_action.dart';
 import 'package:flutter/services.dart';
 import '../models/recurring_expense.dart';
 import '../models/transaction.dart';
@@ -18,7 +19,8 @@ class RecurringExpensesScreen extends StatefulWidget {
 }
 
 class _RecurringExpensesScreenState extends State<RecurringExpensesScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin
+    implements TabAddActionHost {
   final RecurringExpenseService _recurringExpenseService =
       RecurringExpenseService();
   final AccountService _accountService = AccountService();
@@ -256,12 +258,6 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen>
                             Icons.refresh_rounded,
                             'Procesar gastos de hoy',
                             _processRecurringExpenses,
-                          ),
-                          const SizedBox(width: 8),
-                          _buildHeaderAction(
-                            Icons.add_rounded,
-                            'Agregar gasto recurrente',
-                            _navigateToAddRecurringExpense,
                           ),
                         ],
                       ),
@@ -1229,6 +1225,10 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen>
   }
 
   // Método para navegar a la pantalla de agregar gasto recurrente
+  // Botón flotante global "Agregar" (MainNavigationScreen).
+  @override
+  void onAddPressed() => _navigateToAddRecurringExpense();
+
   void _navigateToAddRecurringExpense() async {
     final result = await Navigator.push(
       context,

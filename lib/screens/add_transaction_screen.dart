@@ -14,10 +14,19 @@ class AddTransactionScreen extends StatefulWidget {
   final TransactionType initialType;
   final Transaction? transactionToEdit; // Nueva propiedad para edición
 
+  /// Fecha con la que arranca una transacción NUEVA (ej. el día elegido en el
+  /// calendario). Se ignora al editar. Debe estar entre [earliestDate] y hoy,
+  /// el mismo rango que permite el selector de fecha del formulario.
+  final DateTime? initialDate;
+
+  /// Fecha más antigua que acepta el selector de fecha.
+  static final DateTime earliestDate = DateTime(2020);
+
   const AddTransactionScreen({
     super.key,
     required this.initialType,
     this.transactionToEdit, // Parámetro opcional para editar
+    this.initialDate,
   });
 
   @override
@@ -77,6 +86,20 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     if (widget.transactionToEdit != null) {
       _loadTransactionData();
     } else {
+      // Fecha elegida de antemano (ej. desde el calendario): se conserva la
+      // hora actual para que varios movimientos del mismo día queden en orden.
+      final initialDate = widget.initialDate;
+      if (initialDate != null) {
+        final now = DateTime.now();
+        _selectedDate = DateTime(
+          initialDate.year,
+          initialDate.month,
+          initialDate.day,
+          now.hour,
+          now.minute,
+        );
+      }
+
       // Si es ingreso de salario, preconfigurar
       if (_selectedType == TransactionType.income) {
         _selectedIncomeCategory = IncomeCategory.salary;
@@ -414,14 +437,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                           size: 20,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          'Ingreso',
-                          style: TextStyle(
-                            color: _selectedType == TransactionType.income
-                                ? primaryGreen
-                                : textMedium,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'Ingreso',
+                              style: TextStyle(
+                                color: _selectedType == TransactionType.income
+                                    ? primaryGreen
+                                    : textMedium,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -478,14 +506,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                           size: 20,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          'Gasto',
-                          style: TextStyle(
-                            color: _selectedType == TransactionType.expense
-                                ? primaryRed
-                                : textMedium,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'Gasto',
+                              style: TextStyle(
+                                color: _selectedType == TransactionType.expense
+                                    ? primaryRed
+                                    : textMedium,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -530,15 +563,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                   color: color.withOpacity(0.1),
                 ),
                 child: Icon(
-                  isIncome
-                      ? Icons.attach_money_rounded
-                      : Icons.money_off_rounded,
+                  isIncome ? FormatUtils.currencyIcon : Icons.money_off_rounded,
                   color: color,
                   size: 20,
                 ),
               ),
               const SizedBox(width: 16),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -552,7 +583,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                     ),
                     SizedBox(height: 4),
                     Text(
-                      'Máximo: \$999.999.999,99',
+                      'Máximo: ${FormatUtils.currencySymbol}999.999.999,99',
                       style: TextStyle(color: textMedium, fontSize: 13),
                     ),
                   ],
@@ -572,7 +603,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
               AmountInputFormatter(),
             ],
             decoration: InputDecoration(
-              hintText: '\$0.00',
+              hintText: FormatUtils.amountHint(),
               hintStyle: TextStyle(
                 color: textMedium,
                 fontSize: 18,
@@ -609,13 +640,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
               }
               final amount = double.tryParse(value);
               if (amount == null || !amount.isFinite || amount <= 0) {
-                return 'El monto debe ser mayor a \$0.00';
+                return 'El monto debe ser mayor a ${FormatUtils.amountHint()}';
               }
               if (amount > 999999999.99) {
-                return 'El monto máximo es \$999.999.999,99';
+                return 'El monto máximo es ${FormatUtils.currencySymbol}999.999.999,99';
               }
               if (amount < 0.01) {
-                return 'El monto mínimo es \$0.01';
+                return 'El monto mínimo es ${FormatUtils.currencySymbol}0.01';
               }
               return null;
             },
@@ -832,7 +863,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
           },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: isSelected
                   ? primaryGreen.withOpacity(0.1)
@@ -854,10 +885,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  category['icon'] as String,
-                  style: TextStyle(fontSize: isSelected ? 26 : 24),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      category['icon'] as String,
+                      style: TextStyle(fontSize: isSelected ? 26 : 24),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -1829,7 +1866,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     final date = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: DateTime(2020),
+      firstDate: AddTransactionScreen.earliestDate,
       lastDate: DateTime.now(),
       builder: (context, child) {
         return Theme(

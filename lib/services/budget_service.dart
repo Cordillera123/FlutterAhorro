@@ -4,6 +4,7 @@ import '../models/budget.dart';
 import '../models/transaction.dart';
 import 'transaction_service.dart';
 import 'account_service.dart';
+import '../utils/format_utils.dart';
 
 class BudgetService {
   static const String _budgetsKey = 'budgets';
@@ -514,7 +515,7 @@ class BudgetService {
       if (newStatus == BudgetStatus.exceeded) {
         final excess = newSpentAmount - budget.amount;
         warnings.add(
-          'Excederías el presupuesto de ${budget.categoryName} por \$${excess.toStringAsFixed(0)}',
+          'Excederías el presupuesto de ${budget.categoryName} por ${FormatUtils.formatMoney(excess)}',
         );
         canSpend = false;
       } else if (newStatus == BudgetStatus.danger) {

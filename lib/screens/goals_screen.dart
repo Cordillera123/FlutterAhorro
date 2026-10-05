@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'tab_add_action.dart';
 import 'package:flutter/services.dart';
 import '../models/financial_goal.dart';
 import '../services/goal_service.dart';
@@ -16,7 +17,8 @@ class GoalsScreen extends StatefulWidget {
 }
 
 class _GoalsScreenState extends State<GoalsScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin
+    implements TabAddActionHost {
   final GoalService _goalService = GoalService();
   final AccountService _accountService = AccountService();
   bool _isLoading = true;
@@ -160,8 +162,6 @@ class _GoalsScreenState extends State<GoalsScreen>
           ],
         ),
       ),
-      floatingActionButton: _buildModernFAB(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
@@ -219,7 +219,6 @@ class _GoalsScreenState extends State<GoalsScreen>
                           ],
                         ),
                       ),
-                      _buildHeaderAction(),
                     ],
                   ),
                 ],
@@ -227,24 +226,6 @@ class _GoalsScreenState extends State<GoalsScreen>
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeaderAction() {
-    return GestureDetector(
-      onTap: () {
-        _navigateToCreateGoal();
-      },
-      child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: Colors.white.withOpacity(0.2),
-          border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
-        ),
-        child: const Icon(Icons.add_rounded, color: Colors.white, size: 24),
       ),
     );
   }
@@ -945,21 +926,11 @@ class _GoalsScreenState extends State<GoalsScreen>
     );
   }
 
-  Widget _buildModernFAB() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: AppPrimaryButton(
-        label: 'Nueva Meta',
-        icon: Icons.add_rounded,
-        onPressed: () {
-          HapticFeedback.mediumImpact();
-          _navigateToCreateGoal();
-        },
-      ),
-    );
-  }
-
   // Métodos de navegación y acciones
+  // Botón flotante global "Agregar" (MainNavigationScreen).
+  @override
+  void onAddPressed() => _navigateToCreateGoal();
+
   void _navigateToCreateGoal() async {
     // Verificar límite de metas
     if (!_goalService.canCreateMoreGoals) {
@@ -1072,11 +1043,11 @@ class _GoalsScreenState extends State<GoalsScreen>
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     labelText: 'Monto a aportar',
-                    hintText: '\$0',
+                    hintText: FormatUtils.amountHint(decimals: false),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    prefixIcon: const Icon(Icons.attach_money),
+                    prefixIcon: Icon(FormatUtils.currencyIcon),
                   ),
                 ),
                 const SizedBox(height: 16),
