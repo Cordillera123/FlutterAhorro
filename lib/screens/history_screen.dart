@@ -7,12 +7,14 @@ import '../models/history_filters.dart';
 import '../services/transaction_service.dart';
 import '../services/category_service.dart';
 import '../services/account_service.dart';
+import '../services/goal_service.dart';
 import '../utils/format_utils.dart';
 import '../widgets/history_filters_sheet.dart';
 import '../widgets/transaction_actions_sheet.dart';
 import 'add_transaction_screen.dart';
 import 'export_screen.dart';
 import 'financial_calendar_screen.dart';
+import 'tab_add_action.dart';
 import '../models/export_config.dart';
 import '../theme/app_colors.dart';
 import '../widgets/common/common.dart';
@@ -76,10 +78,20 @@ class _HistoryScreenState extends State<HistoryScreen>
     super.initState();
     _initAnimations();
     _loadTransactions();
+    // Escuchar cambios en las transacciones: lo agregado con el botón
+    // "Agregar", desde el calendario o por un gasto automático aparece sin
+    // tener que salir y volver a entrar.
+    _transactionService.addListener(_onTransactionsChanged);
     // Escuchar cambios en CategoryService (para actualizar nombres/emojis)
     _categoryService.addListener(_onCategoryChanged);
     // Escuchar cambios de cuenta activa
     _accountService.addListener(_onAccountChanged);
+  }
+
+  // Solo se vuelve a filtrar lo que ya está en memoria (no se recarga del
+  // disco: loadTransactions notifica y entraría en bucle).
+  void _onTransactionsChanged() {
+    if (mounted && !_isLoading) _applyFilter();
   }
 
   void _onCategoryChanged() {
@@ -202,6 +214,12 @@ class _HistoryScreenState extends State<HistoryScreen>
 
     final count = selected.length;
     final hasTransfers = selected.any((t) => t.isTransfer);
+    final notes = [
+      if (hasTransfers)
+        'Las transferencias se eliminan completas (también en la otra cuenta).',
+      if (_hasGoalContributions(selected))
+        'Los aportes a metas incluidos también se descontarán de sus metas.',
+    ];
     final confirmed = await showAppConfirmDialog(
       context,
       title: count == 1
@@ -212,13 +230,17 @@ class _HistoryScreenState extends State<HistoryScreen>
                 '"${selected.first.description}"?'
           : 'Esta acción no se puede deshacer. Se eliminarán las $count '
                 'transacciones seleccionadas.',
-      extra: hasTransfers
-          ? const Text(
-              'Las transferencias se eliminan completas (también en la otra cuenta).',
+      extra: notes.isEmpty
+          ? null
+          : Text(
+              notes.join('\n'),
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: textMedium, height: 1.4),
-            )
-          : null,
+              style: const TextStyle(
+                fontSize: 13,
+                color: textMedium,
+                height: 1.4,
+              ),
+            ),
     );
     if (confirmed != true || !mounted) return;
 
@@ -311,6 +333,7 @@ class _HistoryScreenState extends State<HistoryScreen>
 
   @override
   void dispose() {
+    _transactionService.removeListener(_onTransactionsChanged);
     _categoryService.removeListener(_onCategoryChanged);
     _accountService.removeListener(_onAccountChanged);
     _searchDebounce?.cancel();
@@ -378,7 +401,7 @@ class _HistoryScreenState extends State<HistoryScreen>
           child: CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              _buildModernAppBar(),
+              _buildModernAppBar(standalone: !TabHostScope.isHosted(context)),
               SliverToBoxAdapter(
                 child: AnimatedBuilder(
                   animation: _animationController,
@@ -407,7 +430,83 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
   }
 
-  Widget _buildModernAppBar() {
+  Widget _buildModernAppBar({required bool standalone}) {
+    const gradient = BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [primaryBlue, darkBlue, deepBlue],
+      ),
+      borderRadius: BorderRadius.only(
+        bottomLeft: Radius.circular(32),
+        bottomRight: Radius.circular(32),
+      ),
+    );
+
+    // Modo selección: barra contextual en la franja del encabezado que queda
+    // FIJA al hacer scroll (cancelar, conteo, seleccionar todas, eliminar).
+    // Antes estas acciones vivían en el fondo desplegable y se iban con el
+    // scroll: había que volver arriba para usarlas. Se reemplaza solo el
+    // contenido del mismo SliverAppBar (mismo alto), así la lista no salta.
+    if (_selectionMode) {
+      return SliverAppBar(
+        expandedHeight: 140,
+        floating: false,
+        pinned: true,
+        backgroundColor: darkBlue,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle.light,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
+        ),
+        automaticallyImplyLeading: false,
+        leadingWidth: 64,
+        leading: Center(
+          child: _buildHeaderAction(
+            Icons.close_rounded,
+            'Cancelar selección',
+            _exitSelectionMode,
+          ),
+        ),
+        centerTitle: false,
+        titleSpacing: 4,
+        title: _buildSelectionTitle(),
+        actions: [
+          _buildHeaderAction(
+            _allSelected ? Icons.deselect_rounded : Icons.select_all_rounded,
+            _allSelected ? 'Quitar selección' : 'Seleccionar todas',
+            _filteredTransactions.isNotEmpty ? _toggleSelectAll : null,
+          ),
+          const SizedBox(width: 8),
+          _buildHeaderAction(
+            Icons.delete_rounded,
+            'Eliminar seleccionadas',
+            _selectedIds.isNotEmpty ? _deleteSelected : null,
+          ),
+          const SizedBox(width: 16),
+        ],
+        flexibleSpace: FlexibleSpaceBar(
+          background: Container(
+            decoration: gradient,
+            alignment: Alignment.bottomLeft,
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+            child: const Text(
+              'Toca para marcar o desmarcar',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ),
+      );
+    }
+
     return SliverAppBar(
       expandedHeight: 140,
       floating: false,
@@ -415,22 +514,16 @@ class _HistoryScreenState extends State<HistoryScreen>
       backgroundColor: backgroundLight,
       elevation: 0,
       systemOverlayStyle: SystemUiOverlayStyle.dark,
+      // Abierta desde "Ver todo" de Inicio: flecha propia y el título más
+      // abajo para que no se encimen.
+      automaticallyImplyLeading: false,
+      leading: standalone ? const AppBackButton(light: true) : null,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [primaryBlue, darkBlue, deepBlue],
-            ),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(32),
-              bottomRight: Radius.circular(32),
-            ),
-          ),
+          decoration: gradient,
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+              padding: EdgeInsets.fromLTRB(24, standalone ? 48 : 16, 24, 24),
               child: Column(
                 children: [
                   Row(
@@ -439,55 +532,27 @@ class _HistoryScreenState extends State<HistoryScreen>
                       Expanded(child: _buildHeaderTitle()),
                       const SizedBox(width: 16),
                       Row(
-                        children: _selectionMode
-                            ? [
-                                _buildHeaderAction(
-                                  Icons.close_rounded,
-                                  'Cancelar selección',
-                                  _exitSelectionMode,
-                                ),
-                                const SizedBox(width: 8),
-                                _buildHeaderAction(
-                                  _allSelected
-                                      ? Icons.deselect_rounded
-                                      : Icons.select_all_rounded,
-                                  _allSelected
-                                      ? 'Quitar selección'
-                                      : 'Seleccionar todas',
-                                  _filteredTransactions.isNotEmpty
-                                      ? _toggleSelectAll
-                                      : null,
-                                ),
-                                const SizedBox(width: 8),
-                                _buildHeaderAction(
-                                  Icons.delete_rounded,
-                                  'Eliminar seleccionadas',
-                                  _selectedIds.isNotEmpty
-                                      ? _deleteSelected
-                                      : null,
-                                ),
-                              ]
-                            : [
-                                _buildHeaderAction(
-                                  Icons.calendar_month_rounded,
-                                  'Calendario financiero',
-                                  _navigateToCalendar,
-                                ),
-                                const SizedBox(width: 8),
-                                _buildHeaderAction(
-                                  Icons.file_download_outlined,
-                                  'Exportar',
-                                  _navigateToExport,
-                                ),
-                                const SizedBox(width: 8),
-                                _buildHeaderAction(
-                                  Icons.delete_sweep_rounded,
-                                  'Eliminar todas',
-                                  _filteredTransactions.isNotEmpty
-                                      ? _showDeleteAllDialog
-                                      : null,
-                                ),
-                              ],
+                        children: [
+                          _buildHeaderAction(
+                            Icons.calendar_month_rounded,
+                            'Calendario financiero',
+                            _navigateToCalendar,
+                          ),
+                          const SizedBox(width: 8),
+                          _buildHeaderAction(
+                            Icons.file_download_outlined,
+                            'Exportar',
+                            _navigateToExport,
+                          ),
+                          const SizedBox(width: 8),
+                          _buildHeaderAction(
+                            Icons.delete_sweep_rounded,
+                            'Eliminar todas',
+                            _filteredTransactions.isNotEmpty
+                                ? _showDeleteAllDialog
+                                : null,
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -500,21 +565,33 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
   }
 
-  /// Título del encabezado: "Historial" o el conteo de la selección. Va dentro
-  /// de un FittedBox para que nunca desborde junto a los botones.
+  /// Conteo de la selección en la barra contextual fija.
+  Widget _buildSelectionTitle() {
+    final n = _selectedIds.length;
+    final title = n == 0
+        ? 'Selecciona'
+        : (n == 1 ? '1 seleccionada' : '$n seleccionadas');
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Text(
+        title,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.5,
+        ),
+        maxLines: 1,
+      ),
+    );
+  }
+
+  /// Título del encabezado normal. Va dentro de un FittedBox para que nunca
+  /// desborde junto a los botones.
   Widget _buildHeaderTitle() {
-    final String title;
-    final String subtitle;
-    if (_selectionMode) {
-      final n = _selectedIds.length;
-      title = n == 0
-          ? 'Selecciona'
-          : (n == 1 ? '1 seleccionada' : '$n seleccionadas');
-      subtitle = 'Toca para marcar';
-    } else {
-      title = 'Historial';
-      subtitle = 'Revisa todas tus transacciones';
-    }
+    const title = 'Historial';
+    const subtitle = 'Revisa todas tus transacciones';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1770,8 +1847,18 @@ class _HistoryScreenState extends State<HistoryScreen>
     final scope = hasTransfers
         ? 'Las transferencias se eliminan completas, también en la otra cuenta.'
         : 'Las otras cuentas no se verán afectadas.';
-    return 'Esta acción eliminará $what de la cuenta activa. $scope '
+    final goals = _hasGoalContributions(_filteredTransactions)
+        ? ' Los aportes a metas incluidos también se descontarán de sus metas.'
+        : '';
+    return 'Esta acción eliminará $what de la cuenta activa. $scope$goals '
         'No se puede deshacer.';
+  }
+
+  /// ¿Alguna de [transactions] es un aporte (o retiro) de una meta? Borrarla
+  /// también cambia lo ahorrado en esa meta, y el usuario debe saberlo.
+  bool _hasGoalContributions(List<Transaction> transactions) {
+    final goals = GoalService();
+    return transactions.any((t) => goals.contributionForTransaction(t.id) != null);
   }
 
   // Elimina exactamente las transacciones visibles en pantalla

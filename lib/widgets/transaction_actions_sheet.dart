@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../models/transaction.dart';
 import '../screens/add_transaction_screen.dart';
 import '../services/category_service.dart';
+import '../services/goal_service.dart';
 import '../services/transaction_service.dart';
 import '../theme/app_colors.dart';
 import '../utils/format_utils.dart';
@@ -46,6 +47,7 @@ Future<bool> showTransactionActions(
       return result == true;
 
     case _TransactionAction.delete:
+      final goalName = GoalService().goalNameForTransaction(transaction.id);
       final confirmed = await showAppConfirmDialog(
         context,
         title: '¿Eliminar transacción?',
@@ -54,6 +56,18 @@ Future<bool> showTransactionActions(
                   'transferencia completa (en ambas cuentas).'
             : 'Esta acción no se puede deshacer. ¿Estás seguro de eliminar '
                   '"${transaction.description}"?',
+        extra: goalName == null
+            ? null
+            : Text(
+                'Es un aporte a la meta "$goalName": también se descontará '
+                'de lo ahorrado en esa meta.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textMedium,
+                  height: 1.4,
+                ),
+              ),
       );
       if (confirmed != true) return false;
 

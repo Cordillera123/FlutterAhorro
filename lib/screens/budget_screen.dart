@@ -4,11 +4,13 @@ import 'package:flutter/services.dart';
 import '../models/budget.dart';
 import '../models/transaction.dart';
 import '../services/budget_service.dart';
+import '../services/category_service.dart';
 import '../services/transaction_service.dart';
 import '../services/account_service.dart';
 import '../utils/format_utils.dart';
 import 'create_budget_screen.dart';
 import '../theme/app_colors.dart';
+import '../utils/app_log.dart';
 import '../widgets/common/common.dart';
 
 class BudgetsScreen extends StatefulWidget {
@@ -48,12 +50,22 @@ class _BudgetsScreenState extends State<BudgetsScreen>
     _initAnimations();
     _loadData();
     _accountService.addListener(_onAccountChanged);
+    // Lo gastado se calcula desde las transacciones: si una se crea, edita o
+    // elimina mientras esta pantalla está abierta, se recalcula al instante.
+    _transactionService.addListener(_onTransactionsChanged);
   }
 
   void _onAccountChanged() {
     if (mounted) {
       _loadData();
     }
+  }
+
+  // Solo recalcula con lo que ya está en memoria (no recarga del disco:
+  // _loadData llama a loadTransactions, que notifica y entraría en bucle).
+  void _onTransactionsChanged() {
+    if (!mounted || _isLoading) return;
+    setState(() => _summary = _budgetService.getBudgetSummary());
   }
 
   void _initAnimations() {
@@ -82,9 +94,6 @@ class _BudgetsScreenState extends State<BudgetsScreen>
     await _transactionService.loadTransactions();
     _summary = _budgetService.getBudgetSummary();
 
-    // Debug para verificar la carga de datos
-    _budgetService.debugPrintBudgets();
-
     if (mounted) {
       setState(() {
         _isLoading = false;
@@ -98,7 +107,7 @@ class _BudgetsScreenState extends State<BudgetsScreen>
       HapticFeedback.lightImpact();
       await _loadData();
     } catch (e) {
-      print('Error al refrescar datos: $e');
+      AppLog.error('Error al refrescar presupuestos', e);
       // Si hay error, al menos intentar cargar lo básico
       if (mounted) {
         setState(() {
@@ -111,6 +120,7 @@ class _BudgetsScreenState extends State<BudgetsScreen>
   @override
   void dispose() {
     _accountService.removeListener(_onAccountChanged);
+    _transactionService.removeListener(_onTransactionsChanged);
     _animationController.dispose();
     super.dispose();
   }
@@ -577,8 +587,6 @@ class _BudgetsScreenState extends State<BudgetsScreen>
     // CORREGIDO: Mostrar todos los presupuestos activos (incluyendo pausados)
     final budgets = _budgetService.budgets;
 
-    print('Displaying ${budgets.length} budgets');
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -630,8 +638,67 @@ class _BudgetsScreenState extends State<BudgetsScreen>
     );
   }
 
+  /// Porcentaje realmente usado (puede pasar de 100 % si se excedió). Valores
+  /// absurdos se muestran como ">999%".
+  String _usedPercentLabel(BudgetProgress progress) {
+    final percent = progress.usedFraction * 100;
+    if (percent > FormatUtils.maxDisplayedPercentage) {
+      return '>${FormatUtils.maxDisplayedPercentage.toStringAsFixed(0)}%';
+    }
+    return '${percent.toStringAsFixed(0)}%';
+  }
+
+  /// Nombre y emoji vigentes de la categoría: si una categoría personalizada
+  /// se renombró, el presupuesto guardado conserva el nombre anterior.
+  ({String name, String emoji}) _categoryLabel(Budget budget) {
+    if (!budget.hasCustomCategory) {
+      return (name: budget.categoryName, emoji: budget.categoryIcon);
+    }
+    final custom = CategoryService().getCategoryById(budget.customCategoryId!);
+    return (
+      name: custom?.name ?? budget.categoryName,
+      emoji: custom?.emoji ?? budget.categoryIcon,
+    );
+  }
+
+  Widget _buildAlertReachedNote(Budget budget, BudgetProgress progress) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: warningYellow.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: warningYellow.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.notifications_active_rounded,
+            color: warningYellow,
+            size: 16,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Alerta: ya usaste el ${_usedPercentLabel(progress)} '
+              '(aviso al ${budget.alertPercent}%)',
+              style: const TextStyle(
+                fontSize: 12,
+                color: textDark,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildBudgetCard(Budget budget) {
     final progress = _budgetService.getBudgetProgress(budget);
+    final category = _categoryLabel(budget);
 
     return Opacity(
       opacity: budget.isActive ? 1.0 : 0.7,
@@ -677,7 +744,7 @@ class _BudgetsScreenState extends State<BudgetsScreen>
                         ),
                         child: Center(
                           child: Text(
-                            budget.categoryIcon,
+                            category.emoji,
                             style: TextStyle(
                               fontSize: 20,
                               color: budget.isActive
@@ -771,7 +838,7 @@ class _BudgetsScreenState extends State<BudgetsScreen>
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '${budget.categoryName} • ${budget.periodName}',
+                              '${category.name} • ${budget.periodName}',
                               style: TextStyle(
                                 color: budget.isActive
                                     ? textMedium
@@ -804,7 +871,7 @@ class _BudgetsScreenState extends State<BudgetsScreen>
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  '${(progress.percentage * 100).toStringAsFixed(0)}%',
+                                  _usedPercentLabel(progress),
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: budget.isActive
@@ -849,6 +916,14 @@ class _BudgetsScreenState extends State<BudgetsScreen>
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  // Alerta configurada alcanzada (el excedido ya lo dicen el
+                  // estado y el mensaje de arriba).
+                  if (budget.isActive &&
+                      budget.isAlertReached(progress.spentAmount) &&
+                      progress.status != BudgetStatus.exceeded) ...[
+                    const SizedBox(height: 8),
+                    _buildAlertReachedNote(budget, progress),
+                  ],
                 ],
               ),
             ),

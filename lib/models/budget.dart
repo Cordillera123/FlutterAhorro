@@ -146,10 +146,16 @@ class Budget {
     }
   }
 
+  // Días que quedan contando hoy y el último día del período. Por días de
+  // calendario (en UTC para que un cambio de horario no reste un día): antes,
+  // durante todo el último día valía 0 y el presupuesto se daba por
+  // "completado" aunque el día no hubiera terminado.
   int get daysRemaining {
     final now = DateTime.now();
-    if (now.isAfter(endDate)) return 0;
-    return endDate.difference(now).inDays + 1;
+    final today = DateTime.utc(now.year, now.month, now.day);
+    final endDay = DateTime.utc(endDate.year, endDate.month, endDate.day);
+    if (today.isAfter(endDay)) return 0;
+    return endDay.difference(today).inDays + 1;
   }
 
   bool get isCurrentlyActive {
@@ -183,7 +189,11 @@ class Budget {
   // si la app no se abría justo ese día.
   bool get needsReset {
     final now = DateTime.now();
-    if (!now.isAfter(endDate)) return false;
+    // Recién cuando terminó el último día del período (endDate es la
+    // medianoche de ese día).
+    final today = DateTime(now.year, now.month, now.day);
+    final endDay = DateTime(endDate.year, endDate.month, endDate.day);
+    if (!today.isAfter(endDay)) return false;
 
     // Si nunca se ha reiniciado, usar la fecha de creación
     final lastReset = lastResetDate ?? createdAt;
@@ -233,6 +243,17 @@ class Budget {
     return DateTime(date.year, date.month, date.day - daysSinceMonday);
   }
 
+  /// Porcentaje entero en el que el usuario pidió que se le avise (50–95).
+  /// Redondeado: el control deslizante guarda valores como 0.6499999.
+  int get alertPercent => (alertThreshold * 100).round();
+
+  /// ¿Lo gastado llegó al porcentaje de alerta que eligió el usuario?
+  /// Siempre `false` si desactivó las alertas.
+  bool isAlertReached(double spentAmount) {
+    if (!alertsEnabled || amount <= 0) return false;
+    return spentAmount / amount * 100 >= alertPercent - 1e-9;
+  }
+
   // Calcular status basado en gasto actual
   BudgetStatus getStatus(double spentAmount) {
     final percentage = amount > 0 ? spentAmount / amount : 0.0;
@@ -240,6 +261,10 @@ class Budget {
     if (percentage >= 1.0) return BudgetStatus.exceeded;
     if (percentage >= 0.9) return BudgetStatus.danger;
     if (percentage >= 0.7) return BudgetStatus.warning;
+    // Si el usuario pidió que se le avise antes del 70 % (p. ej. al 50 %),
+    // desde ese punto ya no "va muy bien". Con el valor por defecto (80 %)
+    // esto no cambia nada.
+    if (isAlertReached(spentAmount)) return BudgetStatus.warning;
     return BudgetStatus.safe;
   }
 
@@ -360,6 +385,55 @@ class Budget {
   }
 }
 
+/// Nivel de aviso de un presupuesto: aún nada, llegó al porcentaje de
+/// alerta elegido, o llegó/superó el 100 %. El orden importa: solo se avisa
+/// cuando el nivel sube.
+enum BudgetAlertLevel { none, threshold, exceeded }
+
+/// Aviso que se muestra cuando un gasto hace que un presupuesto cruce su
+/// porcentaje de alerta o su límite.
+class BudgetAlert {
+  final Budget budget;
+  final BudgetAlertLevel level;
+  final double spentAmount;
+
+  const BudgetAlert({
+    required this.budget,
+    required this.level,
+    required this.spentAmount,
+  });
+
+  bool get isExceeded => level == BudgetAlertLevel.exceeded;
+
+  /// Porcentaje usado redondeado para mostrar (180, 85…).
+  int get usedPercent =>
+      budget.amount > 0 ? (spentAmount / budget.amount * 100).round() : 0;
+
+  String get title {
+    if (!isExceeded) return 'Alerta de presupuesto';
+    return spentAmount > budget.amount
+        ? 'Presupuesto excedido'
+        : 'Presupuesto al límite';
+  }
+
+  String get message {
+    final name = '"${budget.name}"';
+    if (!isExceeded) {
+      final left = budget.amount - spentAmount;
+      return '$name: ya usaste el $usedPercent % (tu alerta es al '
+          '${budget.alertPercent} %). Te quedan '
+          '${FormatUtils.formatMoney(left)}.';
+    }
+    if (spentAmount > budget.amount) {
+      return '$name: gastaste ${FormatUtils.formatMoney(spentAmount)} de '
+          '${FormatUtils.formatMoney(budget.amount)} ($usedPercent %). Te '
+          'pasaste por ${FormatUtils.formatMoney(spentAmount - budget.amount)}.';
+    }
+    return '$name: llegaste al 100 % '
+        '(${FormatUtils.formatMoney(budget.amount)}).';
+  }
+}
+
 // Clase auxiliar para manejar el progreso del presupuesto
 class BudgetProgress {
   final Budget budget;
@@ -373,7 +447,19 @@ class BudgetProgress {
   });
 
   double get remainingAmount => budget.amount - spentAmount;
-  double get percentage => (spentAmount / budget.amount).clamp(0.0, 1.0);
+
+  /// Fracción usada para la barra de progreso (0 a 1). Con un monto de 0 la
+  /// división daba NaN y la barra quedaba rota.
+  double get percentage => usedFraction.clamp(0.0, 1.0);
+
+  /// Fracción realmente usada, sin tope: 1,5 = 150 % (presupuesto excedido).
+  /// Es la que se muestra como porcentaje; antes se mostraba "100%" aunque
+  /// se hubiera gastado el doble.
+  double get usedFraction {
+    if (budget.amount <= 0) return spentAmount > 0 ? 1.0 : 0.0;
+    return spentAmount / budget.amount;
+  }
+
   BudgetStatus get status => budget.getStatus(spentAmount);
 
   double get dailyAverageSpent {

@@ -297,7 +297,9 @@ class RecurringExpense {
     }
 
     return Transaction(
-      id: 'recurring_${DateTime.now().millisecondsSinceEpoch}',
+      // Incluye el id del gasto automático: varios procesados en el mismo
+      // milisegundo tenían el mismo id, y editar/eliminar uno afectaba a otro.
+      id: 'recurring_${id}_${DateTime.now().millisecondsSinceEpoch}',
       amount: transactionAmount,
       type: TransactionType.expense,
       description: '$name - $description',

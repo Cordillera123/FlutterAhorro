@@ -4,6 +4,7 @@ library;
 
 export 'amount_input_formatter.dart';
 export 'amount_text.dart';
+export 'app_add_fab.dart';
 export 'app_back_button.dart';
 export 'app_card.dart';
 export 'app_empty_state.dart';

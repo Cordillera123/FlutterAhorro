@@ -14,6 +14,7 @@ import 'exporters/csv_service.dart';
 import 'goal_service.dart';
 import 'transaction_service.dart';
 import '../utils/app_info.dart';
+import '../utils/app_log.dart';
 
 /// Servicio orquestador de exportación de reportes.
 ///
@@ -87,11 +88,10 @@ class ExportService {
         ),
         bytes: Uint8List.fromList(bytes),
       );
-      if (savedPath != null) debugPrint('✅ Reporte guardado en: $savedPath');
 
       return savedPath;
     } catch (e) {
-      debugPrint('❌ ExportService.generateAndSave error: $e');
+      AppLog.error('ExportService.generateAndSave error', e);
       rethrow;
     } finally {
       _isExporting = false;

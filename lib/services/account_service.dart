@@ -3,9 +3,11 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/account.dart';
+import '../utils/app_log.dart';
 import 'transaction_service.dart';
 import 'budget_service.dart';
 import 'goal_service.dart';
+import 'recurring_expense_service.dart';
 
 /// Servicio para gestionar las cuentas financieras del usuario.
 /// Usa patrón Singleton y persiste en SharedPreferences.
@@ -92,14 +94,9 @@ class AccountService extends ChangeNotifier {
         await prefs.setString(_activeAccountKey, _activeAccountId);
       }
 
-      print('=== CUENTAS CARGADAS ===');
-      print('Total cuentas: ${_accounts.length}');
-      print('Cuenta activa: ${activeAccount.name} ($_activeAccountId)');
-      print('========================');
-
       notifyListeners();
     } catch (e) {
-      print('Error cargando cuentas: $e');
+      AppLog.error('Error cargando cuentas', e);
       _accounts = [];
       await _createDefaultAccount();
       notifyListeners();
@@ -124,7 +121,7 @@ class AccountService extends ChangeNotifier {
       );
       await prefs.setString(_accountsKey, accountsJson);
     } catch (e) {
-      print('Error guardando cuentas: $e');
+      AppLog.error('Error guardando cuentas', e);
     }
   }
 
@@ -134,7 +131,7 @@ class AccountService extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_activeAccountKey, _activeAccountId);
     } catch (e) {
-      print('Error guardando cuenta activa: $e');
+      AppLog.error('Error guardando la cuenta activa', e);
     }
   }
 
@@ -148,7 +145,6 @@ class AccountService extends ChangeNotifier {
     _activeAccountId = accountId;
     await _saveActiveAccountId();
 
-    print('🔄 Cuenta activa cambiada a: ${activeAccount.name}');
     notifyListeners();
   }
 
@@ -188,7 +184,6 @@ class AccountService extends ChangeNotifier {
     await _saveAccounts();
     notifyListeners();
 
-    print('✅ Cuenta creada: ${newAccount.name}');
     return newAccount;
   }
 
@@ -240,6 +235,10 @@ class AccountService extends ChangeNotifier {
       throw Exception('Debe haber al menos $_minAccounts cuenta');
     }
 
+    // Antes de quitar la cuenta (ver el método): sus gastos automáticos se
+    // eliminan con ella en vez de pasar a la cuenta principal.
+    await RecurringExpenseService().clearRecurringExpensesForAccount(accountId);
+
     _accounts.removeWhere((a) => a.id == accountId);
 
     // Si se eliminó la cuenta activa, cambiar a la cuenta por defecto
@@ -257,8 +256,6 @@ class AccountService extends ChangeNotifier {
     await GoalService().clearGoalsForAccount(accountId);
 
     notifyListeners();
-
-    print('🗑️ Cuenta eliminada: ${account.name}');
   }
 
   /// Actualiza el balance inicial de una cuenta.
@@ -327,7 +324,6 @@ class AccountService extends ChangeNotifier {
   Future<void> markDataMigrated() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_dataMigratedKey, true);
-    print('✅ Migración de datos marcada como completada');
   }
 
   /// Migrar datos existentes a la cuenta principal por defecto.
@@ -335,12 +331,7 @@ class AccountService extends ChangeNotifier {
   /// gastos recurrentes y categorías que no lo tengan.
   Future<void> migrateExistingData() async {
     final migrated = await isDataMigrated();
-    if (migrated) {
-      print('✓ Datos ya migrados previamente');
-      return;
-    }
-
-    print('=== MIGRANDO DATOS A SISTEMA MULTI-CUENTA ===');
+    if (migrated) return;
 
     final prefs = await SharedPreferences.getInstance();
     final defaultId = Account.defaultAccountId;
@@ -364,7 +355,6 @@ class AccountService extends ChangeNotifier {
     await _migrateJsonList(prefs, 'custom_categories', defaultId);
 
     await markDataMigrated();
-    print('=== MIGRACIÓN COMPLETADA ===');
   }
 
   /// Migra una lista JSON agregando accountId a cada elemento que no lo tenga
@@ -375,10 +365,7 @@ class AccountService extends ChangeNotifier {
   ) async {
     try {
       final jsonStr = prefs.getString(key);
-      if (jsonStr == null) {
-        print('  ⏭️ $key: sin datos');
-        return;
-      }
+      if (jsonStr == null) return;
 
       final List<dynamic> items = json.decode(jsonStr);
       int migrated = 0;
@@ -392,12 +379,9 @@ class AccountService extends ChangeNotifier {
 
       if (migrated > 0) {
         await prefs.setString(key, json.encode(items));
-        print('  ✅ $key: $migrated elementos migrados');
-      } else {
-        print('  ✓ $key: ya migrados (${items.length} elementos)');
       }
     } catch (e) {
-      print('  ❌ Error migrando $key: $e');
+      AppLog.error('Error migrando $key', e);
     }
   }
 }

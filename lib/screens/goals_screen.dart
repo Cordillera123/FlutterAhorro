@@ -8,6 +8,7 @@ import '../utils/format_utils.dart';
 import 'create_goal_screen.dart';
 import '../theme/app_colors.dart';
 import '../widgets/common/common.dart';
+import '../widgets/goal_contributions_sheet.dart';
 
 class GoalsScreen extends StatefulWidget {
   const GoalsScreen({super.key});
@@ -122,15 +123,23 @@ class _GoalsScreenState extends State<GoalsScreen>
       );
     }
 
+    // Abierta desde un recordatorio no hay botón global ni barra inferior:
+    // la pantalla pone su propio "Agregar" y su flecha de volver.
+    final standalone = !TabHostScope.isHosted(context);
+
     return Scaffold(
       backgroundColor: backgroundLight,
+      floatingActionButton: standalone
+          ? AppAddFab(onPressed: _navigateToCreateGoal, tooltip: 'Crear meta')
+          : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       body: RefreshIndicator(
         onRefresh: _refreshData,
         color: primaryBlue,
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
-            _buildModernAppBar(),
+            _buildModernAppBar(standalone: standalone),
             SliverToBoxAdapter(
               child: AnimatedBuilder(
                 animation: _animationController,
@@ -165,7 +174,7 @@ class _GoalsScreenState extends State<GoalsScreen>
     );
   }
 
-  Widget _buildModernAppBar() {
+  Widget _buildModernAppBar({required bool standalone}) {
     return SliverAppBar(
       expandedHeight: 140,
       floating: false,
@@ -173,6 +182,9 @@ class _GoalsScreenState extends State<GoalsScreen>
       backgroundColor: backgroundLight,
       elevation: 0,
       systemOverlayStyle: SystemUiOverlayStyle.dark,
+      // Sola: flecha propia y el título más abajo para que no se encimen.
+      automaticallyImplyLeading: false,
+      leading: standalone ? const AppBackButton(light: true) : null,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: const BoxDecoration(
@@ -188,7 +200,7 @@ class _GoalsScreenState extends State<GoalsScreen>
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+              padding: EdgeInsets.fromLTRB(24, standalone ? 48 : 16, 24, 24),
               child: Column(
                 children: [
                   Row(
@@ -537,6 +549,7 @@ class _GoalsScreenState extends State<GoalsScreen>
   Widget _buildGoalsList() {
     final activeGoals = _goalService.activeGoals;
     final pausedGoals = _goalService.pausedGoals;
+    final completedGoals = _goalService.completedGoals;
     final totalGoals = activeGoals.length + pausedGoals.length;
 
     return Column(
@@ -573,12 +586,82 @@ class _GoalsScreenState extends State<GoalsScreen>
             ...pausedGoals.map((goal) => _buildGoalCard(goal)),
           ],
         ],
+        // Metas completadas: antes desaparecían de la lista al llegar al
+        // objetivo (sin forma de verlas, editarlas ni eliminarlas). No ocupan
+        // cupo del límite de 15.
+        if (completedGoals.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Text(
+            'Metas Completadas (${completedGoals.length})',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: textMedium,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...completedGoals.map((goal) => _buildGoalCard(goal)),
+        ],
       ],
+    );
+  }
+
+  /// Acceso a la lista de aportes de la meta, para editarlos o eliminarlos
+  /// desde aquí (sin ir al historial).
+  Widget _buildContributionsLink(FinancialGoal goal, int count) {
+    return Material(
+      color: primaryBlue.withOpacity(0.06),
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: () => showGoalContributionsSheet(
+          context,
+          goalId: goal.id!,
+          onAddContribution: goal.status == GoalStatus.active
+              ? () => _addContribution(goal)
+              : null,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.receipt_long_rounded,
+                color: primaryBlue,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  count == 1
+                      ? '1 aporte · Ver y editar'
+                      : '$count aportes · Ver y editar',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: primaryBlue,
+                  ),
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: primaryBlue,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
   Widget _buildGoalCard(FinancialGoal goal) {
     final isPaused = goal.status == GoalStatus.paused;
+    final contributionCount = goal.id == null
+        ? 0
+        : _goalService.getGoalContributions(goal.id!).length;
 
     return Opacity(
       opacity: isPaused ? 0.7 : 1.0,
@@ -782,6 +865,10 @@ class _GoalsScreenState extends State<GoalsScreen>
                       ),
                     ],
                   ),
+                  if (contributionCount > 0) ...[
+                    const SizedBox(height: 10),
+                    _buildContributionsLink(goal, contributionCount),
+                  ],
                   const SizedBox(height: 12),
                   Container(
                     width: double.infinity,
@@ -835,19 +922,25 @@ class _GoalsScreenState extends State<GoalsScreen>
                     ),
                   ),
                   const SizedBox(width: 6),
-                  Expanded(
-                    child: _buildGoalActionButton(
-                      goal.status == GoalStatus.active
-                          ? Icons.pause_rounded
-                          : Icons.play_arrow_rounded,
-                      goal.status == GoalStatus.active ? 'Pausar' : 'Reanudar',
-                      goal.status == GoalStatus.active
-                          ? warningYellow
-                          : successGreen,
-                      () => _toggleGoalStatus(goal),
+                  // Pausar/Reanudar solo aplica a metas en curso (en una
+                  // completada el botón no hacía nada).
+                  if (goal.status != GoalStatus.completed) ...[
+                    Expanded(
+                      child: _buildGoalActionButton(
+                        goal.status == GoalStatus.active
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
+                        goal.status == GoalStatus.active
+                            ? 'Pausar'
+                            : 'Reanudar',
+                        goal.status == GoalStatus.active
+                            ? warningYellow
+                            : successGreen,
+                        () => _toggleGoalStatus(goal),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 6),
+                    const SizedBox(width: 6),
+                  ],
                   Expanded(
                     child: _buildGoalActionButton(
                       Icons.delete_rounded,
@@ -997,6 +1090,7 @@ class _GoalsScreenState extends State<GoalsScreen>
         final TextEditingController amountController = TextEditingController();
         final TextEditingController noteController = TextEditingController();
         bool isSubmitting = false;
+        String? amountError;
 
         return StatefulBuilder(
           builder: (context, setDialogState) => AlertDialog(
@@ -1040,10 +1134,21 @@ class _GoalsScreenState extends State<GoalsScreen>
               children: [
                 TextField(
                   controller: amountController,
-                  keyboardType: TextInputType.number,
+                  // Mismo campo de monto que el resto de la app: decimales
+                  // con punto o coma. Antes "10,50" se guardaba como 1050.
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  inputFormatters: const [AmountInputFormatter()],
+                  onChanged: (_) {
+                    if (amountError != null) {
+                      setDialogState(() => amountError = null);
+                    }
+                  },
                   decoration: InputDecoration(
                     labelText: 'Monto a aportar',
-                    hintText: FormatUtils.amountHint(decimals: false),
+                    hintText: FormatUtils.amountHint(),
+                    errorText: amountError,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -1073,38 +1178,40 @@ class _GoalsScreenState extends State<GoalsScreen>
                 onPressed: isSubmitting
                     ? null
                     : () async {
-                        final amount = double.tryParse(
-                          amountController.text.replaceAll(',', ''),
-                        );
-                        if (amount != null && amount > 0) {
-                          setDialogState(() => isSubmitting = true);
-                          try {
-                            await _goalService.addContribution(
-                              goal.id!,
-                              amount,
-                              note: noteController.text.isNotEmpty
-                                  ? noteController.text
-                                  : null,
-                            );
-                            if (mounted) {
-                              Navigator.pop(context);
-                              _refreshData();
-                              _showMessage(
-                                'Aporte exitoso',
-                                'Se agregaron ${FormatUtils.formatMoney(amount)} a tu meta',
-                                successGreen,
-                                Icons.check_circle_rounded,
-                              );
-                            }
-                          } catch (e) {
-                            setDialogState(() => isSubmitting = false);
+                        final amount = double.tryParse(amountController.text);
+                        if (amount == null || !amount.isFinite || amount <= 0) {
+                          // Antes no pasaba nada al tocar "Aportar".
+                          setDialogState(
+                            () => amountError = 'Ingresa un monto mayor a 0',
+                          );
+                          return;
+                        }
+                        setDialogState(() => isSubmitting = true);
+                        try {
+                          final note = noteController.text.trim();
+                          await _goalService.addContribution(
+                            goal.id!,
+                            amount,
+                            note: note.isNotEmpty ? note : null,
+                          );
+                          if (mounted) {
+                            Navigator.pop(context);
+                            _refreshData();
                             _showMessage(
-                              'Error',
-                              'No se pudo agregar el aporte',
-                              dangerRed,
-                              Icons.error_rounded,
+                              'Aporte exitoso',
+                              'Se agregaron ${FormatUtils.formatMoney(amount)} a tu meta',
+                              successGreen,
+                              Icons.check_circle_rounded,
                             );
                           }
+                        } catch (e) {
+                          setDialogState(() => isSubmitting = false);
+                          _showMessage(
+                            'Error',
+                            'No se pudo agregar el aporte',
+                            dangerRed,
+                            Icons.error_rounded,
+                          );
                         }
                       },
                 style: ElevatedButton.styleFrom(
@@ -1180,7 +1287,9 @@ class _GoalsScreenState extends State<GoalsScreen>
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                'Ahorrado: ${FormatUtils.formatMoney(goal.currentAmount)}',
+                'Ahorrado: ${FormatUtils.formatMoney(goal.currentAmount)}\n'
+                'Los aportes seguirán en tu historial como gastos de '
+                '"Ahorros e Inversión".',
                 style: TextStyle(
                   fontSize: 11,
                   color: warningYellow,

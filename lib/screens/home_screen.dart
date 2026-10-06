@@ -26,6 +26,7 @@ import 'recurring_expenses_screen.dart';
 import 'stats_screen.dart';
 import 'settings_screen.dart';
 import 'manage_accounts_screen.dart';
+import 'manage_categories_screen.dart';
 import 'create_transfer_screen.dart';
 import 'export_screen.dart';
 import '../models/export_config.dart';
@@ -453,22 +454,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return Drawer(
       backgroundColor: Colors.white,
       child: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(children: [_buildDrawerContent()]),
+        // El botón flotante "Agregar" de la navegación queda por encima del
+        // menú: con este margen inferior la última opción y la versión se
+        // pueden subir por encima de él (antes quedaban tapadas).
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 96),
+          child: Column(
+            children: [
+              _buildDrawerContent(),
+              // Footer
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'Versión 1.0.0',
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                ),
               ),
-            ),
-            // Footer
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(
-                'Versión 1.0.0',
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -575,9 +578,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           subtitle: 'Personaliza tus categorías',
           onTap: () {
             Navigator.pop(context);
+            // Directo a las categorías (antes abría Configuración, igual que
+            // la opción "Configuración" de más abajo).
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              MaterialPageRoute(
+                builder: (context) => const ManageCategoriesScreen(),
+              ),
             );
           },
         ),
@@ -848,6 +855,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
+                      // Mismo filtro que el resto de montos: antes se podía
+                      // pegar "NaN"/"1.234,50" y el saldo quedaba inválido o
+                      // en 0 sin aviso.
+                      inputFormatters: const [AmountInputFormatter()],
                       autofocus: true,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
@@ -909,7 +920,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 final raw = controller.text
                                     .replaceAll(',', '.')
                                     .trim();
-                                final amount = double.tryParse(raw) ?? 0.0;
+                                final parsed = double.tryParse(raw) ?? 0.0;
+                                final amount = parsed.isFinite ? parsed : 0.0;
                                 setModalState(() => isSaving = true);
                                 final nav = Navigator.of(context);
                                 await _accountService.updateInitialBalance(

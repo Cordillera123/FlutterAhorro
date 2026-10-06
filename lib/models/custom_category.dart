@@ -62,9 +62,18 @@ class CustomCategory {
     );
   }
 
-  /// Genera un ID único para nuevas categorías
-  static String generateId() {
-    return 'custom_${DateTime.now().millisecondsSinceEpoch}';
+  /// Genera un ID único para nuevas categorías. Siempre empieza con
+  /// `custom_` (así se reconocen). Si ya existe uno igual en [existingIds]
+  /// (dos categorías creadas en el mismo milisegundo) se le agrega un sufijo:
+  /// antes ambas quedaban con el mismo id y se mezclaban sus gastos.
+  static String generateId({Set<String> existingIds = const {}}) {
+    final base = 'custom_${DateTime.now().millisecondsSinceEpoch}';
+    if (!existingIds.contains(base)) return base;
+    var n = 1;
+    while (existingIds.contains('${base}_$n')) {
+      n++;
+    }
+    return '${base}_$n';
   }
 
   @override

@@ -820,7 +820,8 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
       title: '¿Eliminar cuenta?',
       message:
           'Se eliminará la cuenta "${account.name}". Los datos asociados '
-          '(transacciones, presupuestos, metas) se perderán permanentemente.',
+          '(transacciones, presupuestos, metas y gastos automáticos) se '
+          'perderán permanentemente.',
       icon: Icons.warning_amber_rounded,
     );
     if (confirmed != true) return;

@@ -1073,6 +1073,11 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
         targetDate: _targetDate,
         type: _selectedType,
         priority: _selectedPriority,
+        // Editar no reactiva una meta pausada (antes volvía siempre a
+        // "activa"); si cambió el objetivo, GoalService decide si queda
+        // completada o activa según lo ya ahorrado.
+        status: _isEditMode ? widget.goalToEdit!.status : GoalStatus.active,
+        completedAt: _isEditMode ? widget.goalToEdit!.completedAt : null,
         emoji: _selectedEmoji,
         autoSaveAmount: _isEditMode ? widget.goalToEdit!.autoSaveAmount : 0.0,
         autoSave: _isEditMode ? widget.goalToEdit!.autoSave : false,

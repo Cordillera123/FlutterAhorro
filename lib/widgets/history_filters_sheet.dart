@@ -7,6 +7,7 @@ import '../models/history_filters.dart';
 import '../models/transaction.dart';
 import '../theme/app_colors.dart';
 import '../utils/format_utils.dart';
+import 'common/amount_input_formatter.dart';
 
 /// Nombre + emoji de cada categoría de gasto, en el mismo orden y con los
 /// mismos textos que ya se ven en el historial (Transaction.categoryName).
@@ -631,6 +632,8 @@ class _HistoryFiltersSheetState extends State<HistoryFiltersSheet> {
       controller: controller,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [
+        // Primero: convierte la coma decimal en punto (ver su doc).
+        const AmountInputFormatter(),
         FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
       ],
       decoration: InputDecoration(

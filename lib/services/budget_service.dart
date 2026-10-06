@@ -1,24 +1,72 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/budget.dart';
 import '../models/transaction.dart';
 import 'transaction_service.dart';
 import 'account_service.dart';
+import '../utils/app_log.dart';
 import '../utils/format_utils.dart';
+
+/// Último aviso dado a un presupuesto en su período actual (se persiste para
+/// no repetir el mismo aviso al reabrir la app).
+class _AlertMark {
+  final DateTime periodStart;
+  final BudgetAlertLevel level;
+
+  const _AlertMark(this.periodStart, this.level);
+
+  Map<String, dynamic> toJson() => {
+    'periodStart': periodStart.toIso8601String(),
+    'level': level.name,
+  };
+
+  static _AlertMark? fromJson(Object? json) {
+    if (json is! Map) return null;
+    final start = DateTime.tryParse('${json['periodStart']}');
+    final level = BudgetAlertLevel.values
+        .where((l) => l.name == json['level'])
+        .firstOrNull;
+    if (start == null || level == null) return null;
+    return _AlertMark(start, level);
+  }
+}
 
 class BudgetService {
   static const String _budgetsKey = 'budgets';
+  static const String _alertMarksKey = 'budget_alert_marks';
   static const int _maxActiveBudgets =
       15; // NUEVO: Límite máximo de presupuestos
 
   // Singleton (misma instancia en memoria que TransactionService)
   static final BudgetService _instance = BudgetService._internal();
   factory BudgetService() => _instance;
-  BudgetService._internal();
+  BudgetService._internal() {
+    // Lo gastado sale de las transacciones: cada vez que una se crea, edita o
+    // elimina (en cualquier pantalla, o por un gasto automático) se revisa si
+    // algún presupuesto cruzó su porcentaje de alerta o su límite.
+    _transactionService.addListener(_checkAlerts);
+  }
 
   List<Budget> _budgets = [];
   final TransactionService _transactionService = TransactionService();
   final AccountService _accountService = AccountService();
+
+  // true cuando _budgets refleja lo guardado (se puede revisar alertas).
+  bool _isLoaded = false;
+
+  // Clave: id del presupuesto.
+  Map<String, _AlertMark> _alertMarks = {};
+  bool _alertMarksLoaded = false;
+
+  final StreamController<BudgetAlert> _alertsController =
+      StreamController<BudgetAlert>.broadcast();
+
+  /// Avisos de presupuesto a mostrar al usuario (uno por cada vez que un
+  /// presupuesto llega a su porcentaje de alerta o a su límite). Solo se
+  /// emiten si el presupuesto tiene las alertas activadas.
+  Stream<BudgetAlert> get alerts => _alertsController.stream;
 
   // Getter para TODOS los presupuestos (sin filtro de cuenta)
   List<Budget> get allBudgets => _budgets;
@@ -52,10 +100,6 @@ class BudgetService {
             _budgets[i].accountId,
           );
           if (resolved != _budgets[i].accountId) {
-            print(
-              '🛠️ Presupuesto huérfano migrado: ${_budgets[i].name} '
-              '(${_budgets[i].accountId} → $resolved)',
-            );
             _budgets[i] = _budgets[i].copyWith(accountId: resolved);
             necesitaGuardar = true;
           }
@@ -64,31 +108,28 @@ class BudgetService {
           await _saveBudgets();
         }
 
-        // AGREGAR DEBUGGING DESPUÉS DE CARGAR:
-        print('=== CARGANDO PRESUPUESTOS ===');
-        print('Cuenta activa: ${_accountService.activeAccountId}');
-        print('JSON encontrado, cargados ${_budgets.length} presupuestos:');
-        for (int i = 0; i < _budgets.length; i++) {
-          print(
-            '  $i: ${_budgets[i].name} - ID: ${_budgets[i].id} '
-            '- accountId: ${_budgets[i].accountId}',
-          );
-        }
-        print('Filtrados para cuenta activa: ${budgets.length}');
-        print('============================');
-
         // Ordenar por fecha de creación (más recientes primero)
         _budgets.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
         // NUEVO: Procesar reinicios automáticos después de cargar
         await processAutomaticResets();
       } else {
-        print('=== NO SE ENCONTRÓ JSON DE PRESUPUESTOS ===');
         _budgets = [];
       }
+
+      // Las marcas de aviso se leen del disco solo la primera vez: después la
+      // memoria siempre está al día (cada cambio se guarda) y releerlas en
+      // medio de un guardado podría devolver una versión vieja y repetir un
+      // aviso.
+      if (!_alertMarksLoaded) {
+        _alertMarks = _decodeAlertMarks(prefs.getString(_alertMarksKey));
+        _alertMarksLoaded = true;
+      }
+      _isLoaded = true;
     } catch (e) {
-      print('Error loading budgets: $e');
+      AppLog.error('Error cargando presupuestos', e);
       _budgets = [];
+      _isLoaded = false;
     }
   }
 
@@ -99,13 +140,20 @@ class BudgetService {
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     await _saveBudgets();
     await processAutomaticResets();
+    // Los avisos de los presupuestos restaurados empiezan desde su estado
+    // actual (no se avisa de golpe por todo lo que ya estaba gastado).
+    _alertMarks = {};
+    _alertMarksLoaded = true;
+    for (final budget in _budgets) {
+      _markCurrentLevel(budget);
+    }
+    await _saveAlertMarks();
+    _isLoaded = true;
   }
 
   // NUEVO: Procesar reinicios automáticos de presupuestos
   Future<void> processAutomaticResets() async {
     bool hasChanges = false;
-
-    print('=== PROCESANDO REINICIOS AUTOMÁTICOS ===');
 
     for (int i = 0; i < _budgets.length; i++) {
       final budget = _budgets[i];
@@ -114,10 +162,6 @@ class BudgetService {
       if (!budget.isActive) continue;
 
       if (budget.needsReset) {
-        print(
-          '🔄 Reiniciando presupuesto: ${budget.name} (${budget.periodName})',
-        );
-
         // Obtener el nuevo rango de fechas
         final newRange = budget.getNextPeriodRange();
 
@@ -130,28 +174,13 @@ class BudgetService {
         );
 
         hasChanges = true;
-
-        print('✅ Reiniciado: ${budget.name}');
-        print(
-          '   Nuevo período: ${_formatDate(newRange.start)} - ${_formatDate(newRange.end)}',
-        );
       }
     }
 
     // Solo guardar si hubo cambios
     if (hasChanges) {
       await _saveBudgets();
-      print('💾 Cambios guardados: $hasChanges presupuestos reiniciados');
-    } else {
-      print('✓ No hay presupuestos que necesiten reiniciarse');
     }
-
-    print('========================================');
-  }
-
-  // Método auxiliar para formatear fechas en logs
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
   }
 
   // Guardar presupuestos en almacenamiento local
@@ -160,22 +189,128 @@ class BudgetService {
       final prefs = await SharedPreferences.getInstance();
       final budgetsJson = json.encode(_budgets.map((b) => b.toJson()).toList());
       await prefs.setString(_budgetsKey, budgetsJson);
-
-      // AGREGAR DEBUGGING DESPUÉS DE GUARDAR:
-      print('=== GUARDANDO EN SHAREDPREFERENCES ===');
-      print('Guardando ${_budgets.length} presupuestos');
-      // Mostrar solo primeros 100 caracteres si el JSON es lo suficientemente largo
-      if (budgetsJson.length > 100) {
-        print('JSON generado: ${budgetsJson.substring(0, 100)}...');
-      } else {
-        print('JSON generado: $budgetsJson');
-      }
-      print('=====================================');
     } catch (e) {
-      print('Error saving budgets: $e');
+      AppLog.error('Error guardando presupuestos', e);
       throw Exception('No se pudo guardar el presupuesto');
     }
   }
+
+  // ───────────────────────── Alertas ─────────────────────────
+
+  static Map<String, _AlertMark> _decodeAlertMarks(String? raw) {
+    if (raw == null) return {};
+    try {
+      final decoded = json.decode(raw);
+      if (decoded is! Map) return {};
+      return {
+        for (final entry in decoded.entries)
+          if (_AlertMark.fromJson(entry.value) case final mark?)
+            '${entry.key}': mark,
+      };
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<void> _saveAlertMarks() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _alertMarksKey,
+        json.encode({
+          for (final entry in _alertMarks.entries)
+            entry.key: entry.value.toJson(),
+        }),
+      );
+    } catch (e) {
+      AppLog.error('Error guardando avisos de presupuestos', e);
+    }
+  }
+
+  /// Simula reabrir la app en pruebas: la próxima carga vuelve a leer del
+  /// disco los avisos ya dados.
+  @visibleForTesting
+  void forgetAlertMarksForTesting() {
+    _alertMarks = {};
+    _alertMarksLoaded = false;
+  }
+
+  static bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  /// Nivel de aviso según lo gastado. Sin alertas activadas, siempre "none".
+  BudgetAlertLevel _levelFor(Budget budget, double spentAmount) {
+    if (!budget.alertsEnabled || budget.amount <= 0) {
+      return BudgetAlertLevel.none;
+    }
+    if (spentAmount >= budget.amount) return BudgetAlertLevel.exceeded;
+    if (budget.isAlertReached(spentAmount)) return BudgetAlertLevel.threshold;
+    return BudgetAlertLevel.none;
+  }
+
+  /// Toma el estado actual del presupuesto como punto de partida, sin avisar.
+  /// Se usa al crearlo o editarlo: si el usuario mismo deja el presupuesto
+  /// por encima de su alerta (p. ej. baja el monto), ya lo está viendo.
+  void _markCurrentLevel(Budget budget) {
+    final id = budget.id;
+    if (id == null) return;
+    _alertMarks[id] = _AlertMark(
+      budget.startDate,
+      _levelFor(budget, getBudgetProgress(budget).spentAmount),
+    );
+  }
+
+  /// Revisa todos los presupuestos en curso y avisa de los que SUBIERON de
+  /// nivel (llegaron a su alerta o a su límite) desde la última revisión de
+  /// su período. Cada aviso se da una sola vez por período; si lo gastado
+  /// vuelve a bajar (se editó o eliminó un gasto), se puede volver a avisar
+  /// cuando suba de nuevo.
+  void _checkAlerts() {
+    if (!_isLoaded || !_transactionService.isLoaded) return;
+
+    final fired = <BudgetAlert>[];
+    var changed = false;
+
+    for (final budget in _budgets) {
+      final id = budget.id;
+      if (id == null || !budget.isActive || !budget.isCurrentlyActive) {
+        continue;
+      }
+
+      final spent = getBudgetProgress(budget).spentAmount;
+      final level = _levelFor(budget, spent);
+      final mark = _alertMarks[id];
+
+      if (mark == null) {
+        // Presupuesto que todavía no se había revisado (p. ej. los que ya
+        // existían al actualizar la app): su estado actual es el punto de
+        // partida, sin avisar por lo ya gastado.
+        _alertMarks[id] = _AlertMark(budget.startDate, level);
+        changed = true;
+        continue;
+      }
+
+      // Período nuevo (reinicio automático): se empieza desde cero.
+      final previous = _sameDay(mark.periodStart, budget.startDate)
+          ? mark.level
+          : BudgetAlertLevel.none;
+
+      if (level.index > previous.index) {
+        fired.add(BudgetAlert(budget: budget, level: level, spentAmount: spent));
+      }
+      if (level != mark.level || !_sameDay(mark.periodStart, budget.startDate)) {
+        _alertMarks[id] = _AlertMark(budget.startDate, level);
+        changed = true;
+      }
+    }
+
+    if (changed) unawaited(_saveAlertMarks());
+    for (final alert in fired) {
+      _alertsController.add(alert);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
 
   // NUEVO: Verificar si se puede crear un nuevo presupuesto
   bool canCreateBudget() {
@@ -187,13 +322,6 @@ class BudgetService {
 
   // CORREGIDO: Agregar nuevo presupuesto con validación mejorada
   Future<void> addBudget(Budget budget) async {
-    print('=== AGREGANDO PRESUPUESTO ===');
-    print('Presupuestos antes de agregar: ${_budgets.length}');
-    print('Presupuestos activos: ${activeBudgets.length}');
-    print('Nombre: ${budget.name}');
-    print('Categoría: ${budget.categoryName}');
-    print('Período: ${budget.periodName}');
-
     // 1. Validar límite máximo de presupuestos activos
     if (!canCreateBudget()) {
       throw Exception(
@@ -217,8 +345,6 @@ class BudgetService {
       }
     }).toList();
 
-    print('Presupuestos duplicados encontrados: ${duplicateBudgets.length}');
-
     if (duplicateBudgets.isNotEmpty) {
       throw Exception(
         'Ya existe un presupuesto ${budget.periodName.toLowerCase()} de ${budget.categoryName} para este mismo período',
@@ -237,19 +363,8 @@ class BudgetService {
     _budgets.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     await _saveBudgets();
-
-    // AGREGAR DEBUGGING DESPUÉS DE GUARDAR:
-    print('=== DESPUÉS DE GUARDAR ===');
-    print('Lista _budgets tiene ${_budgets.length} elementos:');
-    for (int i = 0; i < _budgets.length; i++) {
-      print('  $i: ${_budgets[i].name} - ID: ${_budgets[i].id}');
-    }
-    print('========================');
-
-    print('Presupuesto agregado: ${newBudget.name}');
-    print('Total presupuestos: ${_budgets.length}');
-    print('Presupuestos activos: ${activeBudgets.length}');
-    print('=== FIN AGREGAR PRESUPUESTO ===');
+    _markCurrentLevel(newBudget);
+    await _saveAlertMarks();
   }
 
   // NUEVO: Función mejorada para detectar períodos exactamente iguales
@@ -272,50 +387,11 @@ class BudgetService {
     }
   }
 
-  // NUEVO: Obtener el lunes de una semana específica
+  // NUEVO: Obtener el lunes de una semana específica (a medianoche: con la
+  // hora incluida, dos presupuestos de la misma semana creados a distinta
+  // hora no se reconocían como duplicados).
   DateTime _getMondayOfWeek(DateTime date) {
-    return date.subtract(Duration(days: date.weekday - 1));
-  }
-
-  // MEJORADO: Verificar solapamiento temporal más flexible (mantenido por compatibilidad)
-  bool _hasExactPeriodOverlap(Budget existing, Budget newBudget) {
-    // Solo considerar como duplicado si es EXACTAMENTE la misma categoría Y período Y fechas
-    switch (newBudget.period) {
-      case BudgetPeriod.weekly:
-        // Para semanal: mismo rango de fechas exacto
-        return existing.startDate.isAtSameMomentAs(newBudget.startDate) &&
-            existing.endDate.isAtSameMomentAs(newBudget.endDate);
-
-      case BudgetPeriod.monthly:
-        // Para mensual: mismo mes y año exacto
-        return existing.startDate.year == newBudget.startDate.year &&
-            existing.startDate.month == newBudget.startDate.month;
-
-      case BudgetPeriod.yearly:
-        // Para anual: mismo año exacto
-        return existing.startDate.year == newBudget.startDate.year;
-    }
-  }
-
-  // NUEVO: Método auxiliar para verificar solapamiento de rangos de fechas
-  bool _dateRangesOverlap(
-    DateTime start1,
-    DateTime end1,
-    DateTime start2,
-    DateTime end2,
-  ) {
-    return start1.isBefore(end2.add(Duration(days: 1))) &&
-        end1.isAfter(start2.subtract(Duration(days: 1)));
-  }
-
-  // CORREGIDO: Verificar si dos presupuestos se superponen en tiempo (mantenido por compatibilidad)
-  bool _periodsOverlap(Budget existing, Budget newBudget) {
-    return _dateRangesOverlap(
-      existing.startDate,
-      existing.endDate,
-      newBudget.startDate,
-      newBudget.endDate,
-    );
+    return DateTime(date.year, date.month, date.day - (date.weekday - 1));
   }
 
   // Actualizar presupuesto existente
@@ -358,6 +434,10 @@ class BudgetService {
       updatedAt: DateTime.now(),
     );
     await _saveBudgets();
+    // Con el monto o el porcentaje de alerta nuevos se parte del estado
+    // actual (el usuario lo está viendo; no hace falta avisarle).
+    _markCurrentLevel(_budgets[index]);
+    await _saveAlertMarks();
   }
 
   // Eliminar presupuesto
@@ -370,13 +450,20 @@ class BudgetService {
     }
 
     await _saveBudgets();
+    if (_alertMarks.remove(budgetId) != null) await _saveAlertMarks();
   }
 
   /// Elimina todos los presupuestos que pertenecen a [accountId].
   /// Se usa al eliminar una cuenta por completo.
   Future<void> clearBudgetsForAccount(String accountId) async {
+    final removedIds = _budgets
+        .where((b) => b.accountId == accountId)
+        .map((b) => b.id)
+        .toSet();
     _budgets.removeWhere((b) => b.accountId == accountId);
     await _saveBudgets();
+    _alertMarks.removeWhere((id, _) => removedIds.contains(id));
+    await _saveAlertMarks();
   }
 
   // Activar/desactivar presupuesto
@@ -401,6 +488,11 @@ class BudgetService {
       updatedAt: DateTime.now(),
     );
     await _saveBudgets();
+    if (newActiveState) {
+      // Al reanudarlo no se avisa por lo gastado mientras estuvo pausado.
+      _markCurrentLevel(_budgets[index]);
+      await _saveAlertMarks();
+    }
   }
 
   // Obtener presupuesto por ID
@@ -414,8 +506,27 @@ class BudgetService {
 
   // Obtener progreso de un presupuesto específico
   BudgetProgress getBudgetProgress(Budget budget) {
-    // Asegurar que las transacciones estén cargadas
-    final transactions = _transactionService.transactions;
+    // Las transacciones de la cuenta del presupuesto (igual a la cuenta
+    // activa en pantalla; para las demás cuentas, las alertas también usan
+    // sus propios gastos).
+    final transactions = _transactionService.transactionsForAccount(
+      budget.accountId,
+    );
+
+    // Período por días completos: desde las 00:00 del primer día hasta el
+    // final del último. Antes el inicio era "después de (inicio - 1 día)", así
+    // que también contaba lo gastado el último día del período anterior
+    // (p. ej. el 30 de septiembre entraba en el presupuesto de octubre).
+    final periodStart = DateTime(
+      budget.startDate.year,
+      budget.startDate.month,
+      budget.startDate.day,
+    );
+    final periodEnd = DateTime(
+      budget.endDate.year,
+      budget.endDate.month,
+      budget.endDate.day + 1,
+    );
 
     // Filtrar transacciones del período y categoría del presupuesto
     final budgetTransactions = transactions.where((transaction) {
@@ -423,12 +534,8 @@ class BudgetService {
       if (transaction.type != TransactionType.expense) return false;
 
       // Verificar que esté dentro del período
-      if (!transaction.date.isAfter(
-            budget.startDate.subtract(const Duration(days: 1)),
-          ) ||
-          !transaction.date.isBefore(
-            budget.endDate.add(const Duration(days: 1)),
-          )) {
+      if (transaction.date.isBefore(periodStart) ||
+          !transaction.date.isBefore(periodEnd)) {
         return false;
       }
 
@@ -443,11 +550,13 @@ class BudgetService {
       }
     }).toList();
 
-    // Calcular monto gastado
-    final spentAmount = budgetTransactions.fold(
-      0.0,
-      (sum, t) => sum + t.amount,
-    );
+    // Calcular monto gastado, redondeado a centavos: sumar muchos decimales
+    // (100 × 0,01 = 1,0000000000000007) marcaba "excedido" un presupuesto
+    // gastado exactamente.
+    final spentAmount =
+        (budgetTransactions.fold(0.0, (sum, t) => sum + t.amount) * 100)
+            .round() /
+        100;
 
     return BudgetProgress(
       budget: budget,
@@ -566,11 +675,6 @@ class BudgetService {
       }
     }
 
-    // Debug para verificar la carga de presupuestos
-    print('Debug - Total budgets loaded: ${_budgets.length}');
-    print('Debug - Active budgets: ${activeBudgets.length}');
-    print('Debug - Current period budgets: ${currentPeriodBudgets.length}');
-
     return BudgetSummary(
       totalBudgets: allProgress.length,
       totalBudgeted: totalBudgeted,
@@ -594,9 +698,18 @@ class BudgetService {
 
     switch (period) {
       case BudgetPeriod.weekly:
-        // Comenzar el lunes de la semana actual
-        final mondayOfWeek = start.subtract(Duration(days: start.weekday - 1));
-        end = mondayOfWeek.add(const Duration(days: 6));
+        // Comenzar el lunes de la semana actual, a medianoche (igual que los
+        // períodos mensual/anual y que el reinicio automático).
+        final mondayOfWeek = DateTime(
+          start.year,
+          start.month,
+          start.day - (start.weekday - 1),
+        );
+        end = DateTime(
+          mondayOfWeek.year,
+          mondayOfWeek.month,
+          mondayOfWeek.day + 6,
+        );
         return {'start': mondayOfWeek, 'end': end};
 
       case BudgetPeriod.monthly:
@@ -611,24 +724,6 @@ class BudgetService {
         final lastDayOfYear = DateTime(start.year, 12, 31);
         return {'start': firstDayOfYear, 'end': lastDayOfYear};
     }
-  }
-
-  // Método temporal para debugging
-  void debugPrintBudgets() {
-    print('=== DEBUG BUDGETS ===');
-    print('Cuenta activa: ${_accountService.activeAccountId}');
-    print('Total budgets: ${_budgets.length}');
-    for (int i = 0; i < _budgets.length; i++) {
-      final budget = _budgets[i];
-      print(
-        'Budget $i: ${budget.name} - ${budget.categoryName} - '
-        '${budget.periodName} - Active: ${budget.isActive} '
-        '- accountId: ${budget.accountId}',
-      );
-    }
-    print('Visible en cuenta activa: ${budgets.length}');
-    print('Active budgets: ${activeBudgets.length}');
-    print('==================');
   }
 }
 

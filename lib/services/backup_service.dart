@@ -17,6 +17,7 @@ import 'goal_service.dart';
 import 'recurring_expense_service.dart';
 import 'transaction_service.dart';
 import '../utils/app_info.dart';
+import '../utils/app_log.dart';
 
 /// Versión de la app mostrada en la metadata del backup. Es solo
 /// informativa (no participa en la validación) — actualizar junto a
@@ -122,11 +123,10 @@ class BackupService {
         fileName: _buildFileName(),
         bytes: Uint8List.fromList(utf8.encode(jsonString)),
       );
-      if (savedPath != null) debugPrint('✅ Backup guardado en: $savedPath');
 
       return savedPath;
     } catch (e) {
-      debugPrint('❌ BackupService.createAndSaveBackup error: $e');
+      AppLog.error('BackupService.createAndSaveBackup error', e);
       rethrow;
     } finally {
       _isBusy = false;

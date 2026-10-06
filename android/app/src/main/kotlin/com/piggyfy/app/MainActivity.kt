@@ -1,4 +1,4 @@
-package com.example.ahorro_app
+package com.piggyfy.app
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

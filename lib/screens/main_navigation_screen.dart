@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'home_screen.dart';
@@ -9,8 +11,11 @@ import 'add_transaction_screen.dart';
 import 'lock_screen.dart';
 import 'tab_add_action.dart';
 import '../models/transaction.dart';
+import '../services/budget_service.dart';
 import '../services/security_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/budget_alert_listener.dart';
+import '../widgets/common/app_add_fab.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -105,6 +110,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
     );
     _initFabAnimation();
     WidgetsBinding.instance.addObserver(this);
+    // Los avisos de presupuesto necesitan los presupuestos en memoria desde el
+    // primer gasto que se registre (aunque no se abra la pestaña).
+    unawaited(BudgetService().loadBudgets());
   }
 
   @override
@@ -159,25 +167,33 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Avisos de presupuesto (porcentaje de alerta / límite) en toda la app.
+    return BudgetAlertListener(child: _buildScaffold());
+  }
+
+  Widget _buildScaffold() {
     return Scaffold(
       backgroundColor: backgroundLight,
       body: FadeTransition(
         opacity: _tabFadeAnimation,
-        child: PageView.builder(
-          controller: _pageController,
-          onPageChanged: (index) {
-            // Un toque en la barra ya actualizó el índice y vibró; solo los
-            // deslizamientos con el dedo llegan aquí con un índice nuevo.
-            if (index == _currentIndex) return;
-            setState(() {
-              _currentIndex = index;
-            });
-            HapticFeedback.lightImpact();
-          },
-          itemCount: _navigationItems.length,
-          itemBuilder: (context, index) {
-            return _navigationItems[index].screen;
-          },
+        // Las pestañas saben que aquí ya hay botón "Agregar" y barra inferior.
+        child: TabHostScope(
+          child: PageView.builder(
+            controller: _pageController,
+            onPageChanged: (index) {
+              // Un toque en la barra ya actualizó el índice y vibró; solo los
+              // deslizamientos con el dedo llegan aquí con un índice nuevo.
+              if (index == _currentIndex) return;
+              setState(() {
+                _currentIndex = index;
+              });
+              HapticFeedback.lightImpact();
+            },
+            itemCount: _navigationItems.length,
+            itemBuilder: (context, index) {
+              return _navigationItems[index].screen;
+            },
+          ),
         ),
       ),
       bottomNavigationBar: _buildModernBottomNav(),
@@ -283,19 +299,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   Widget _buildFloatingActionButton() {
     return ScaleTransition(
       scale: _fabAnimation,
-      child: FloatingActionButton.extended(
-        onPressed: _onAddPressed,
-        tooltip: _addTooltip,
-        backgroundColor: primaryBlue,
-        foregroundColor: Colors.white,
-        elevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        icon: const Icon(Icons.add_rounded, size: 20),
-        label: const Text(
-          'Agregar',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-        ),
-      ),
+      child: AppAddFab(onPressed: _onAddPressed, tooltip: _addTooltip),
     );
   }
 

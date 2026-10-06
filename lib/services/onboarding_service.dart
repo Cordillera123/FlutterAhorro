@@ -1,5 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/app_log.dart';
 
 /// Recuerda si el usuario ya vio (u omitió) el tutorial de bienvenida, para
 /// mostrarlo solo en la primera apertura de la app. Sigue el patrón
@@ -22,7 +22,7 @@ class OnboardingService {
       final prefs = await SharedPreferences.getInstance();
       _completed = prefs.getBool(_completedKey) ?? false;
     } catch (e) {
-      debugPrint('❌ Error cargando OnboardingService: $e');
+      AppLog.error('Error cargando OnboardingService', e);
       _completed = false;
     }
   }
@@ -33,7 +33,7 @@ class OnboardingService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_completedKey, true);
     } catch (e) {
-      debugPrint('❌ Error guardando OnboardingService: $e');
+      AppLog.error('Error guardando OnboardingService', e);
     }
   }
 }

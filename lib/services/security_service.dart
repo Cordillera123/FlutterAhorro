@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import '../utils/app_info.dart';
+import '../utils/app_log.dart';
 
 /// Servicio de seguridad de la app: bloqueo con PIN, biometría y la
 /// preferencia de ocultar saldos.
@@ -56,7 +57,7 @@ class SecurityService extends ChangeNotifier {
       _hideBalances = hideBalances == 'true';
       _hasPin = pinHash != null && pinHash.isNotEmpty;
     } catch (e) {
-      debugPrint('❌ Error inicializando SecurityService: $e');
+      AppLog.error('Error inicializando SecurityService', e);
       _lockEnabled = false;
       _biometricEnabled = false;
       _hideBalances = false;
@@ -131,7 +132,7 @@ class SecurityService extends ChangeNotifier {
       final available = await _localAuth.getAvailableBiometrics();
       return available.isNotEmpty;
     } catch (e) {
-      debugPrint('ℹ️ Biometría no disponible: $e');
+      AppLog.error('Biometría no disponible', e);
       return false;
     }
   }
@@ -160,7 +161,7 @@ class SecurityService extends ChangeNotifier {
         biometricOnly: true,
       );
     } catch (e) {
-      debugPrint('ℹ️ Autenticación biométrica no completada: $e');
+      AppLog.error('Autenticación biométrica no completada', e);
       return false;
     }
   }

@@ -6,6 +6,7 @@ import '../models/transaction.dart';
 import '../services/recurring_expense_service.dart';
 import '../services/account_service.dart';
 import '../utils/format_utils.dart';
+import '../utils/app_log.dart';
 import 'add_recurring_expense_screen.dart';
 import '../theme/app_colors.dart';
 import '../widgets/common/common.dart';
@@ -93,7 +94,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen>
     try {
       _budgetImpact = await _recurringExpenseService.getBudgetImpactSummary();
     } catch (e) {
-      print('Error cargando impacto en presupuestos: $e');
+      AppLog.error('Error cargando impacto en presupuestos', e);
       _budgetImpact = {};
     }
 
@@ -156,8 +157,19 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen>
       );
     }
 
+    // Abierta desde el menú lateral o un recordatorio no hay botón global ni
+    // barra inferior: la pantalla pone su propio "Agregar" y su flecha.
+    final standalone = !TabHostScope.isHosted(context);
+
     return Scaffold(
       backgroundColor: backgroundLight,
+      floatingActionButton: standalone
+          ? AppAddFab(
+              onPressed: _navigateToAddRecurringExpense,
+              tooltip: 'Crear gasto automático',
+            )
+          : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       body: RefreshIndicator(
         onRefresh: _loadData,
         color: primaryPurple,
@@ -165,7 +177,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen>
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
-            _buildModernAppBar(),
+            _buildModernAppBar(standalone: standalone),
             SliverToBoxAdapter(
               child: AnimatedBuilder(
                 animation: _animationController,
@@ -193,7 +205,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen>
     );
   }
 
-  Widget _buildModernAppBar() {
+  Widget _buildModernAppBar({required bool standalone}) {
     return SliverAppBar(
       expandedHeight: 140,
       floating: false,
@@ -201,6 +213,10 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen>
       backgroundColor: backgroundLight,
       elevation: 0,
       systemOverlayStyle: SystemUiOverlayStyle.dark,
+      // Sola: flecha propia y el título más abajo para que no se encimen
+      // (antes la flecha automática quedaba sobre "Gastos Automáticos").
+      automaticallyImplyLeading: false,
+      leading: standalone ? const AppBackButton(light: true) : null,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: const BoxDecoration(
@@ -216,7 +232,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen>
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+              padding: EdgeInsets.fromLTRB(24, standalone ? 48 : 16, 24, 24),
               child: Column(
                 children: [
                   Row(
@@ -1295,15 +1311,22 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen>
       );
 
       // Procesar gastos recurrentes
-      await _recurringExpenseService.processRecurringExpenses();
+      final created = await _recurringExpenseService.processRecurringExpenses();
 
       // Cerrar diálogo de carga
       if (mounted) Navigator.pop(context);
 
-      // Mostrar mensaje de éxito
+      // Mostrar el resultado real (antes decía que se habían creado
+      // transacciones aunque hoy no tocara ninguna).
       _showProcessMessage(
-        'Gastos procesados exitosamente',
-        'Se han creado las transacciones correspondientes a los gastos automáticos de hoy.',
+        created.isEmpty
+            ? 'Todo al día'
+            : 'Gastos procesados exitosamente',
+        created.isEmpty
+            ? 'No había gastos automáticos pendientes para hoy.'
+            : created.length == 1
+            ? 'Se registró 1 gasto automático de hoy en tu historial.'
+            : 'Se registraron ${created.length} gastos automáticos de hoy en tu historial.',
         successGreen,
         Icons.check_circle_rounded,
       );

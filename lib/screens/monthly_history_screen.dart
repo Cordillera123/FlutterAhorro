@@ -4,6 +4,7 @@ import '../services/stats_service.dart';
 import '../utils/format_utils.dart';
 import '../theme/app_colors.dart';
 import '../widgets/common/common.dart';
+import '../utils/app_log.dart';
 
 class MonthlyHistoryScreen extends StatefulWidget {
   const MonthlyHistoryScreen({Key? key}) : super(key: key);
@@ -71,7 +72,7 @@ class _MonthlyHistoryScreenState extends State<MonthlyHistoryScreen>
         _isLoading = false;
       });
     } catch (e) {
-      print('Error cargando historial mensual: $e');
+      AppLog.error('Error cargando historial mensual', e);
       setState(() => _isLoading = false);
     }
   }

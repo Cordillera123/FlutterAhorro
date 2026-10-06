@@ -90,7 +90,7 @@ _categoryService.removeListener(_onCategoryServiceChanged);
 ```powershell
 flutter run                            # Dev mode (portrait-only, Spanish locale es_CO)
 flutter pub run build_runner build     # Regenerate .g.dart files after model changes
-dart debug_budget_test.dart            # Run debug/test scripts for budget logic
+flutter test                           # Unit + widget tests (budget logic: test/finance_logic_audit_test.dart)
 ```
 
 ## Adding Categories

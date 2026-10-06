@@ -446,9 +446,10 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
             controller: _amountController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [
+              // Primero: convierte la coma decimal en punto (ver su doc).
+              const AmountInputFormatter(),
               FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
               LengthLimitingTextInputFormatter(13),
-              AmountInputFormatter(),
             ],
             decoration: InputDecoration(
               hintText: FormatUtils.amountHint(),
@@ -883,7 +884,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
                     ),
                     SizedBox(height: 4),
                     Text(
-                      'Configura cuándo recibir notificaciones',
+                      'Configura cuándo te avisamos',
                       style: TextStyle(color: textMedium, fontSize: 13),
                     ),
                   ],
@@ -946,8 +947,13 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
                 },
               ),
             ),
+            // Describe lo que de verdad hace la app: un aviso dentro de la app
+            // en el momento en que un gasto cruza el porcentaje (y otro al
+            // llegar al límite), una sola vez por período.
             Text(
-              'Recibirás una notificación cuando hayas gastado el ${(_alertThreshold * 100).toStringAsFixed(0)}% de tu presupuesto',
+              'Te avisaremos en la app en cuanto tus gastos lleguen al '
+              '${(_alertThreshold * 100).round()}% de tu presupuesto, y otra '
+              'vez si llegas al 100%.',
               style: const TextStyle(
                 color: textMedium,
                 fontSize: 13,
@@ -1234,7 +1240,12 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
         return;
       }
 
-      final dates = _isEditMode
+      // Al editar se conservan las fechas del período en curso, salvo que se
+      // cambie el período (p. ej. mensual → semanal): antes quedaba un
+      // "semanal" que sumaba los gastos de todo el mes.
+      final keepDates =
+          _isEditMode && widget.budgetToEdit!.period == _selectedPeriod;
+      final dates = keepDates
           ? {
               'start': widget.budgetToEdit!.startDate,
               'end': widget.budgetToEdit!.endDate,
@@ -1243,7 +1254,7 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
 
       final budget = Budget(
         id: _isEditMode ? widget.budgetToEdit!.id : null,
-        name: _nameController.text,
+        name: _nameController.text.trim(),
         amount: amount,
         period: _selectedPeriod,
         category: _selectedCustomCategoryId != null
@@ -1254,6 +1265,10 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
         customCategoryEmoji: _selectedCustomCategoryEmoji,
         startDate: dates['start']!,
         endDate: dates['end']!,
+        // Editar no reactiva un presupuesto pausado ni pierde su último
+        // reinicio (antes ambos volvían a su valor por defecto).
+        isActive: _isEditMode ? widget.budgetToEdit!.isActive : true,
+        lastResetDate: keepDates ? widget.budgetToEdit!.lastResetDate : null,
         alertsEnabled: _alertsEnabled,
         alertThreshold: _alertThreshold,
         createdAt: _isEditMode
@@ -1268,7 +1283,6 @@ class _CreateBudgetScreenState extends State<CreateBudgetScreen>
         await _budgetService.updateBudget(budget);
       } else {
         await _budgetService.addBudget(budget);
-        _budgetService.debugPrintBudgets(); // Para verificar que se agregó
       }
 
       if (mounted) {

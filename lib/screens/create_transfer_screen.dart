@@ -417,9 +417,10 @@ class _CreateTransferScreenState extends State<CreateTransferScreen> {
       controller: _amountController,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [
+        // Primero: convierte la coma decimal en punto (ver su doc).
+        const AmountInputFormatter(),
         FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
         LengthLimitingTextInputFormatter(13),
-        AmountInputFormatter(),
       ],
       style: const TextStyle(
         fontSize: 20,

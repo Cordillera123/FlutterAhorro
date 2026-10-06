@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/custom_category.dart';
 import '../models/transaction.dart';
+import '../utils/app_log.dart';
 import 'transaction_service.dart';
 import 'budget_service.dart';
 import 'account_service.dart';
@@ -168,11 +169,13 @@ class CategoryService extends ChangeNotifier {
 
         // Ordenar por fecha de creación (más recientes primero)
         _customCategories.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      } else {
+        _customCategories = [];
       }
 
       notifyListeners();
     } catch (e) {
-      print('Error cargando categorías personalizadas: $e');
+      AppLog.error('Error cargando categorías personalizadas', e);
       _customCategories = [];
       notifyListeners();
     }
@@ -187,7 +190,7 @@ class CategoryService extends ChangeNotifier {
       );
       await prefs.setString(_categoriesKey, categoriesJson);
     } catch (e) {
-      print('Error guardando categorías personalizadas: $e');
+      AppLog.error('Error guardando categorías personalizadas', e);
     }
   }
 
@@ -206,6 +209,10 @@ class CategoryService extends ChangeNotifier {
     required String name,
     required String emoji,
   }) async {
+    // Se compara sin espacios sobrantes: "Mascotas " y "Mascotas" son la
+    // misma categoría (antes se creaban dos con el mismo nombre).
+    name = name.trim();
+
     // Validar que no exista una categoría con el mismo nombre en la cuenta activa
     final nameExists = customCategories.any(
       (c) => c.name.toLowerCase() == name.toLowerCase(),
@@ -223,7 +230,9 @@ class CategoryService extends ChangeNotifier {
     }
 
     final newCategory = CustomCategory(
-      id: CustomCategory.generateId(),
+      id: CustomCategory.generateId(
+        existingIds: {for (final c in _customCategories) c.id},
+      ),
       name: name.trim(),
       emoji: emoji,
       createdAt: DateTime.now(),
@@ -247,6 +256,7 @@ class CategoryService extends ChangeNotifier {
     if (index == -1) {
       throw Exception('Categoría no encontrada');
     }
+    name = name.trim();
 
     // Validar que no exista otra categoría con el mismo nombre en la cuenta activa
     final nameExists = customCategories.any(

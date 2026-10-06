@@ -6,6 +6,7 @@ import '../models/custom_category.dart';
 import '../services/transaction_service.dart';
 import '../services/category_service.dart';
 import '../services/account_service.dart';
+import '../services/goal_service.dart';
 import '../utils/format_utils.dart';
 import '../theme/app_colors.dart';
 import '../widgets/common/common.dart';
@@ -113,8 +114,58 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     if (mounted) setState(() {});
   }
 
+  /// Nombre de la meta si la transacción que se edita es un aporte (o retiro)
+  /// de una meta. Su monto y fecha mandan sobre la meta, pero no puede pasar
+  /// de gasto a ingreso (dejaría de ser un aporte).
+  String? _goalName;
+
+  bool get _isGoalContribution => _goalName != null;
+
+  void _showGoalTypeLockedMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Este movimiento es un aporte a la meta "$_goalName": no se '
+          'puede cambiar su tipo.',
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Widget _buildGoalContributionNotice() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: primaryBlue.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: primaryBlue.withOpacity(0.2)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.flag_rounded, color: primaryBlue, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Aporte a la meta "$_goalName". Si cambias el monto o la fecha, '
+              'la meta se actualiza automáticamente.',
+              style: const TextStyle(
+                color: textDark,
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _loadTransactionData() {
     final transaction = widget.transactionToEdit!;
+    _goalName = GoalService().goalNameForTransaction(transaction.id);
     _amountController.text = transaction.amount.toString();
     _descriptionController.text = transaction.description;
     _selectedDate = transaction.date;
@@ -187,6 +238,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildTypeSelector(),
+                            if (_isGoalContribution) ...[
+                              const SizedBox(height: 12),
+                              _buildGoalContributionNotice(),
+                            ],
                             const SizedBox(height: 24),
                             _buildAmountField(),
                             const SizedBox(height: 24),
@@ -392,6 +447,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
               Expanded(
                 child: GestureDetector(
                   onTap: () {
+                    // Tocar el tipo ya elegido no debe borrar la categoría.
+                    if (_selectedType == TransactionType.income) return;
+                    if (_isGoalContribution) {
+                      _showGoalTypeLockedMessage();
+                      return;
+                    }
                     HapticFeedback.lightImpact();
                     setState(() {
                       _selectedType = TransactionType.income;
@@ -461,6 +522,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
               Expanded(
                 child: GestureDetector(
                   onTap: () {
+                    if (_selectedType == TransactionType.expense) return;
+                    if (_isGoalContribution) {
+                      _showGoalTypeLockedMessage();
+                      return;
+                    }
                     HapticFeedback.lightImpact();
                     setState(() {
                       _selectedType = TransactionType.expense;
@@ -596,11 +662,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
             controller: _amountController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [
+              // Primero: convierte la coma decimal en punto (ver su doc).
+              const AmountInputFormatter(),
               FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
               LengthLimitingTextInputFormatter(
                 13,
               ), // Máximo 13 caracteres (999999999.99)
-              AmountInputFormatter(),
             ],
             decoration: InputDecoration(
               hintText: FormatUtils.amountHint(),
@@ -1843,8 +1910,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: AppPrimaryButton(
+        // Al editar no se "agrega" nada (antes decía "Agregar Gasto").
         label: _isLoading
             ? 'Guardando transacción...'
+            : widget.transactionToEdit != null
+            ? 'Guardar cambios'
             : isIncome
             ? 'Agregar Ingreso'
             : 'Agregar Gasto',
@@ -1863,11 +1933,21 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
   }
 
   Future<void> _selectDate() async {
+    final now = DateTime.now();
+    // showDatePicker falla si la fecha inicial queda fuera del rango (p. ej.
+    // un movimiento restaurado de una copia con fecha futura o anterior a
+    // 2020): se acota solo para abrir el selector.
+    var initial = _selectedDate;
+    if (initial.isAfter(now)) initial = now;
+    if (initial.isBefore(AddTransactionScreen.earliestDate)) {
+      initial = AddTransactionScreen.earliestDate;
+    }
+
     final date = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
+      initialDate: initial,
       firstDate: AddTransactionScreen.earliestDate,
-      lastDate: DateTime.now(),
+      lastDate: now,
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -1886,7 +1966,18 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
 
     if (date != null) {
       setState(() {
-        _selectedDate = date;
+        // Se conserva la hora: el selector devuelve medianoche y los
+        // movimientos del mismo día perdían su orden.
+        final withTime = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          _selectedDate.hour,
+          _selectedDate.minute,
+          _selectedDate.second,
+        );
+        final current = DateTime.now();
+        _selectedDate = withTime.isAfter(current) ? current : withTime;
       });
     }
   }

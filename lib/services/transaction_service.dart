@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/transaction.dart';
+import '../utils/app_log.dart';
 import 'account_service.dart';
 
 class TransactionService extends ChangeNotifier {
@@ -15,6 +16,13 @@ class TransactionService extends ChangeNotifier {
   final AccountService _accountService = AccountService();
 
   List<Transaction> _transactions = [];
+
+  // true cuando la lista en memoria refleja lo guardado (se cargó o se
+  // reemplazó por completo). Quien sincroniza datos derivados de las
+  // transacciones (p. ej. los aportes de las metas) debe esperar a esto: con
+  // la lista aún vacía, "no existe la transacción" no significa que se borró.
+  bool _isLoaded = false;
+  bool get isLoaded => _isLoaded;
 
   // Getter para todas las transacciones (sin filtrar por cuenta)
   List<Transaction> get allTransactions => List.unmodifiable(_transactions);
@@ -53,9 +61,6 @@ class TransactionService extends ChangeNotifier {
           if (resolved != _transactions[i].accountId) {
             _transactions[i] = _transactions[i].copyWith(accountId: resolved);
             necesitaGuardar = true;
-            print(
-              '🛠️ Migrada transacción huérfana: ${_transactions[i].description}',
-            );
           }
         }
 
@@ -65,14 +70,19 @@ class TransactionService extends ChangeNotifier {
         // Guardar cambios si se migró alguna transacción
         if (necesitaGuardar) {
           await _saveTransactions();
-          print('✅ Transacciones huérfanas migradas y guardadas');
         }
+      } else {
+        // Nada guardado: la memoria debe reflejarlo (no conservar lo de una
+        // carga anterior).
+        _transactions = [];
       }
 
+      _isLoaded = true;
       notifyListeners();
     } catch (e) {
-      print('❌ Error cargando transacciones: $e');
+      AppLog.error('Error cargando transacciones', e);
       _transactions = [];
+      _isLoaded = false;
       notifyListeners();
     }
   }
@@ -86,7 +96,7 @@ class TransactionService extends ChangeNotifier {
       );
       await prefs.setString(_transactionsKey, transactionsJson);
     } catch (e) {
-      print('Error guardando transacciones: $e');
+      AppLog.error('Error guardando transacciones', e);
     }
   }
 
@@ -96,7 +106,23 @@ class TransactionService extends ChangeNotifier {
     _transactions = List.of(transactions)
       ..sort((a, b) => b.date.compareTo(a.date));
     await _saveTransactions();
+    _isLoaded = true;
     notifyListeners();
+  }
+
+  /// Id nuevo que no choca con ninguna transacción existente. Dos movimientos
+  /// creados en el mismo milisegundo (p. ej. varios gastos automáticos o
+  /// aportes procesados seguidos) tendrían el mismo id, y editar/eliminar uno
+  /// afectaría al otro.
+  String generateId({String prefix = ''}) {
+    final base = '$prefix${DateTime.now().millisecondsSinceEpoch}';
+    final existing = {for (final t in _transactions) t.id};
+    if (!existing.contains(base)) return base;
+    var n = 1;
+    while (existing.contains('${base}_$n')) {
+      n++;
+    }
+    return '${base}_$n';
   }
 
   /// Un monto debe ser finito y positivo: NaN/infinito romperían los balances
@@ -112,11 +138,6 @@ class TransactionService extends ChangeNotifier {
     _assertValidAmount(transaction.amount);
     final transactionWithAccount = transaction.copyWith(
       accountId: _accountService.resolveAccountId(transaction.accountId),
-    );
-
-    print('🟢 ADD - accountId asignado: ${transactionWithAccount.accountId}');
-    print(
-      '🟢 ADD - activeAccountId actual: ${_accountService.activeAccountId}',
     );
 
     _transactions.add(transactionWithAccount);
@@ -213,19 +234,10 @@ class TransactionService extends ChangeNotifier {
     if (index != -1) {
       final existing = _transactions[index];
 
-      print('🟡 UPDATE - ID: ${updatedTransaction.id}');
-      print('🟡 UPDATE - accountId recibido: ${updatedTransaction.accountId}');
-      print('🟡 UPDATE - accountId existente: ${existing.accountId}');
-      print(
-        '🟡 UPDATE - activeAccountId actual: ${_accountService.activeAccountId}',
-      );
-
       final rawAccountId = updatedTransaction.accountId.isNotEmpty
           ? updatedTransaction.accountId
           : existing.accountId;
       final accountId = _accountService.resolveAccountId(rawAccountId);
-
-      print('🟡 UPDATE - accountId final a guardar: $accountId');
 
       _transactions[index] = updatedTransaction.copyWith(accountId: accountId);
       _transactions.sort((a, b) => b.date.compareTo(a.date));
@@ -263,20 +275,14 @@ class TransactionService extends ChangeNotifier {
         .fold(0, (sum, t) => sum + t.amount);
   }
 
-  // Transacciones del mes actual (cuenta activa)
+  // Transacciones del mes actual (cuenta activa). Se compara mes y año: la
+  // versión anterior (isAfter(día 1 - 1 día)) también incluía lo registrado
+  // el último día del mes anterior después de medianoche.
   List<Transaction> get thisMonthTransactions {
     final now = DateTime.now();
-    final firstDayOfMonth = DateTime(now.year, now.month, 1);
-    final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
-
-    return transactions.where((transaction) {
-      return transaction.date.isAfter(
-            firstDayOfMonth.subtract(const Duration(days: 1)),
-          ) &&
-          transaction.date.isBefore(
-            lastDayOfMonth.add(const Duration(days: 1)),
-          );
-    }).toList();
+    return transactions
+        .where((t) => t.date.year == now.year && t.date.month == now.month)
+        .toList();
   }
 
   // Gastos por categoría del mes actual

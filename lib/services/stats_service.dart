@@ -93,14 +93,28 @@ class StatsService {
     final List<WeeklyStats> weeklyStats = [];
 
     for (int i = 3; i >= 0; i--) {
-      final weekStart = now.subtract(Duration(days: (i * 7) + now.weekday - 1));
-      final weekEnd = weekStart.add(const Duration(days: 6));
+      // Semana de lunes 00:00 a domingo inclusive, por días de calendario.
+      // Antes el inicio llevaba la hora actual y el filtro era "después de
+      // (inicio - 1 día)": una misma transacción podía contar en dos semanas.
+      final weekStart = DateTime(
+        now.year,
+        now.month,
+        now.day - (i * 7) - (now.weekday - 1),
+      );
+      final weekEnd = DateTime(
+        weekStart.year,
+        weekStart.month,
+        weekStart.day + 6,
+      );
+      final nextWeekStart = DateTime(
+        weekStart.year,
+        weekStart.month,
+        weekStart.day + 7,
+      );
 
       final weekTransactions = transactions
           .where(
-            (t) =>
-                t.date.isAfter(weekStart.subtract(const Duration(days: 1))) &&
-                t.date.isBefore(weekEnd.add(const Duration(days: 1))),
+            (t) => !t.date.isBefore(weekStart) && t.date.isBefore(nextWeekStart),
           )
           .toList();
 

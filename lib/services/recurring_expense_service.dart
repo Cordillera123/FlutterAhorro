@@ -2,8 +2,9 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/recurring_expense.dart';
 import '../models/transaction.dart';
+import '../utils/app_log.dart';
 import 'transaction_service.dart';
-import 'budget_service.dart'; // NUEVO: Importar BudgetService
+import 'budget_service.dart';
 import 'account_service.dart';
 
 class RecurringExpenseService {
@@ -66,9 +67,11 @@ class RecurringExpenseService {
 
         // Ordenar por fecha de creación (más reciente primero)
         _recurringExpenses.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      } else {
+        _recurringExpenses = [];
       }
     } catch (e) {
-      print('Error cargando gastos recurrentes: $e');
+      AppLog.error('Error cargando gastos automáticos', e);
       _recurringExpenses = [];
     }
   }
@@ -82,7 +85,7 @@ class RecurringExpenseService {
       );
       await prefs.setString(_recurringExpensesKey, recurringExpensesJson);
     } catch (e) {
-      print('Error guardando gastos recurrentes: $e');
+      AppLog.error('Error guardando gastos automáticos', e);
     }
   }
 
@@ -129,6 +132,22 @@ class RecurringExpenseService {
     await _saveRecurringExpenses();
   }
 
+  /// Elimina los gastos automáticos de [accountId]. Se usa al eliminar una
+  /// cuenta: si quedaban, al cargarlos se reasignaban a la cuenta principal y
+  /// seguían registrando gastos allí.
+  ///
+  /// Debe llamarse ANTES de quitar la cuenta: recarga la lista guardada (por
+  /// si aún no estaba en memoria) y esa carga reasigna los gastos de cuentas
+  /// que ya no existen.
+  Future<void> clearRecurringExpensesForAccount(String accountId) async {
+    await loadRecurringExpenses();
+    final before = _recurringExpenses.length;
+    _recurringExpenses.removeWhere((e) => e.accountId == accountId);
+    if (_recurringExpenses.length != before) {
+      await _saveRecurringExpenses();
+    }
+  }
+
   // Activar/Desactivar un gasto recurrente
   Future<void> toggleRecurringExpense(String id) async {
     final index = _recurringExpenses.indexWhere((expense) => expense.id == id);
@@ -139,18 +158,30 @@ class RecurringExpenseService {
     }
   }
 
+  // Procesamiento en curso: Inicio lo dispara cada vez que se abre y también
+  // el botón "Procesar". Dos ejecuciones a la vez veían el mismo gasto como
+  // pendiente (aún sin lastProcessed) y lo registraban dos veces.
+  Future<List<Transaction>>? _processing;
+
   // ACTUALIZADO: Procesar gastos recurrentes del día actual con integración de presupuestos
-  Future<List<Transaction>> processRecurringExpensesForToday() async {
+  Future<List<Transaction>> processRecurringExpensesForToday() {
+    return _processing ??= _processRecurringExpensesForToday().whenComplete(
+      () => _processing = null,
+    );
+  }
+
+  Future<List<Transaction>> _processRecurringExpensesForToday() async {
     final transactionService = TransactionService();
-    final budgetService = BudgetService(); // NUEVO: Instancia del BudgetService
     final createdTransactions = <Transaction>[];
 
-    // NUEVO: Cargar presupuestos para poder trabajar con ellos
-    await budgetService.loadBudgets();
+    // Presupuestos en memoria antes de registrar: si un gasto automático hace
+    // que un presupuesto llegue a su alerta o a su límite, se avisa al
+    // usuario (BudgetService revisa cada transacción nueva).
+    await BudgetService().loadBudgets();
 
-    for (int i = 0; i < _recurringExpenses.length; i++) {
-      final expense = _recurringExpenses[i];
-
+    // Se recorre una copia: loadRecurringExpenses() puede reemplazar la
+    // lista mientras se espera a guardar cada transacción.
+    for (final expense in List.of(_recurringExpenses)) {
       if (expense.shouldRunToday()) {
         try {
           // Crear la transacción
@@ -158,55 +189,23 @@ class RecurringExpenseService {
           await transactionService.addTransaction(transaction);
           createdTransactions.add(transaction);
 
-          // NUEVO: Verificar si hay presupuestos activos para esta categoría
-          // Se excluyen los presupuestos de categoría personalizada: como los
-          // gastos recurrentes no soportan categorías personalizadas, un
-          // gasto recurrente "Otros" no debe reportarse como impacto de
-          // presupuestos personalizados que en realidad no le corresponden.
-          final activeBudgets = budgetService.currentPeriodBudgets
-              .where(
-                (budget) =>
-                    !budget.hasCustomCategory &&
-                    budget.category == expense.category,
-              )
-              .toList();
-
-          if (activeBudgets.isNotEmpty) {
-            print(
-              '💰 Gasto recurrente procesado: ${expense.name} (\$${expense.amount})',
-            );
-            print(
-              '📊 Encontrados ${activeBudgets.length} presupuesto(s) activo(s) para categoría ${expense.categoryName}',
-            );
-
-            // Los presupuestos se actualizarán automáticamente cuando se consulten
-            // porque el BudgetService calcula los gastos basándose en las transacciones
-            for (final budget in activeBudgets) {
-              print('   - Presupuesto: ${budget.name} (\$${budget.amount})');
-            }
-          } else {
-            print(
-              '⚠️ No hay presupuestos activos para la categoría ${expense.categoryName}',
-            );
-          }
-
-          // Actualizar la fecha de último procesamiento
-          _recurringExpenses[i] = expense.copyWith(
-            lastProcessed: DateTime.now(),
+          // Marcar y guardar de inmediato (antes se guardaba al final del
+          // recorrido): si la app se cierra a mitad, el gasto no se vuelve a
+          // registrar al abrirla.
+          final index = _recurringExpenses.indexWhere(
+            (e) => e.id == expense.id,
           );
+          if (index != -1) {
+            _recurringExpenses[index] = _recurringExpenses[index].copyWith(
+              lastProcessed: DateTime.now(),
+            );
+            await _saveRecurringExpenses();
+          }
         } catch (e) {
-          print('❌ Error procesando gasto recurrente ${expense.name}: $e');
+          AppLog.error('Error procesando un gasto automático', e);
           // Continuar con el siguiente gasto en caso de error
         }
       }
-    }
-
-    // Guardar los cambios si se procesaron gastos
-    if (createdTransactions.isNotEmpty) {
-      await _saveRecurringExpenses();
-      print(
-        '✅ Procesados ${createdTransactions.length} gastos recurrentes exitosamente',
-      );
     }
 
     return createdTransactions;

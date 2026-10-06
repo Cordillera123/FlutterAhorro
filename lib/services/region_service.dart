@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/region.dart';
+import '../utils/app_log.dart';
 
 /// Región/moneda activa de la app. Sigue el patrón Singleton +
 /// ChangeNotifier del resto de servicios, persistido en SharedPreferences.
@@ -32,7 +33,7 @@ class RegionService extends ChangeNotifier {
         );
       }
     } catch (e) {
-      debugPrint('❌ Error cargando RegionService: $e');
+      AppLog.error('Error cargando RegionService', e);
       _current = Region.ecuador;
     }
   }
@@ -45,7 +46,7 @@ class RegionService extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_regionKey, region.name);
     } catch (e) {
-      debugPrint('❌ Error guardando RegionService: $e');
+      AppLog.error('Error guardando RegionService', e);
     }
   }
 }

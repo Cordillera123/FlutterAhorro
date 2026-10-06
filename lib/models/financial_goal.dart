@@ -228,7 +228,11 @@ class FinancialGoal {
   }
 
   bool get isCompleted => currentAmount >= targetAmount;
-  bool get isOverdue => DateTime.now().isAfter(targetDate) && !isCompleted;
+
+  // Vencida recién al día siguiente de la fecha objetivo (el mismo día todavía
+  // "Hoy vence"); antes bastaba con pasar la medianoche de ese día.
+  bool get isOverdue =>
+      _dateOnly(DateTime.now()).isAfter(_dateOnly(targetDate)) && !isCompleted;
 
   // Nombres descriptivos
   String get typeName {
@@ -453,6 +457,9 @@ class FinancialGoal {
     DateTime? updatedAt,
     DateTime? completedAt,
     String? accountId,
+    // completedAt: null no lo borra (null = "sin cambios"); para reabrir una
+    // meta completada se pasa clearCompletedAt: true.
+    bool clearCompletedAt = false,
   }) {
     return FinancialGoal(
       id: id ?? this.id,
@@ -471,7 +478,7 @@ class FinancialGoal {
       autoSaveFrequency: autoSaveFrequency ?? this.autoSaveFrequency,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
-      completedAt: completedAt ?? this.completedAt,
+      completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
       accountId: accountId ?? this.accountId,
     );
   }
@@ -481,11 +488,20 @@ class FinancialGoal {
 class GoalContribution {
   final String? id;
   final String goalId;
+
+  /// Positivo para un aporte y negativo para un retiro.
   final double amount;
   final DateTime date;
   final String? note;
   final bool isAutomatic;
   final String accountId; // ID de la cuenta a la que pertenece
+
+  /// Id de la transacción del historial que representa este aporte (el gasto
+  /// "Aporte a …") o retiro. Esa transacción es la fuente de verdad: si se
+  /// edita su monto o fecha, el aporte se actualiza; si se elimina, el aporte
+  /// desaparece de la meta. `null` en aportes antiguos que no se pudieron
+  /// enlazar a su transacción.
+  final String? transactionId;
 
   GoalContribution({
     this.id,
@@ -495,7 +511,28 @@ class GoalContribution {
     this.note,
     this.isAutomatic = false,
     required this.accountId,
+    this.transactionId,
   });
+
+  bool get isWithdrawal => amount < 0;
+
+  GoalContribution copyWith({
+    double? amount,
+    DateTime? date,
+    String? accountId,
+    String? transactionId,
+  }) {
+    return GoalContribution(
+      id: id,
+      goalId: goalId,
+      amount: amount ?? this.amount,
+      date: date ?? this.date,
+      note: note,
+      isAutomatic: isAutomatic,
+      accountId: accountId ?? this.accountId,
+      transactionId: transactionId ?? this.transactionId,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {
@@ -506,6 +543,7 @@ class GoalContribution {
       'note': note,
       'isAutomatic': isAutomatic,
       'accountId': accountId,
+      'transactionId': transactionId,
     };
   }
 
@@ -518,6 +556,7 @@ class GoalContribution {
       note: json['note'],
       isAutomatic: json['isAutomatic'] ?? false,
       accountId: json['accountId'] as String? ?? 'account_default',
+      transactionId: json['transactionId'] as String?,
     );
   }
 }
